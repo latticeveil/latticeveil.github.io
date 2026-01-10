@@ -255,8 +255,12 @@
             <h3 class="category-title">Ores & Precious Minerals</h3>
             <div class="block-gallery" id="ore-gallery"></div>
 
-            <h3 class="category-title" style="border-color: #666; color: #888;">Legacy & Archive (Failed Designs)</h3>
+            <h3 class="category-title" style="border-color: #666; color: #888;">Legacy Archive: Experimental Designs</h3>
             <div class="block-gallery" id="legacy-gallery"></div>
+
+            <h3 class="category-title" style="border-color: #444; color: #666;">Legacy Archive: The HD Era (V1)</h3>
+            <p style="color: #666; font-size: 0.9rem;">These original high-definition textures were replaced to achieve the current pixel art aesthetic.</p>
+            <div class="block-gallery" id="hd-gallery"></div>
         </div>
 
         <!-- MODELS TAB -->
@@ -349,7 +353,15 @@ elements.Add(new BlockModelElement {
             { id: 'gold', name: 'Gold', cat: 'ore', desc: 'Rare, heavy metal for the elite.' },
             { id: 'diamond', name: 'Diamond', cat: 'ore', desc: 'The hardest and most precious material.' },
             // Legacy
-            { id: 'legacy/grass_patchy', name: 'Patchy Grass', cat: 'legacy', desc: 'An experimental version with sparse grass coverage. Retired for a cleaner look.' }
+            { id: 'legacy/grass_patchy', name: 'Patchy Grass', cat: 'legacy', desc: 'An experimental version with sparse grass coverage. Retired for a cleaner look.' },
+            // HD Era
+            { id: 'legacy/hd/grass', name: 'HD Grass', cat: 'hd', desc: 'The original high-resolution grass texture from the V1 release.' },
+            { id: 'legacy/hd/dirt', name: 'HD Dirt', cat: 'hd', desc: 'Detailed soil texture used in the early stages of development.' },
+            { id: 'legacy/hd/stone', name: 'HD Stone', cat: 'hd', desc: 'Original stone texture featuring realistic cracks and weathering.' },
+            { id: 'legacy/hd/wood', name: 'HD Wood', cat: 'hd', desc: 'High-detail timber planks from the HD experimental phase.' },
+            { id: 'legacy/hd/leaves', name: 'HD Leaves', cat: 'hd', desc: 'Original photorealistic foliage design.' },
+            { id: 'legacy/hd/sand', name: 'HD Sand', cat: 'hd', desc: 'High-resolution desert sand with fine grain detail.' },
+            { id: 'legacy/hd/water', name: 'HD Water', cat: 'hd', desc: 'The initial realistic water texture.' }
         ];
 
         function populateGalleries() {
