@@ -332,37 +332,6 @@
             <div id="log-game" class="sub-content active">
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>🧊 Engine: GLB (glTF Binary) Model Support</h3>
-                        <span class="log-date">JAN 10, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Transitioned the block modeling system from JSON to the industry-standard <strong>GLB (glTF 2.0 Binary)</strong> format. This shift allows for more complex geometry, better performance through binary data loading, and seamless compatibility with professional 3D tools. The first asset to utilize this new system is the updated door model.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <div class="log-header">
-                        <h3>🦾 Engine: Generic JSON Model Interpreter</h3>
-                        <span class="log-date">JAN 10, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Revolutionized the block modeling system by implementing a data-driven JSON interpreter. The engine can now parse complex <code>block.json</code> files directly from the Assets folder, supporting per-element rotation, custom UV mapping, and specific display transforms for GUI and First-Person contexts. This allows for rapid iteration and full modding support for 3D blocks.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <img src="assets/img/door.png" class="log-image" style="object-fit: contain; background: #333; height: 200px; padding: 20px;">
-                    <div class="log-header">
-                        <h3>📐 Model: Door Synchronization & Physical Reversion</h3>
-                        <span class="log-date">JAN 10, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Refined the door implementation using the new JSON interpreter. While the physical in-world door remains a optimized 2-block slab, the hand and inventory versions now use the full 3D model with protruding knobs and accurate proportions.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <div class="log-header">
                         <h3>🧹 Launcher: Legacy Cleanup & Skipping</h3>
                         <span class="log-date">JAN 10, 2026</span>
                     </div>
@@ -371,64 +340,6 @@
                     </div>
                 </div>
 
-                <div class="log-entry">
-                    <img src="assets/img/Screenshots_bg.png" class="log-image">
-                    <div class="log-header">
-                        <h3>🛠️ Asset Restoration: Screenshots Background</h3>
-                        <span class="log-date">JAN 10, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Fixed a missing UI dependency where the Screenshots management page was lacking its environmental backdrop. We've synchronized <code>Screenshots_bg.png</code> across all distribution channels to ensure UI consistency.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <div class="log-header">
-                        <h3>⚡ Launcher: Smart Asset Sync</h3>
-                        <span class="log-date">JAN 10, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Optimized the launcher's startup routine to perform a "Smart Sync." The launcher now compares local asset tags and publication dates against the GitHub API. If your assets are already up-to-date, the download phase is skipped entirely, getting you into the game much faster.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <img src="assets/img/Profile_bg.png" class="log-image">
-                    <div class="log-header">
-                        <h3>🛠️ Asset Restoration: Profile Background</h3>
-                        <span class="log-date">JAN 10, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Discovered that the <code>Profile_bg.png</code> was missing from the latest asset build. We successfully recovered the environment backdrop and synchronized it across the Game Source, Asset ZIP, and Web Gallery.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <div class="log-header">
-                        <h3>🪟 Window Focus & UX Fix</h3>
-                        <span class="log-date">JAN 10, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Implemented a combination of <code>TopMost</code> timing and Win32 <code>SetForegroundWindow</code> P/Invoke to ensure both the Launcher and Game window correctly pop up on top of other applications during startup.</p>
-                        <pre>
-// Force window to foreground
-[DllImport("user32.dll")]
-private static extern bool SetForegroundWindow(IntPtr hWnd);
-                        </pre>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <img src="assets/img/door.png" class="log-image" style="object-fit: contain; background: #333; height: 200px; padding: 20px;">
-                    <div class="log-header">
-                        <h3>🏗️ Custom 3D Door Geometry</h3>
-                        <span class="log-date">JAN 09, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Moving beyond simple cubes, we've implemented custom geometry logic for doors. This includes a protruding 3D doorknob and a semi-transparent window pane, all while maintaining the voxel grid alignment.</p>
-                    </div>
-                </div>
-            </div>
 
             <!-- WEBSITE UPDATES -->
             <div id="log-website" class="sub-content">
@@ -526,7 +437,6 @@ private static extern bool SetForegroundWindow(IntPtr hWnd);
             { id: 'bedrock', name: 'Bedrock', cat: 'nat', desc: 'The unbreakable floor of the world.' },
             { id: 'plank', name: 'Plank', cat: 'util', desc: 'Refined wood for building structures.' },
             { id: 'glass', name: 'Glass', cat: 'util', desc: 'Smelted sand, perfect for windows.' },
-            { id: 'door', name: 'Door', cat: 'util', desc: 'A functional entryway with a 3D knob.' },
             { id: 'crafting_table', name: 'Crafting Table', cat: 'util', desc: 'The workstation for all advanced tools.' },
             { id: 'chest', name: 'Chest', cat: 'util', desc: 'Storage for your blocks and items.' },
             { id: 'coal', name: 'Coal', cat: 'ore', desc: 'Common fuel source found in stone layers.' },
