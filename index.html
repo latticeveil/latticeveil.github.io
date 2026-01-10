@@ -6,7 +6,6 @@
     <title>Redactedcraft | Official Site</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Three.js for 3D Modeling -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
@@ -92,7 +91,6 @@
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Categorized Gallery */
         .category-title {
             border-left: 10px solid var(--primary);
             padding-left: 15px;
@@ -126,7 +124,37 @@
         .block-item img { width: 128px; height: 128px; image-rendering: pixelated; margin-bottom: 15px; }
         .block-item span { display: block; font-family: 'Press Start 2P'; font-size: 0.7rem; color: var(--accent); }
 
-        /* 3D Viewer */
+        /* Dev Log Styling */
+        .log-entry {
+            background: var(--panel-bg);
+            border: 4px solid #444;
+            margin-bottom: 40px;
+            box-shadow: 8px 8px 0px #000;
+            overflow: hidden;
+        }
+
+        .log-header {
+            background: #111;
+            padding: 15px 25px;
+            border-bottom: 4px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .log-header h3 { margin: 0; font-size: 0.9rem; }
+        .log-date { font-family: 'Press Start 2P'; font-size: 0.6rem; color: var(--primary); }
+
+        .log-body { padding: 25px; }
+        .log-image { 
+            width: 100%; 
+            max-height: 300px; 
+            object-fit: cover; 
+            image-rendering: pixelated; 
+            border-bottom: 4px solid #444;
+        }
+
         #model-viewer-container {
             display: flex;
             flex-direction: column;
@@ -137,11 +165,7 @@
             margin-top: 20px;
         }
 
-        #three-canvas {
-            width: 100%;
-            height: 500px;
-            cursor: move;
-        }
+        #three-canvas { width: 100%; height: 500px; cursor: move; }
 
         .model-controls {
             margin-top: 20px;
@@ -164,7 +188,6 @@
         .model-btn:hover { background: var(--primary); }
         .model-btn.active { background: var(--primary); border-color: white; }
 
-        /* Modal / Lightbox */
         .modal {
             display: none;
             position: fixed;
@@ -176,19 +199,12 @@
             flex-direction: column;
         }
 
-        .modal-content {
-            max-width: 80%;
-            max-height: 60%;
-            image-rendering: pixelated;
-            border: 8px solid #fff;
-        }
-
+        .modal-content { max-width: 80%; max-height: 60%; image-rendering: pixelated; border: 8px solid #fff; }
         .modal-info { text-align: center; margin-top: 20px; padding: 0 20px; max-width: 600px; }
         .modal-info h3 { margin: 0; color: var(--accent); font-size: 2rem; }
         .modal-info p { color: #ccc; font-size: 1.5rem; }
         .close-modal { position: absolute; top: 20px; right: 30px; font-size: 40px; cursor: pointer; color: white; }
 
-        /* Social Icons */
         .social-links { display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
         .social-btn {
             display: flex;
@@ -227,7 +243,7 @@
         <button class="tab-link" onclick="openTab(event, 'about')">ABOUT ME</button>
     </nav>
 
-    <div class="container">
+    <div class="container"> 
         
         <!-- HOME TAB -->
         <div id="home" class="tab-content active">
@@ -244,7 +260,7 @@
         <!-- TEXTURES TAB -->
         <div id="assets" class="tab-content">
             <h2>Standard Block Library</h2>
-            <p>Our textures utilize 16x16 pixel grids with no interpolation, ensuring maximum sharpness. Backgrounds shown are checkerboard to highlight transparency.</p>
+            <p>Our textures utilize 16x16 pixel grids with no interpolation, ensuring maximum sharpness.</p>
             
             <h3 class="category-title">Natural Resources</h3>
             <div class="block-gallery" id="nat-gallery"></div>
@@ -259,7 +275,6 @@
             <div class="block-gallery" id="legacy-gallery"></div>
 
             <h3 class="category-title" style="border-color: #444; color: #666;">Legacy Archive: The HD Era (V1)</h3>
-            <p style="color: #666; font-size: 0.9rem;">These original high-definition textures were replaced to achieve the current pixel art aesthetic.</p>
             <div class="block-gallery" id="hd-gallery"></div>
         </div>
 
@@ -270,36 +285,50 @@
             
             <div id="model-viewer-container">
                 <div id="three-canvas"></div>
-                <div class="model-controls" id="model-buttons">
-                    <!-- Buttons added via script -->
-                </div>
+                <div class="model-controls" id="model-buttons"></div>
             </div>
         </div>
 
-        <!-- CODING TAB -->
+        <!-- DEV LOG TAB -->
         <div id="coding" class="tab-content">
-            <h2>Dev Logs</h2>
+            <h2>Developer Logs</h2>
 
-            <h3>🪟 Window Focus & UX Fix (Jan 2026)</h3>
-            <p>Resolved an issue where the launcher and game windows would start behind other applications. We implemented a combination of WinForms <code>TopMost</code> properties and Win32 <code>SetForegroundWindow</code> P/Invoke calls to ensure a smooth startup experience.</p>
-            <pre>
-// Launcher Focus Logic
-this.TopMost = true;
-this.Load += (s, e) => {
-    this.Activate();
-    Task.Delay(500).ContinueWith(_ => Invoke(() => this.TopMost = false));
-};
-            </pre>
+            <div class="log-entry">
+                <img src="assets/img/Profile_bg.png" class="log-image">
+                <div class="log-header">
+                    <h3>🛠️ Asset Restoration: Profile Background</h3>
+                    <span class="log-date">JAN 10, 2026</span>
+                </div>
+                <div class="log-body">
+                    <p>Discovered that the <code>Profile_bg.png</code> was missing from the latest asset build. We successfully recovered the environment backdrop and synchronized it across the Game Source, Asset ZIP, and Web Gallery.</p>
+                </div>
+            </div>
 
-            <h3>🏗️ Custom 3D Door Logic</h3>
-            <p>Unlike standard blocks, doors require a custom coordinate space to handle the protruding knob and proper hinge rotation.</p>
-            <pre>
-// Protruding 3D Knob Element
-elements.Add(new BlockModelElement {
-    From = open ? new Vector3(2, 12, 12) : new Vector3(12, 12, 2),
-    To = open ? new Vector3(4, 14, 14) : new Vector3(14, 14, 4)
-});
-            </pre>
+            <div class="log-entry">
+                <div class="log-header">
+                    <h3>🪟 Window Focus & UX Fix</h3>
+                    <span class="log-date">JAN 10, 2026</span>
+                </div>
+                <div class="log-body">
+                    <p>Implemented a combination of <code>TopMost</code> timing and Win32 <code>SetForegroundWindow</code> P/Invoke to ensure both the Launcher and Game window correctly pop up on top of other applications during startup.</p>
+                    <pre>
+// Force window to foreground
+[DllImport("user32.dll")]
+private static extern bool SetForegroundWindow(IntPtr hWnd);
+                    </pre>
+                </div>
+            </div>
+
+            <div class="log-entry">
+                <img src="assets/img/door.png" class="log-image" style="object-fit: contain; background: #333; height: 200px; padding: 20px;">
+                <div class="log-header">
+                    <h3>🏗️ Custom 3D Door Geometry</h3>
+                    <span class="log-date">JAN 09, 2026</span>
+                </div>
+                <div class="log-body">
+                    <p>Moving beyond simple cubes, we've implemented custom geometry logic for doors. This includes a protruding 3D doorknob and a semi-transparent window pane, all while maintaining the voxel grid alignment.</p>
+                </div>
+            </div>
         </div>
 
         <!-- ABOUT TAB -->
@@ -342,8 +371,7 @@ elements.Add(new BlockModelElement {
     </footer>
 
     <script>
-        const blocks = [
-            // Natural
+        const textureData = [
             { id: 'grass', name: 'Grass', cat: 'nat', desc: 'Lush greenery for the surface layer.' },
             { id: 'dirt', name: 'Dirt', cat: 'nat', desc: 'Standard soil found beneath the grass.' },
             { id: 'stone', name: 'Stone', cat: 'nat', desc: 'Dense rock forming the world\'s crust.' },
@@ -353,31 +381,23 @@ elements.Add(new BlockModelElement {
             { id: 'leaves', name: 'Leaves', cat: 'nat', desc: 'Translucent foliage from the canopy.' },
             { id: 'water', name: 'Water', cat: 'nat', desc: 'Fluid life-giving substance of the oceans.' },
             { id: 'bedrock', name: 'Bedrock', cat: 'nat', desc: 'The unbreakable floor of the world.' },
-            // Utility
             { id: 'plank', name: 'Plank', cat: 'util', desc: 'Refined wood for building structures.' },
             { id: 'glass', name: 'Glass', cat: 'util', desc: 'Smelted sand, perfect for windows.' },
             { id: 'door', name: 'Door', cat: 'util', desc: 'A functional entryway with a 3D knob.' },
             { id: 'crafting_table', name: 'Crafting Table', cat: 'util', desc: 'The workstation for all advanced tools.' },
             { id: 'chest', name: 'Chest', cat: 'util', desc: 'Storage for your blocks and items.' },
-            // Ores
             { id: 'coal', name: 'Coal', cat: 'ore', desc: 'Common fuel source found in stone layers.' },
             { id: 'iron', name: 'Iron', cat: 'ore', desc: 'Essential metal for durable equipment.' },
             { id: 'gold', name: 'Gold', cat: 'ore', desc: 'Rare, heavy metal for the elite.' },
             { id: 'diamond', name: 'Diamond', cat: 'ore', desc: 'The hardest and most precious material.' },
-            // Legacy
-            { id: 'legacy/grass_patchy', name: 'Patchy Grass', cat: 'legacy', desc: 'An experimental version with sparse grass coverage. Retired for a cleaner look.' },
-            // HD Era
-            { id: 'legacy/hd/grass', name: 'HD Grass', cat: 'hd', desc: 'The original high-resolution grass texture from the V1 release.' },
-            { id: 'legacy/hd/dirt', name: 'HD Dirt', cat: 'hd', desc: 'Detailed soil texture used in the early stages of development.' },
-            { id: 'legacy/hd/stone', name: 'HD Stone', cat: 'hd', desc: 'Original stone texture featuring realistic cracks and weathering.' },
-            { id: 'legacy/hd/wood', name: 'HD Wood', cat: 'hd', desc: 'High-detail timber planks from the HD experimental phase.' },
-            { id: 'legacy/hd/leaves', name: 'HD Leaves', cat: 'hd', desc: 'Original photorealistic foliage design.' },
-            { id: 'legacy/hd/sand', name: 'HD Sand', cat: 'hd', desc: 'High-resolution desert sand with fine grain detail.' },
-            { id: 'legacy/hd/water', name: 'HD Water', cat: 'hd', desc: 'The initial realistic water texture.' }
+            { id: 'legacy/grass_patchy', name: 'Patchy Grass', cat: 'legacy', desc: 'Experimental version with sparse grass coverage.' },
+            { id: 'legacy/hd/grass', name: 'HD Grass', cat: 'hd', desc: 'Original high-resolution grass from V1.' },
+            { id: 'legacy/hd/dirt', name: 'HD Dirt', cat: 'hd', desc: 'Original high-resolution dirt from V1.' },
+            { id: 'legacy/hd/stone', name: 'HD Stone', cat: 'hd', desc: 'Original high-resolution stone from V1.' }
         ];
 
         function populateGalleries() {
-            blocks.forEach(b => {
+            textureData.forEach(b => {
                 const container = document.getElementById(`${b.cat}-gallery`);
                 if (!container) return;
                 const div = document.createElement('div');
@@ -409,7 +429,6 @@ elements.Add(new BlockModelElement {
 
         function closeModal() { document.getElementById('textureModal').style.display = "none"; }
 
-        /* THREE.JS 3D Logic */
         let scene, camera, renderer, cube;
         function initThree() {
             if (scene) return; 
@@ -419,88 +438,39 @@ elements.Add(new BlockModelElement {
             renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
             container.appendChild(renderer.domElement);
-
-            const light = new THREE.AmbientLight(0xffffff, 1.0);
-            scene.add(light);
-            
-            camera.position.z = 2;
-            camera.position.y = 1;
-            camera.lookAt(0,0,0);
-
+            scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+            camera.position.z = 2; camera.position.y = 1; camera.lookAt(0,0,0);
             loadModel('grass');
             animate();
-
             const btnContainer = document.getElementById('model-buttons');
-            blocks.forEach(b => {
+            textureData.filter(b => b.cat !== 'legacy' && b.cat !== 'hd').forEach(b => {
                 const btn = document.createElement('button');
                 btn.className = 'model-btn';
                 btn.innerText = b.name;
-                btn.onclick = () => {
-                    document.querySelectorAll('.model-btn').forEach(bb => bb.classList.remove('active'));
-                    btn.classList.add('active');
-                    loadModel(b.id);
-                };
+                btn.onclick = () => loadModel(b.id);
                 btnContainer.appendChild(btn);
             });
         }
 
         function loadModel(id) {
             if(cube) scene.remove(cube);
-            const loader = new THREE.TextureLoader();
-            const texture = loader.load(`assets/img/${id}.png`, (tex) => {
-                // Ensure correct filtering
-                tex.magFilter = THREE.NearestFilter;
-                tex.minFilter = THREE.NearestFilter;
-                tex.needsUpdate = true;
-            });
-
-            // 3x2 Cube Net Layout UV Mapping
-            // Row 0 (Top): [0.5, 1.0]
-            // Row 1 (Bottom): [0, 0.5]
-            // Col 0: [0, 0.333], Col 1: [0.333, 0.666], Col 2: [0.666, 1.0]
-            
-            // UV Order in BoxGeometry: 
-            // 0: Right (PosX), 1: Left (NegX), 2: Top (PosY), 3: Bottom (NegY), 4: Front (PosZ), 5: Back (NegZ) 
-            
+            const texture = new THREE.TextureLoader().load(`assets/img/${id}.png`);
+            texture.magFilter = texture.minFilter = THREE.NearestFilter;
             const uvs = new Float32Array([
-                // PosX: (0,0) Top Row, 1st Col
-                0, 1,  0.333, 1,  0, 0.5,  0.333, 0.5,
-                // NegX: (1,1) Bottom Row, 2nd Col
-                0.333, 0.5,  0.666, 0.5,  0.333, 0,  0.666, 0,
-                // PosY: (2,0) Top Row, 3rd Col
-                0.666, 1,  1, 1,  0.666, 0.5,  1, 0.5,
-                // NegY: (0,1) Bottom Row, 1st Col
-                0, 0.5,  0.333, 0.5,  0, 0,  0.333, 0,
-                // PosZ: (1,0) Top Row, 2nd Col
-                0.333, 1,  0.666, 1,  0.333, 0.5,  0.666, 0.5,
-                // NegZ: (2,1) Bottom Row, 3rd Col
-                0.666, 0.5,  1, 0.5,  0.666, 0,  1, 0
+                0, 1, 0.333, 1, 0, 0.5, 0.333, 0.5,
+                0.333, 0.5, 0.666, 0.5, 0.333, 0, 0.666, 0,
+                0.666, 1, 1, 1, 0.666, 0.5, 1, 0.5,
+                0, 0.5, 0.333, 0.5, 0, 0, 0.333, 0,
+                0.333, 1, 0.666, 1, 0.333, 0.5, 0.666, 0.5,
+                0.666, 0.5, 1, 0.5, 0.666, 0, 1, 0
             ]);
-
             const geometry = new THREE.BoxGeometry(1, 1, 1);
             geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
-            
-            const material = new THREE.MeshStandardMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
-            cube = new THREE.Mesh(geometry, material);
+            cube = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ map: texture, transparent: true }));
             scene.add(cube);
         }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            if(cube) {
-                cube.rotation.y += 0.01;
-            }
-            renderer.render(scene, camera);
-        }
-
-        window.addEventListener('resize', () => {
-            if(!renderer) return;
-            const container = document.getElementById('three-canvas');
-            camera.aspect = container.clientWidth / container.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
-        });
-
+        function animate() { requestAnimationFrame(animate); if(cube) cube.rotation.y += 0.01; renderer.render(scene, camera); }
         populateGalleries();
     </script>
 
