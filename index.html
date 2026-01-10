@@ -332,6 +332,16 @@
             <div id="log-game" class="sub-content active">
                 <div class="log-entry">
                     <div class="log-header">
+                        <h3>🛡️ Rendering: Draw Stability Fix</h3>
+                        <span class="log-date">JAN 10, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p>Resolved a critical rendering crash (<code>System.ArgumentOutOfRangeException</code>) that occurred when the engine attempted to draw an item or block with zero vertices. We've added robust validation checks to the <code>FirstPersonHandRenderer</code> and custom block drawing logic to ensure the GPU only receives valid geometry data.</p>
+                    </div>
+                </div>
+
+                <div class="log-entry">
+                    <div class="log-header">
                         <h3>🦾 Engine: Generic JSON Model Interpreter</h3>
                         <span class="log-date">JAN 10, 2026</span>
                     </div>
