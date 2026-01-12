@@ -800,9 +800,11 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
             const geometry = new THREE.BoxGeometry(1, 1, 1);
             
-            // Define UVs for CubeNet (3x2 grid)
-            // Face order in Materials: PosX, NegX, PosY, NegY, PosZ, NegZ
-            // Tile indices from CubeNetAtlas: (1,0), (1,1), (0,0), (2,0), (0,1), (2,1)
+            // Face order in THREE.BoxGeometry: 
+            // 0: PosX (+x), 1: NegX (-x), 2: PosY (+y), 3: NegY (-y), 4: PosZ (+z), 5: NegZ (-z)
+            
+            // Tile indices from CubeNetAtlas mapping:
+            // PosX: (1,0), NegX: (1,1), PosY: (0,0), NegY: (2,0), PosZ: (0,1), NegZ: (2,1)
             const tiles = [
                 {x: 1, y: 0}, // PosX
                 {x: 1, y: 1}, // NegX
@@ -813,21 +815,52 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             ];
 
             const uvAttr = geometry.attributes.uv;
+            
             for (let i = 0; i < 6; i++) {
                 const u0 = tiles[i].x / 3;
                 const v0 = 1 - (tiles[i].y + 1) / 2;
                 const u1 = (tiles[i].x + 1) / 3;
                 const v1 = 1 - tiles[i].y / 2;
 
-                // Adjust for 0.5px bleed prevention (optional but good)
+                // Adjust for 0.5px bleed prevention
                 const eps = 0.001;
-                const su0 = u0 + eps, sv0 = v0 + eps, su1 = u1 - eps, sv1 = v1 - eps;
+                let coords = [
+                    { u: u0 + eps, v: v1 - eps }, // top-left
+                    { u: u1 - eps, v: v1 - eps }, // top-right
+                    { u: u0 + eps, v: v0 + eps }, // bottom-left
+                    { u: u1 - eps, v: v0 + eps }  // bottom-right
+                ];
+
+                // --- Apply Engine Orientation Rules (VoxelMesherGreedy.cs) ---
+                // Helper: Rotate 90 deg clockwise
+                const rotate90 = (c) => {
+                    const t = [c[2], c[0], c[3], c[1]]; // Swap indices to rotate
+                    return t;
+                };
+                // Helper: Flip Horizontal
+                const flipU = (c) => [c[1], c[0], c[3], c[2]];
+                // Helper: Flip Vertical
+                const flipV = (c) => [c[2], c[3], c[0], c[1]];
+                // Helper: Swap Axes (Rotate 90 + Flip)
+                const swapAxes = (c) => [c[0], c[2], c[1], c[3]];
+
+                if (i === 0 || i === 1) { // PosX, NegX
+                    coords = swapAxes(coords);
+                    coords = flipU(coords);
+                } else if (i === 2) { // PosY (Top)
+                    coords = swapAxes(coords);
+                    coords = flipV(coords);
+                } else if (i === 3) { // NegY (Bottom)
+                    coords = swapAxes(coords);
+                } else if (i === 4 || i === 5) { // PosZ, NegZ
+                    coords = flipV(coords);
+                }
 
                 const base = i * 4;
-                uvAttr.setXY(base, su0, sv1);
-                uvAttr.setXY(base + 1, su1, sv1);
-                uvAttr.setXY(base + 2, su0, sv0);
-                uvAttr.setXY(base + 3, su1, sv0);
+                uvAttr.setXY(base,     coords[0].u, coords[0].v);
+                uvAttr.setXY(base + 1, coords[1].u, coords[1].v);
+                uvAttr.setXY(base + 2, coords[2].u, coords[2].v);
+                uvAttr.setXY(base + 3, coords[3].u, coords[3].v);
             }
 
             cube = new THREE.Mesh(geometry, []);
