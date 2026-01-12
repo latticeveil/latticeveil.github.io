@@ -824,43 +824,31 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
                 // Adjust for 0.5px bleed prevention
                 const eps = 0.001;
-                let coords = [
-                    { u: u0 + eps, v: v1 - eps }, // top-left
-                    { u: u1 - eps, v: v1 - eps }, // top-right
-                    { u: u0 + eps, v: v0 + eps }, // bottom-left
-                    { u: u1 - eps, v: v0 + eps }  // bottom-right
-                ];
-
-                // --- Apply Engine Orientation Rules (VoxelMesherGreedy.cs) ---
-                // Helper: Rotate 90 deg clockwise
-                const rotate90 = (c) => {
-                    const t = [c[2], c[0], c[3], c[1]]; // Swap indices to rotate
-                    return t;
-                };
-                // Helper: Flip Horizontal
-                const flipU = (c) => [c[1], c[0], c[3], c[2]];
-                // Helper: Flip Vertical
-                const flipV = (c) => [c[2], c[3], c[0], c[1]];
-                // Helper: Swap Axes (Rotate 90 + Flip)
-                const swapAxes = (c) => [c[0], c[2], c[1], c[3]];
-
-                if (i === 0 || i === 1) { // PosX, NegX
-                    coords = swapAxes(coords);
-                    coords = flipU(coords);
-                } else if (i === 2) { // PosY (Top)
-                    coords = swapAxes(coords);
-                    coords = flipV(coords);
-                } else if (i === 3) { // NegY (Bottom)
-                    coords = swapAxes(coords);
-                } else if (i === 4 || i === 5) { // PosZ, NegZ
-                    coords = flipV(coords);
-                }
+                const su0 = u0 + eps, sv0 = v0 + eps, su1 = u1 - eps, sv1 = v1 - eps;
 
                 const base = i * 4;
-                uvAttr.setXY(base,     coords[0].u, coords[0].v);
-                uvAttr.setXY(base + 1, coords[1].u, coords[1].v);
-                uvAttr.setXY(base + 2, coords[2].u, coords[2].v);
-                uvAttr.setXY(base + 3, coords[3].u, coords[3].v);
+                
+                // standard winding for three.js BoxGeometry:
+                // vertex 0: TL, vertex 1: TR, vertex 2: BL, vertex 3: BR
+                
+                if (i === 2) { // TOP (+Y)
+                    // Rotate top texture so 'front' of block is North? 
+                    // Let's use a standard upright mapping.
+                    uvAttr.setXY(base,     su0, sv1);
+                    uvAttr.setXY(base + 1, su1, sv1);
+                    uvAttr.setXY(base + 2, su0, sv0);
+                    uvAttr.setXY(base + 3, su1, sv0);
+                } else if (i === 3) { // BOTTOM (-Y)
+                    uvAttr.setXY(base,     su0, sv1);
+                    uvAttr.setXY(base + 1, su1, sv1);
+                    uvAttr.setXY(base + 2, su0, sv0);
+                    uvAttr.setXY(base + 3, su1, sv0);
+                } else { // SIDES
+                    uvAttr.setXY(base,     su0, sv1);
+                    uvAttr.setXY(base + 1, su1, sv1);
+                    uvAttr.setXY(base + 2, su0, sv0);
+                    uvAttr.setXY(base + 3, su1, sv0);
+                }
             }
 
             cube = new THREE.Mesh(geometry, []);
