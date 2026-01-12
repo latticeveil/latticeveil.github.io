@@ -227,6 +227,35 @@
             -webkit-user-drag: none;
             caret-color: transparent; /* Hides cursor if accidentally focused */
         }
+
+        #three-container {
+            width: 512px;
+            height: 512px;
+            display: none; /* Shown via JS */
+            cursor: grab;
+        }
+        #three-container:active { cursor: grabbing; }
+
+        .modal-view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .view-btn {
+            background: #444;
+            border: 2px solid #666;
+            color: #fff;
+            padding: 5px 15px;
+            font-family: 'Press Start 2P';
+            font-size: 0.6rem;
+            cursor: pointer;
+        }
+        .view-btn.active {
+            background: var(--primary);
+            border-color: var(--text-light);
+        }
+
         .modal-info { text-align: center; margin-top: 20px; padding: 0 20px; max-width: 600px; }
         .modal-info h3 { margin: 0; color: var(--accent); font-size: 2rem; }
         .modal-info p { color: #ccc; font-size: 1.5rem; }
@@ -332,7 +361,7 @@
 
     <nav class="tabs-nav">
         <button class="tab-link active" onclick="openTab(event, 'home')">HOME</button>
-        <button class="tab-link" onclick="openTab(event, 'assets')">TEXTURES</button>
+        <button class="tab-link" onclick="openTab(event, 'assets')">TEXTURES & MODELS</button>
         <button class="tab-link" onclick="openTab(event, 'lore')">LORE</button>
         <button class="tab-link" onclick="openTab(event, 'coding')">DEV LOG</button>
         <button class="tab-link" onclick="openTab(event, 'about')">ABOUT ME</button>
@@ -664,9 +693,17 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
     </div>
 
     <!-- Lightbox -->
-    <div id="textureModal" class="modal" onclick="closeModal()">
-        <span class="close-modal">&times;</span>
+    <div id="textureModal" class="modal">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        
+        <div class="modal-view-toggle">
+            <button id="view2D" class="view-btn active" onclick="setViewMode('2D')">2D NET</button>
+            <button id="view3D" class="view-btn" onclick="setViewMode('3D')">3D MODEL</button>
+        </div>
+
         <img class="modal-content" id="modalImg">
+        <div id="three-container"></div>
+
         <div class="modal-info">
             <h3 id="modalName"></h3>
             <p id="modalDesc"></p>
@@ -696,16 +733,16 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             { id: 'leaves', name: 'Leaves', cat: 'nat', desc: 'Translucent foliage from the canopy.' },
             { id: 'water', name: 'Water', cat: 'nat', desc: 'Fluid life-giving substance of the oceans.' },
             { id: 'nullrock', name: 'Nullrock', cat: 'nat', desc: 'A mysterious, dark stone found in the void.' },
+            { id: 'corestone', name: 'Corestone', cat: 'nat', desc: 'The unbreakable foundation of the world.' },
             { id: 'plank', name: 'Plank', cat: 'util', desc: 'Refined wood for building structures.' },
             { id: 'glass', name: 'Glass', cat: 'util', desc: 'Smelted sand, perfect for windows.' },
             { id: 'artificer_bench', name: 'Artificer Bench', cat: 'util', desc: 'A specialized station for advanced crafting.' },
-            { id: 'door', name: 'Door', cat: 'util', desc: 'A standard wooden door for security.' },
-            { id: 'dooropen', name: 'Door (Open)', cat: 'util', desc: 'An open wooden door allowing passage.' },
             { id: 'chest', name: 'Chest', cat: 'util', desc: 'Storage for your blocks and items.' },
             { id: 'coal', name: 'Coal', cat: 'ore', desc: 'Common fuel source found in stone layers.' },
             { id: 'iron', name: 'Iron', cat: 'ore', desc: 'Essential metal for durable equipment.' },
             { id: 'gold', name: 'Gold', cat: 'ore', desc: 'Rare, heavy metal for the elite.' },
             { id: 'diamond', name: 'Diamond', cat: 'ore', desc: 'The hardest and most precious material.' },
+            { id: 'missing', name: 'Missing Texture', cat: 'legacy', desc: 'Displayed when a resource fails to load.' },
             { id: 'crafting_table', name: 'Crafting Table', cat: 'legacy', desc: 'The original workstation, now replaced by the Artificer Bench.' },
             { id: 'legacy/grass_patchy', name: 'Patchy Grass', cat: 'legacy', desc: 'Experimental version with sparse grass coverage.' },
             { id: 'legacy/hd/grass', name: 'HD Grass', cat: 'hd', desc: 'Original high-resolution grass from V1.' },
@@ -748,6 +785,112 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             evt.currentTarget.classList.add("active");
         }
 
+        // --- 3D Viewer Logic ---
+        let scene, camera, renderer, cube;
+        let is3DInitialized = false;
+
+        function init3D() {
+            const container = document.getElementById('three-container');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(512, 512);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            
+            // Define UVs for CubeNet (3x2 grid)
+            // Face order in Materials: PosX, NegX, PosY, NegY, PosZ, NegZ
+            // Tile indices from CubeNetAtlas: (1,0), (1,1), (0,0), (2,0), (0,1), (2,1)
+            const tiles = [
+                {x: 1, y: 0}, // PosX
+                {x: 1, y: 1}, // NegX
+                {x: 0, y: 0}, // PosY
+                {x: 2, y: 0}, // NegY
+                {x: 0, y: 1}, // PosZ
+                {x: 2, y: 1}  // NegZ
+            ];
+
+            const uvAttr = geometry.attributes.uv;
+            for (let i = 0; i < 6; i++) {
+                const u0 = tiles[i].x / 3;
+                const v0 = 1 - (tiles[i].y + 1) / 2;
+                const u1 = (tiles[i].x + 1) / 3;
+                const v1 = 1 - tiles[i].y / 2;
+
+                // Adjust for 0.5px bleed prevention (optional but good)
+                const eps = 0.001;
+                const su0 = u0 + eps, sv0 = v0 + eps, su1 = u1 - eps, sv1 = v1 - eps;
+
+                const base = i * 4;
+                uvAttr.setXY(base, su0, sv1);
+                uvAttr.setXY(base + 1, su1, sv1);
+                uvAttr.setXY(base + 2, su0, sv0);
+                uvAttr.setXY(base + 3, su1, sv0);
+            }
+
+            cube = new THREE.Mesh(geometry, []);
+            scene.add(cube);
+
+            camera.position.z = 2;
+            is3DInitialized = true;
+            animate();
+
+            // Interaction
+            let isDragging = false;
+            let prevMouse = { x: 0, y: 0 };
+            container.onmousedown = (e) => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; };
+            window.onmouseup = () => { isDragging = false; };
+            window.onmousemove = (e) => {
+                if (!isDragging) return;
+                const delta = { x: e.clientX - prevMouse.x, y: e.clientY - prevMouse.y };
+                cube.rotation.y += delta.x * 0.01;
+                cube.rotation.x += delta.y * 0.01;
+                prevMouse = { x: e.clientX, y: e.clientY };
+            };
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (cube && !window.isDragging) {
+                // Subtle auto-rotation if not interacting
+                // cube.rotation.y += 0.005;
+            }
+            renderer.render(scene, camera);
+        }
+
+        function update3DTexture(src) {
+            if (!is3DInitialized) init3D();
+            const loader = new THREE.TextureLoader();
+            loader.load(src, (tex) => {
+                tex.magFilter = THREE.NearestFilter;
+                tex.minFilter = THREE.NearestFilter;
+                const material = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+                cube.material = material;
+            });
+        }
+
+        function setViewMode(mode) {
+            const img = document.getElementById('modalImg');
+            const three = document.getElementById('three-container');
+            const btn2D = document.getElementById('view2D');
+            const btn3D = document.getElementById('view3D');
+
+            if (mode === '3D') {
+                img.style.display = 'none';
+                three.style.display = 'block';
+                btn3D.classList.add('active');
+                btn2D.classList.remove('active');
+                if (img.src) update3DTexture(img.src);
+            } else {
+                img.style.display = 'block';
+                three.style.display = 'none';
+                btn2D.classList.add('active');
+                btn3D.classList.remove('active');
+            }
+        }
+
         function openModal(src, name, desc) {
             document.getElementById('textureModal').style.display = "flex";
             document.getElementById('modalImg').src = src;
@@ -755,14 +898,11 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             document.getElementById('modalDesc').innerText = desc;
             
             // Extract just the filename relative to assets/img
-            // src is like "assets/img/grass.png"
             const relativePath = src.split('assets/img/')[1]; 
             const absoluteUrl = 'https://redactedcraft.github.io/assets/img/' + relativePath;
             const filename = name.toLowerCase().replace(/\s+/g, '_') + '.png';
 
             const dlBtn = document.getElementById('modalDownload');
-            
-            // Remove previous event listeners by cloning
             const newBtn = dlBtn.cloneNode(true);
             dlBtn.parentNode.replaceChild(newBtn, dlBtn);
             
@@ -771,14 +911,21 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 const a = document.createElement('a');
                 a.href = absoluteUrl;
                 a.download = filename;
-                a.target = '_blank'; // Fallback to new tab if download is blocked
+                a.target = '_blank';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
             };
+
+            // Reset to 2D view on open
+            setViewMode('2D');
+            // Reset cube rotation
+            if (cube) { cube.rotation.set(0.4, 0.4, 0); }
         }
 
-        function closeModal() { document.getElementById('textureModal').style.display = "none"; }
+        function closeModal() { 
+            document.getElementById('textureModal').style.display = "none"; 
+        }
 
         populateGalleries();
     </script>
