@@ -668,7 +668,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>�  Home Page Redesign & Technical Showcase</h3>
+                        <h3>�  Home Page Redesign & Technical Showcase</h3>
                         <span class="log-date">JAN 11, 2026</span>
                     </div>
                     <div class="log-body">
@@ -1033,9 +1033,11 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
         populateGalleries();
         // WebXR / Quest Detection
         async function checkVR() {
-            const isQuest = /OculusBrowser|Quest/i.test(navigator.userAgent) || window.location.search.includes('debugvr=1');
+            const isDebug = window.location.search.includes('debugvr=1');
+            const isQuest = /OculusBrowser|Quest/i.test(navigator.userAgent);
             const vrSupported = navigator.xr && await navigator.xr.isSessionSupported('immersive-vr');
-            if (isQuest && vrSupported) {
+            
+            if (isDebug || (isQuest && vrSupported)) {
                 document.getElementById('vrIcon').style.display = 'block';
             }
         }
