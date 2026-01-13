@@ -6,6 +6,7 @@
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.3.2/dist/aframe-environment-component.min.js"></script>
     <script>
+      // Component to ensure pixel art stays sharp
       AFRAME.registerComponent('pixelated', {
         init: function () {
           this.el.addEventListener('materialtextureloaded', (e) => {
@@ -17,12 +18,35 @@
         }
       });
 
-      let scrollY = 0;
-      const SCROLL_STEP = 0.5;
-      const MAX_SCROLL = 10;
+      // Local Clipping Component: Makes text invisible outside the grey box
+      AFRAME.registerComponent('scroll-clip', {
+        init: function () {
+          this.clippingPlanes = [
+            new THREE.Plane(new THREE.Vector3(0, -1, 0), 1.1), // Top limit
+            new THREE.Plane(new THREE.Vector3(0, 1, 0), 1.1)   // Bottom limit
+          ];
+        },
+        tick: function () {
+          const mesh = this.el.getObject3D('mesh');
+          if (mesh && mesh.material) {
+            // Apply clipping to the actual world space of the kiosk
+            const worldPos = new THREE.Vector3();
+            this.el.object3D.getWorldPosition(worldPos);
+            
+            // Adjust planes based on the kiosk's world Y position
+            this.clippingPlanes[0].constant = worldPos.y + 1.1; 
+            this.clippingPlanes[1].constant = -(worldPos.y - 1.1);
 
+            mesh.material.clippingPlanes = this.clippingPlanes;
+            mesh.material.clipShadows = true;
+          }
+        }
+      });
+
+      let scrollY = 0;
+      const MAX_SCROLL = 10;
       function applyScroll(dir) {
-        scrollY += dir * SCROLL_STEP;
+        scrollY += dir * 0.5;
         scrollY = Math.max(0, Math.min(scrollY, MAX_SCROLL));
         const scroller = document.getElementById('log-scroller');
         if (scroller) scroller.setAttribute('position', `0 ${scrollY} 0`);
@@ -67,7 +91,7 @@
     <style>.a-enter-vr-button { background-color: #4e9a06 !important; }</style>
   </head>
   <body>
-    <a-scene renderer="antialias: false; colorManagement: true;">
+    <a-scene renderer="antialias: false; colorManagement: true; localClippingEnabled: true;">
       <a-assets>
         <img id="logo-img" src="../assets/img/logo.png" crossorigin="anonymous">
         <img id="hero-img" src="../assets/img/hero_bg.png" crossorigin="anonymous">
@@ -97,7 +121,7 @@
           <a-text value="OFFICIAL DEVELOPER PORTAL" align="center" position="0 -0.2 0.01" color="#fff" width="2.5" font="monoid"></a-text>
         </a-entity>
 
-        <!-- Navbar -->
+        <!--Navbar -->
         <a-entity id="navbar-section" position="0 1.25 0.35">
           <a-plane color="#111" width="6" height="0.3" position="0 0 0" material="shader: flat"></a-plane>
           <a-plane color="#3a7304" width="6" height="0.03" position="0 -0.15 0.01"></a-plane>
@@ -110,11 +134,6 @@
         <!-- Content Area -->
         <a-entity id="content-section" position="0 -0.45 0">
           <a-plane color="#2d2d2d" width="6" height="3.2" position="0 0 -0.1" material="shader: flat"></a-plane>
-
-          <!-- Top/Bottom 'Kill' Zones (Masks) -->
-          <!-- These match the environment to hide text that scrolls out of bounds -->
-          <a-plane color="#111" width="6" height="2" position="0 2.2 0.15" material="shader: flat"></a-plane> <!-- Top Mask -->
-          <a-plane color="#1a1a1a" width="6" height="2" position="0 -2.2 0.15" material="shader: flat"></a-plane> <!-- Bottom Mask -->
 
           <!-- HOME -->
           <a-entity id="panel-home" class="panel" visible="true">
@@ -149,7 +168,8 @@
             </a-entity>
             <a-entity id="log-viewport" position="0 0.2 0">
                <a-entity id="log-scroller">
-                 <a-image id="log-banner" src="#screenshots-bg" width="4" height="1.5" position="0 0.5 0.01" pixelated visible="false"></a-image>
+                 <!-- Banner Image with Clipping -->
+                 <a-image id="log-banner" src="#screenshots-bg" width="4" height="1.5" position="0 0.5 0.01" pixelated visible="false" scroll-clip></a-image>
                  <a-entity id="log-content-parent" position="-2.6 -0.2 0.01"></a-entity>
                </a-entity>
             </a-entity>
@@ -187,20 +207,20 @@
 
       const logs = {
         game: [
-          { title: "Wrench Icon Restoring Order: EOS Fixes", body: "- Strictly using eos-service.onrender.com\n- Added automatic credential fallback\n- Removed sensitive SDK tools" },
-          { title: "Hammer Icon Developer Update: Pro Build Tools", body: "- Unified Build GUI implemented\n- Automated single-file publishing\n- Simplified source distribution" },
-          { title: "Broom Icon Launcher: Legacy Cleanup", body: "- Removed deprecated atlas requirement\n- Fixed legacy URL issues\n- Improved sync logic" },
-          { title: "Bolt Icon Launcher: Smart Asset Sync", body: "- Faster startup via GitHub API checks\n- Improved launcher UX" },
-          { title: "Satellite Icon Multiplayer: EOS Integration", body: "- Cross-platform P2P networking enabled\n- Seamless lobby management" },
-          { title: "Map Icon World: Greedy Meshing", body: "- 400% performance increase in terrain rendering" },
-          { title: "Rocket Icon Project Start: MonoGame Migration", body: "- Transitioned to modern C# foundation" }
+          { title: "🔧 Restoring Order: EOS Fixes", body: "- Strictly using eos-service.onrender.com\n- Added automatic credential fallback\n- Removed sensitive SDK tools" },
+          { title: "🛠️ Developer Update: Pro Build Tools", body: "- Unified Build GUI implemented\n- Automated single-file publishing\n- Simplified source distribution" },
+          { title: "🧹 Launcher: Legacy Cleanup", body: "- Removed deprecated atlas requirement\n- Fixed legacy URL issues\n- Improved sync logic" },
+          { title: "⚡ Launcher: Smart Asset Sync", body: "- Faster startup via GitHub API checks\n- Improved launcher UX" },
+          { title: "📡 Multiplayer: EOS Integration", body: "- Cross-platform P2P networking enabled\n- Seamless lobby management" },
+          { title: "🗺️ World: Greedy Meshing", body: "- 400% performance increase in terrain rendering" },
+          { title: "🚀 Project Start: MonoGame Migration", body: "- Transitioned to modern C# foundation" }
         ],
         website: [
-          { title: "Goggles Icon New Feature: WebXR VR Portal", body: "- Meta Quest users rejoice!\n- Implemented immersive virtual kiosk" },
-          { title: "Mobile Icon UX: Mobile 3D Model Support", body: "- Optimized block inspector for touch\n- Full feature parity for mobile browsers" },
-          { title: "Scale Icon Legal Infrastructure: Privacy & Terms", body: "- Added essential transparency pages\n- Styled legal compliant foundation" },
-          { title: "Palette Icon Visual Identity & Tabbed Layout", body: "- Completely revamped site architecture\n- Dedicated spaces for asset browsing" },
-          { title: "Search Icon 3D Model Inspector Integration", body: "- Real-time Three.js preview enabled\n- High-fidelity texture mapping" }
+          { title: "🥽 New Feature: WebXR VR Portal", body: "- Meta Quest users rejoice!\n- Implemented immersive virtual kiosk" },
+          { title: "📱 UX: Mobile 3D Model Support", body: "- Optimized block inspector for touch\n- Full feature parity for mobile browsers" },
+          { title: "⚖️ Legal Infrastructure: Privacy & Terms", body: "- Added essential transparency pages\n- Styled legal compliant foundation" },
+          { title: "🎨 Visual Identity & Tabbed Layout", body: "- Completely revamped site architecture\n- Dedicated spaces for asset browsing" },
+          { title: "🔍 3D Model Inspector Integration", body: "- Real-time Three.js preview enabled\n- High-fidelity texture mapping" }
         ]
       };
 
@@ -211,11 +231,14 @@
         logs[type].forEach(log => {
           const entry = document.createElement('a-entity');
           entry.setAttribute('position', `0 ${offset} 0`);
+          
           const t = document.createElement('a-text');
           t.setAttribute('value', log.title);
           t.setAttribute('color', '#e9b96e');
           t.setAttribute('width', '5');
           t.setAttribute('font', 'monoid');
+          t.setAttribute('scroll-clip', ''); // Apply clipping to title
+          
           const b = document.createElement('a-text');
           b.setAttribute('value', log.body);
           b.setAttribute('position', '0.2 -0.4 0');
@@ -223,6 +246,8 @@
           b.setAttribute('width', '4.5');
           b.setAttribute('font', 'monoid');
           b.setAttribute('wrap-count', '50');
+          b.setAttribute('scroll-clip', ''); // Apply clipping to body
+          
           entry.appendChild(t);
           entry.appendChild(b);
           container.appendChild(entry);
