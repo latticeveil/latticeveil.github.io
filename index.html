@@ -530,7 +530,12 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                         <span class="log-date">JAN 12, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>This update restores EOS availability when remote config loads after startup and keeps multiplayer online without relaunching.</p>
+                        <p>Multiplayer reliability has been significantly improved. This patch addresses a race condition where the Epic Online Services (EOS) configuration would sometimes fail to initialize if the remote configuration loaded after the game engine's startup sequence.</p>
+                        <ul>
+                            <li><strong>Dynamic Polling:</strong> Integrated a background system to detect EOS config availability post-startup.</li>
+                            <li><strong>Async Initialization:</strong> Multi-threaded connection logic ensures zero-hang engine responsiveness.</li>
+                            <li><strong>Session Persistence:</strong> Automatic recovery logic keeps your lobby active without requiring a relaunch.</li>
+                        </ul>
                     </div>
                 </div>
                 <div class="log-entry">
