@@ -19,9 +19,12 @@
 
 ## What was pushed
 - Branch update/blocks-and-assets-v1_4 pushed to origin (commit 378df66).
+- Phase 2 releases created:
+  - Game v6.1.0: https://github.com/Redactedcraft/Redactedcraft/releases/tag/v6.1.0
+  - Assets v6.1: https://github.com/Redactedcraft/Assets/releases/tag/v6.1
 
 ## Next steps
-- Create releases for game and assets, then update checkpoints and master checkpoint.
+- Phase 2 complete; await further instructions.
 
 ## SWE-1.5 CONTINUATION PROMPT
-If taking over, proceed to releases for game and assets, then update checkpoints and master checkpoint.
+If taking over, Phase 2 is complete; verify release URLs and await further instructions.
