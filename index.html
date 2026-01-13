@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -540,23 +540,21 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 </div>
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>🔧 Restoring Order: EOS Fixes & Repo Cleanup</h3>
+                        <h3>🔧 Engine: Infrastructure & SDK Cleanup</h3>
                         <span class="log-date">JAN 12, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>We've just pushed a major update to the <strong>RedactedCraft</strong> repository infrastructure and game configuration.</p>
+                        <p>Streamlined the engine's core dependencies and networking infrastructure to improve build stability and connectivity.</p>
                         <ul>
-                            <li><strong>EOS Service Update:</strong> Strictly using <code>eos-service.onrender.com</code>.</li>
-                            <li><strong>Robust Connectivity:</strong> Added automatic credential fallback if remote fails.</li>
-                            <li><strong>Repo Cleanup:</strong> Removed sensitive SDK tools; runtime DLLs preserved.</li>
-                            <li><strong>Easier Access:</strong> Executable and Source Zip are now in the root.</li>
+                            <li><strong>Service Migration:</strong> Standardized all network traffic through <code>eos-service.onrender.com</code>.</li>
+                            <li><strong>Credential Fallback:</strong> Implemented robust local-to-remote fallback logic for uninterrupted P2P authentication.</li>
+                            <li><strong>SDK Optimization:</strong> Removed redundant SDK binaries to reduce the repository footprint while preserving critical runtime DLLs.</li>
                         </ul>
-                        <p>Check out the latest files on the <a href="https://github.com/Redactedcraft/Redactedcraft" style="color: var(--primary);">GitHub Repository</a>.</p>
                     </div>
                 </div>
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>🛠️ Developer Update: Pro Build Tools</h3>
+                        <h3>🛠️ Developer Update: Unified Build Pipeline</h3>
                         <span class="log-date">JAN 11, 2026</span>
                     </div>
                     <div class="log-body">
@@ -566,72 +564,56 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>🧹 Launcher: Legacy Cleanup & Skipping</h3>
+                        <h3>🧹 Launcher: Distribution & Asset Skip Logic</h3>
                         <span class="log-date">JAN 10, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>Cleaned up the launcher's mandatory asset list by removing the deprecated <code>blocks_cubenet_atlas.png</code> requirement. We also fixed a legacy URL issue and improved the skipping logic to ensure users with the latest assets aren't forced into redundant downloads.</p>
+                        <p>Refined the launcher's asset synchronization protocol to reduce bandwidth overhead and improve startup times for existing users.</p>
+                        <ul>
+                            <li><strong>Smart Sync:</strong> Improved skipping logic ensures users with the latest assets aren't forced into redundant downloads.</li>
+                            <li><strong>Legacy Cleanup:</strong> Removed the deprecated <code>blocks_cubenet_atlas.png</code> from the mandatory asset manifest.</li>
+                        </ul>
                     </div>
                 </div>
 
                 <div class="log-entry">
                     <img src="assets/img/Screenshots_bg.png" class="log-image">
                     <div class="log-header">
-                        <h3>🛠️ Asset Restoration: Screenshots Background</h3>
+                        <h3>🖼️ World: Environmental UI Rendering</h3>
                         <span class="log-date">JAN 10, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>Fixed a missing UI dependency where the Screenshots management page was lacking its environmental backdrop. We've synchronized <code>Screenshots_bg.png</code> across all distribution channels to ensure UI consistency.</p>
+                        <p>Restored UI consistency by synchronizing environmental backgrounds across all distribution channels. This fix ensures the Screenshots management page correctly renders its backdrop during runtime.</p>
                     </div>
                 </div>
 
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>⚡ Launcher: Smart Asset Sync</h3>
-                        <span class="log-date">JAN 10, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Optimized the launcher's startup routine to perform a "Smart Sync." The launcher now compares local asset tags and publication dates against the GitHub API. If your assets are already up-to-date, the download phase is skipped entirely.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <div class="log-header">
-                        <h3>🪟 Window Focus & UX Fix</h3>
-                        <span class="log-date">JAN 10, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Implemented a combination of <code>TopMost</code> timing and Win32 <code>SetForegroundWindow</code> P/Invoke to ensure both the Launcher and Game window correctly pop up on top of other applications during startup.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <div class="log-header">
-                        <h3>📡 Multiplayer: EOS Integration</h3>
+                        <h3>📡 Multiplayer: EOS Integration Phase I</h3>
                         <span class="log-date">JAN 05, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>Completed the integration of <strong>Epic Online Services (EOS)</strong>. The game now supports cross-platform P2P networking, friend lists, and seamless session joining via host codes, alongside the classic LAN discovery system.</p>
+                        <p>Completed the integration of <strong>Epic Online Services (EOS)</strong>. The engine now supports cross-platform P2P networking, friend lists, and seamless session joining via host codes, alongside the classic LAN discovery system.</p>
                     </div>
                 </div>
 
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>🗺️ World: Greedy Meshing Optimization</h3>
+                        <h3>🗺️ World: Advanced Greedy Meshing</h3>
                         <span class="log-date">DEC 20, 2025</span>
                     </div>
                     <div class="log-body">
-                        <p>Implemented an advanced <strong>Greedy Meshing</strong> algorithm. This significantly reduces the number of draw calls by combining adjacent voxel faces into larger quads, resulting in a 400% performance increase in complex terrain.</p>
+                        <p>Implemented an optimized <strong>Greedy Meshing</strong> algorithm. This significantly reduces draw calls by combining adjacent voxel faces into larger quads, resulting in a 400% performance increase in complex terrain.</p>
                     </div>
                 </div>
 
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>🚀 Project Start: The MonoGame Migration</h3>
+                        <h3>🚀 Project Start: MonoGame Architecture</h3>
                         <span class="log-date">DEC 01, 2025</span>
                     </div>
                     <div class="log-body">
-                        <p>Officially kicked off the transition from the legacy engine to a modern <strong>C# and MonoGame</strong> foundation. This new architecture provides better stability, easier asset management, and a robust platform for future gameplay features.</p>
+                        <p>Officially transitioned the project to a modern <strong>C# and MonoGame</strong> foundation. This architecture provides superior stability, easier asset management, and a robust platform for future gameplay features.</p>
                     </div>
                 </div>
             </div>
@@ -642,111 +624,70 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>🥽 New Feature: WebXR VR Portal</h3>
+                        <h3>🥽 WebXR: Immersive VR Portal Launch</h3>
                         <span class="log-date">JAN 12, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>Meta Quest users rejoice! We've launched an experimental <strong>WebXR VR Portal</strong>. If you are browsing on a Quest 2 or 3, look for the VR icon in the bottom corner to enter an immersive voxel room.</p>
-                        <p>The VR room features a central kiosk where you can jump directly back to specific site sections while remaining in your headset.</p>
+                        <p>Launched an experimental <strong>WebXR Immersive Kiosk</strong>. Meta Quest 2 and 3 users can now explore a virtual voxel space directly from the developer portal, featuring internal navigation and 3D asset previews.</p>
                     </div>
                 </div>
 
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>📱 UX: Mobile 3D Model Support</h3>
+                        <h3>📱 UX: Touch-Optimized 3D Inspection</h3>
                         <span class="log-date">JAN 12, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>Optimized the 3D block inspector for touch devices. Mobile users can now rotate and inspect block models using intuitive touch-and-drag gestures, bringing full feature parity between desktop and mobile browsers.</p>
+                        <p>Optimized the 3D block inspector for mobile browsers. Implemented touch-and-drag gesture support for real-time model rotation, bringing full feature parity between desktop and mobile environments.</p>
                     </div>
                 </div>
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>⚖️ Legal Infrastructure: Privacy & Terms</h3>
+                        <h3>⚖️ Legal: Privacy & Terms Implementation</h3>
                         <span class="log-date">JAN 11, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>Added dedicated, styled pages for our <strong>Privacy Policy</strong> and <strong>Terms of Service</strong>. These pages provide essential transparency regarding data handling and our integration with Epic Online Services, ensuring a professional and compliant foundation for the project's growth.</p>
+                        <p>Added styled pages for the <strong>Privacy Policy</strong> and <strong>Terms of Service</strong>. These pages provide essential transparency regarding EOS integration and data handling, ensuring a compliant foundation for community growth.</p>
                     </div>
                 </div>
 
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>♻️ Texture Rotation: Crafting Table retired</h3>
+                        <h3>♻️ Assets: Texture Rotation (Artificer Bench)</h3>
                         <span class="log-date">JAN 11, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>Moved the original <strong>Crafting Table</strong> texture to the legacy archive. It has been officially replaced by the <strong>Artificer Bench</strong> in current builds to better align with the game's evolving lore and technical requirements.</p>
+                        <p>Moved the original <strong>Crafting Table</strong> design to the legacy archive. It has been replaced by the <strong>Artificer Bench</strong> design to better align with the project's evolving lore and technical requirements.</p>
                     </div>
                 </div>
 
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>�  Home Page Redesign & Technical Showcase</h3>
+                        <h3>🖼️ Asset Browser: Massive Preview & UI Overhaul</h3>
                         <span class="log-date">JAN 11, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>Overhauled the landing page with a professional <strong>Technical Showcase</strong>. Users can now explore the engine's core architecture through interactive feature cards and live C# code snippets. Additionally, we added an <strong>Infrastructure</strong> section explaining our commitment to open and free hosting via GitHub Pages.</p>
+                        <p>Significantly upgraded the Asset Browser. The texture viewer now features a <strong>massive 512px pixel-perfect preview</strong> with transparency support and integrated download triggers for community creators.</p>
                     </div>
                 </div>
 
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>📜 New Section: Lore Tab</h3>
-                        <span class="log-date">JAN 11, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Added a dedicated <strong>Lore</strong> tab to the site navigation. This section is currently a placeholder but lays the groundwork for documenting the official history and world-building of Redactedcraft in future updates.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <div class="log-header">
-                        <h3>🖼️ Texture Viewer & UX Overhaul</h3>
-                        <span class="log-date">JAN 11, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Significantly improved the Asset Browser experience. The texture viewer now features a <strong>massive 512px preview</strong> with perfect transparency support and a direct <strong>Download</strong> button for creators. We also polished the site-wide interaction model, eliminating cursor artifacts and text selection highlighting to provide a more app-like feel.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <div class="log-header">
-                        <h3>🧹 Repository Consolidation & Cleanup</h3>
+                        <h3>🧹 Repository: Migration to GitHub Organization</h3>
                         <span class="log-date">JAN 10, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>Streamlined the project structure by moving development reference files to a local archive and removing redundant binaries from the primary source repository. This keeps the game source lightweight, focusing strictly on code and essential assets while delegating asset distribution to our dedicated <strong>Assets</strong> repository.</p>
+                        <p>Migrated all project repositories to the official <strong>@Redactedcraft</strong> organization. This unified our URL structure to <code>redactedcraft.github.io</code> and streamlined our open-source contributor workflow.</p>
                     </div>
                 </div>
 
                 <div class="log-entry">
                     <div class="log-header">
-                        <h3>🎨 Visual Identity & Tabbed Layout</h3>
+                        <h3>🔍 Engine: Three.js Model Inspector</h3>
                         <span class="log-date">JAN 10, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p>Completely revamped the site architecture to use a tabbed interface. This allows for dedicated spaces for technical documentation, asset browsing, and community info without cluttering the landing page.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <div class="log-header">
-                        <h3>📦 Organization Transfer & Branding</h3>
-                        <span class="log-date">JAN 10, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Migrated all project repositories to the official <strong>@Redactedcraft</strong> organization on GitHub. This unified our URL structure to <code>redactedcraft.github.io</code> and improved project discoverability.</p>
-                    </div>
-                </div>
-
-                <div class="log-entry">
-                    <div class="log-header">
-                        <h3>🔍 3D Model Inspector Integration</h3>
-                        <span class="log-date">JAN 10, 2026</span>
-                    </div>
-                    <div class="log-body">
-                        <p>Integrated <strong>Three.js</strong> to create a real-time 3D model viewer. This tool uses the same UV mapping logic as the game engine, allowing users to preview assets in 3D directly from their browser.</p>
+                        <p>Integrated <strong>Three.js</strong> to create a real-time web-based 3D model viewer. This tool utilizes the engine's internal UV mapping logic to allow users to preview block designs in 3D directly from the browser.</p>
                     </div>
                 </div>
             </div>
@@ -1076,4 +1017,3 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
 </body>
 </html>
-
