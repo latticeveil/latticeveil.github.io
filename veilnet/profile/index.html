@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Veilnet • Profile</title>
+  <link rel="icon" href="../assets/Veilnet.png">
+  <link rel="stylesheet" href="../assets/veilnet.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <a href="../index.html" style="display:flex; align-items:center; gap:12px">
+          <span style="font-weight:1000">LatticeVeil</span>
+          <span class="brand-badge">Veilnet</span>
+        </a>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="../index.html">Home</a>
+        <a href="../community/index.html">Community</a>
+        <a href="../worlds/index.html" onclick="alert('Demo page not included yet.'); return false;">Worlds</a>
+        <a href="../leaderboards/index.html" onclick="alert('Demo page not included yet.'); return false;">Leaderboards</a>
+        <a href="../messages/index.html">Messages</a>
+      </nav>
+
+      <div class="right">
+        <div class="pfp-wrap">
+          <div class="avatar" data-veil-avatar title="Profile">
+            <img data-veil-avatar-img src="../assets/default_pfp.png" alt="profile">
+          </div>
+          <div class="status-ring" data-veil-ring style="--ring: rgba(255,255,255,.25); opacity:.55"></div>
+
+          <div class="dropdown" data-veil-dropdown>
+            <div class="dd-head">
+              <img data-veil-dd-img src="../assets/default_pfp.png" alt="">
+              <div>
+                <div class="dd-title" data-veil-dd-title>Not signed in</div>
+                <div class="dd-sub" data-veil-dd-sub>Login to access Veilnet features</div>
+              </div>
+            </div>
+
+            <div class="dd-item" onclick="location.href='../index.html'">
+              <span>Go to Veilnet</span><small>Home</small>
+            </div>
+
+            <div class="dd-item" data-veil-myprofile style="display:none">
+              <span>My Profile</span><small>/profile</small>
+            </div>
+
+            <div class="dd-item" data-veil-settings style="display:none">
+              <span>Settings</span><small>Link + prefs</small>
+            </div>
+
+            <div class="dd-divider"></div>
+
+            <div class="dd-item" data-veil-login>
+              <span>Login with Google</span><small>Demo</small>
+            </div>
+
+            <div class="dd-item" data-veil-logout style="display:none">
+              <span>Log Out</span><small>Demo</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  
+<main class="container" style="padding: 18px 0 34px">
+  <div class="breadcrumbs"><a href="../index.html">Veilnet</a> / Profile</div>
+  <div data-veil-profile style="margin-top:12px"></div>
+</main>
+
+
+  <footer class="footer">
+    <div class="container">
+      Veilnet demo • Static GitHub Pages layout preview • No backend connections yet
+    </div>
+  </footer>
+
+  <script src="../assets/veilnet.js"></script>
+</body>
+</html>
