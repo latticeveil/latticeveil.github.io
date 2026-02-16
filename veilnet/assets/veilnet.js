@@ -211,6 +211,8 @@
   function setProfileUnreadBadge(total) {
     const profileBadge = document.getElementById('vnUnreadBadgeProfile');
     
+    console.log('setProfileUnreadBadge called with:', total, 'badge element:', profileBadge);
+    
     if (total <= 0) {
       // Hide badge
       if (profileBadge) profileBadge.classList.add('vn-badge--hidden');
@@ -277,6 +279,7 @@
       }
     }
     
+    console.log('sumUnreadFromStorage calculated total:', total);
     setProfileUnreadBadge(total);
     return total;
   }
