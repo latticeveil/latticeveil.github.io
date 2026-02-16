@@ -462,6 +462,11 @@
     let socketInitialized = false;
     let resyncInterval = null;
     let isResyncing = false;
+    
+    // Conversation state management
+    let conversationsById = new Map();
+    let unreadConversationIds = new Set();
+    let lastMessagePreview = new Map();
 
     // Connection banner and retry logic
     const connectionBanner = document.getElementById('connectionBanner');
@@ -493,12 +498,18 @@
     }
 
     function startResync() {
-      if (resyncInterval || isGuest || !currentConversationId) return;
+      if (resyncInterval || isGuest) return;
       
       resyncInterval = setInterval(async () => {
         // Only resync when page is visible
-        if (document.visibilityState === 'visible' && currentConversationId && !isResyncing) {
-          await resyncConversation(currentConversationId);
+        if (document.visibilityState === 'visible') {
+          // Resync active conversation messages
+          if (currentConversationId) {
+            await resyncConversation(currentConversationId);
+          }
+          
+          // Resync conversation list for new messages
+          await resyncConversationsList();
         }
       }, 5000);
     }
@@ -530,6 +541,45 @@
         console.error('Resync failed:', error);
       } finally {
         isResyncing = false;
+      }
+    }
+
+    async function resyncConversationsList() {
+      try {
+        const conversations = await apiCall(`${VEILNET_API_BASE}/api/conversations`);
+        
+        // Check for new messages and update state
+        conversations.forEach(conv => {
+          const existingConv = conversationsById.get(conv.id);
+          const existingPreview = lastMessagePreview.get(conv.id);
+          
+          // Update conversation state
+          conversationsById.set(conv.id, conv);
+          
+          if (conv.lastMessage) {
+            const newPreview = {
+              text: conv.lastMessage.text,
+              author: conv.lastMessage.sender,
+              time: new Date(conv.lastMessage.timestamp)
+            };
+            
+            // Check if this is a newer message
+            if (!existingPreview || newPreview.time > existingPreview.time) {
+              lastMessagePreview.set(conv.id, newPreview);
+              
+              // Mark as unread if not the active conversation
+              if (conv.id !== currentConversationId) {
+                unreadConversationIds.add(conv.id);
+              }
+            }
+          }
+        });
+        
+        // Re-render conversation list with updated state
+        renderConversationList(conversations);
+        
+      } catch (error) {
+        console.error('Conversation list resync failed:', error);
       }
     }
 
@@ -585,6 +635,20 @@
     async function loadConversations() {
       try {
         const conversations = await apiCall(`${VEILNET_API_BASE}/api/conversations`);
+        
+        // Update conversation state
+        conversationsById.clear();
+        conversations.forEach(conv => {
+          conversationsById.set(conv.id, conv);
+          if (conv.lastMessage) {
+            lastMessagePreview.set(conv.id, {
+              text: conv.lastMessage.text,
+              author: conv.lastMessage.sender,
+              time: new Date(conv.lastMessage.timestamp)
+            });
+          }
+        });
+        
         renderConversationList(conversations);
         hideConnectionBanner();
         
@@ -617,18 +681,33 @@
         return;
       }
 
-      list.innerHTML = conversations.map(conv => {
+      // Sort conversations: unread first, then by last message time
+      const sortedConversations = [...conversations].sort((a, b) => {
+        const aUnread = unreadConversationIds.has(a.id);
+        const bUnread = unreadConversationIds.has(b.id);
+        if (aUnread !== bUnread) {
+          return bUnread ? 1 : -1; // Unread conversations first
+        }
+        // Sort by last message time
+        const aTime = a.lastMessage ? new Date(a.lastMessage.timestamp) : new Date(0);
+        const bTime = b.lastMessage ? new Date(b.lastMessage.timestamp) : new Date(0);
+        return bTime - aTime;
+      });
+
+      list.innerHTML = sortedConversations.map(conv => {
         const otherUser = conv.participants.find(p => p !== currentUsername) || 'Unknown';
         const isActive = conv.id === currentConversationId;
+        const isUnread = unreadConversationIds.has(conv.id);
         const lastMsg = conv.lastMessage;
+        const preview = lastMessagePreview.get(conv.id);
         
         return `
           <a class="side-link conversation-item" href="#" data-conversation-id="${conv.id}" style="${isActive?'background: rgba(56,225,255,.07); box-shadow: 0 0 0 1px rgba(56,225,255,.12) inset':''}">
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-              <span style="font-weight:1000">${escapeHtml(otherUser)}</span>
-              <span class="tag" style="border-color: rgba(56,225,255,.25); color: var(--cyan);">—</span>
+              <span style="font-weight:1000; ${isUnread ? 'color: var(--cyan);' : ''}">${escapeHtml(otherUser)}</span>
+              ${isUnread ? '<span class="unread-badge">NEW</span>' : '<span class="tag" style="border-color: rgba(56,225,255,.25); color: var(--cyan);">—</span>'}
             </div>
-            ${lastMsg ? `<div class="small" style="margin-top: 4px; opacity: 0.7;">${escapeHtml(lastMsg.text.substring(0, 50))}${lastMsg.text.length > 50 ? '...' : ''}</div>` : ''}
+            ${preview ? `<div class="small" style="margin-top: 4px; opacity: 0.7;">${escapeHtml(preview.author)}: ${escapeHtml(preview.text.substring(0, 50))}${preview.text.length > 50 ? '...' : ''}</div>` : ''}
           </a>
         `;
       }).join('');
@@ -696,6 +775,15 @@
       }
 
       currentConversationId = conversationId;
+      
+      // Clear unread for this conversation
+      unreadConversationIds.delete(conversationId);
+      
+      // Update conversation list to remove unread badge
+      const conv = conversationsById.get(conversationId);
+      if (conv) {
+        renderConversationList(Array.from(conversationsById.values()));
+      }
       
       // Update UI selection
       list.querySelectorAll('.conversation-item').forEach(item => {
@@ -852,6 +940,20 @@
       // Remove existing listener before adding new one
       socket.off('message:new');
       socket.on('message:new', (payload) => {
+        // Update conversation state
+        const conv = conversationsById.get(payload.conversationId);
+        if (conv && payload.message) {
+          conv.lastMessage = payload.message;
+          conversationsById.set(payload.conversationId, conv);
+          
+          // Update message preview
+          lastMessagePreview.set(payload.conversationId, {
+            text: payload.message.text,
+            author: payload.message.sender,
+            time: new Date(payload.message.timestamp)
+          });
+        }
+
         if (payload.conversationId === currentConversationId && !isGuest) {
           // Check for duplicate message
           if (isDuplicateMessage(payload.message)) {
@@ -866,16 +968,12 @@
             container.scrollTop = container.scrollHeight;
           }
         } else {
-          // Show unread indicator for other conversation
-          const convItem = list.querySelector(`[data-conversation-id="${payload.conversationId}"]`);
-          if (convItem) {
-            const tag = convItem.querySelector('.tag');
-            if (tag) {
-              tag.textContent = 'new';
-              tag.style.borderColor = 'rgba(255,77,77,.5)';
-              tag.style.color = 'var(--red)';
-            }
-          }
+          // Mark as unread and show indicator
+          unreadConversationIds.add(payload.conversationId);
+          
+          // Update conversation list to show unread badge and move to top
+          renderConversationList(Array.from(conversationsById.values()));
+          
           // TODO: Add notification popup + sound once accounts exist
         }
       });
