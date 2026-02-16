@@ -1,0 +1,2 @@
+# Exclude GitHub metadata from source archives (Download ZIP / git archive)
+.github/ export-ignore
