@@ -348,8 +348,14 @@
           if (event.data && event.data.type === 'unread:changed') {
             sumUnreadFromStorage();
             // If on messages page and loadConversations is available, refresh conversation list
-            if (location.pathname.includes('/veilnet/messages/') && typeof loadConversations === 'function') {
-              loadConversations();
+            if (location.pathname.includes('/veilnet/messages/')) {
+              try {
+                if (typeof loadConversations === 'function') {
+                  loadConversations();
+                }
+              } catch (error) {
+                console.log('loadConversations not available in this context');
+              }
             }
           }
         };
@@ -368,8 +374,14 @@
       if (event.key === 'veilnet.sync') {
         sumUnreadFromStorage();
         // If on messages page and loadConversations is available, refresh conversation list
-        if (location.pathname.includes('/veilnet/messages/') && typeof loadConversations === 'function') {
-          loadConversations();
+        if (location.pathname.includes('/veilnet/messages/')) {
+          try {
+            if (typeof loadConversations === 'function') {
+              loadConversations();
+            }
+          } catch (error) {
+            console.log('loadConversations not available in this context');
+          }
         }
       }
     });
