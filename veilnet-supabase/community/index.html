@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community - Veilnet</title>
+  <link rel="stylesheet" href="../assets/veilnet.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <header>
+    <nav>
+      <a href="../supabase-index.html">Veilnet</a>
+      <a href="index.html">Community</a>
+      <a href="../worlds/index.html" onclick="alert('Demo page not included yet.'); return false;">Worlds</a>
+      <a href="../leaderboards/index.html" onclick="alert('Demo page not included yet.'); return false;">Leaderboards</a>
+      <a href="../messages/index.html">Messages</a>
+    </nav>
+
+    <div class="right">
+      <div class="pfp-wrap">
+        <div class="avatar" data-veil-avatar title="Profile">
+          <img data-veil-avatar-img src="../assets/default_pfp.png" alt="profile">
+          <span id="vnUnreadBadgeProfile" class="vn-badge vn-badge--hidden"></span>
+        </div>
+        <div class="status-ring" data-veil-ring style="--ring: rgba(255,255,255,.25); opacity:.55"></div>
+
+        <div class="dropdown" data-veil-dropdown>
+          <div class="dd-head">
+            <img data-veil-dd-img src="../assets/default_pfp.png" alt="">
+            <div>
+              <div class="dd-title" data-veil-dd-title>Not signed in</div>
+              <div class="dd-sub" data-veil-dd-sub>Sign in to access Veilnet</div>
+            </div>
+          </div>
+
+          <div id="auth-signed-out" class="auth-section">
+            <div class="dd-item" onclick="signInWithGoogle()">
+              <span>Sign in with Google</span><small>Secure OAuth</small>
+            </div>
+          </div>
+
+          <div id="auth-signed-in" class="auth-section" style="display:none;">
+            <div class="dd-item" onclick="location.href='../supabase-index.html'">
+              <span>Go to Veilnet</span><small>Home</small>
+            </div>
+            <div class="dd-item" onclick="location.href='../messages/index.html'">
+              <span>Messages</span><small>Chat</small>
+            </div>
+            <div class="dd-item" onclick="location.href='profile/index.html'">
+              <span>My Profile</span><small>/profile</small>
+            </div>
+            <div class="dd-item" onclick="location.href='settings/index.html'">
+              <span>Settings</span><small>Account</small>
+            </div>
+            <div class="dd-divider"></div>
+            <div class="dd-item" onclick="signOut()">
+              <span>Sign Out</span><small>Secure logout</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div id="auth-loading" class="auth-loading" style="display:none;">
+      <div class="loading-spinner"></div>
+      <div>Loading...</div>
+    </div>
+
+    <div id="auth-content">
+      <!-- Community content will be loaded here -->
+    </div>
+  </main>
+
+  <script src="../assets/supabase-config.js"></script>
+  <script src="../assets/supabase-auth.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        await veilnetAuth.init();
+        
+        veilnetAuth.onAuthChange = (user) => {
+          updateAuthUI(user);
+        };
+        
+        updateAuthUI(veilnetAuth.getCurrentUser());
+        
+      } catch (error) {
+        console.error('Failed to initialize community:', error);
+        showError('Failed to load community. Please refresh.');
+      }
+    });
+
+    function updateAuthUI(user) {
+      const signedOut = document.getElementById('auth-signed-out');
+      const signedIn = document.getElementById('auth-signed-in');
+      const ddTitle = document.querySelector('[data-veil-dd-title]');
+      const ddSub = document.querySelector('[data-veil-dd-sub]');
+      const avatarImg = document.querySelector('[data-veil-avatar-img]');
+      const ddImg = document.querySelector('[data-veil-dd-img]');
+      
+      if (user) {
+        signedOut.style.display = 'none';
+        signedIn.style.display = 'block';
+        ddTitle.textContent = user.user_metadata?.display_name || user.email || 'User';
+        ddSub.textContent = 'Account settings';
+        
+        if (user.user_metadata?.avatar_url) {
+          avatarImg.src = user.user_metadata.avatar_url;
+          ddImg.src = user.user_metadata.avatar_url;
+        }
+        
+        loadCommunity();
+      } else {
+        signedOut.style.display = 'block';
+        signedIn.style.display = 'none';
+        ddTitle.textContent = 'Not signed in';
+        ddSub.textContent = 'Sign in to access Veilnet';
+        avatarImg.src = '../assets/default_pfp.png';
+        ddImg.src = '../assets/default_pfp.png';
+        
+        loadAuthRequired();
+      }
+    }
+
+    function loadCommunity() {
+      const contentEl = document.getElementById('auth-content');
+      
+      contentEl.innerHTML = `
+        <div class="panel">
+          <h2>Community</h2>
+          <div class="small">Connect with other Veilnet users and join conversations.</div>
+          
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:24px;">
+            <div class="panel">
+              <h3>Recent Activity</h3>
+              <div style="padding:16px 0;">
+                <div class="small" style="opacity:0.7;">Community features coming soon...</div>
+              </div>
+            </div>
+            
+            <div class="panel">
+              <h3>Popular Conversations</h3>
+              <div style="padding:16px 0;">
+                <div class="small" style="opacity:0.7;">Community features coming soon...</div>
+              </div>
+            </div>
+            
+            <div class="panel">
+              <h3>Find Users</h3>
+              <div style="padding:16px 0;">
+                <div class="small" style="opacity:0.7;">Community features coming soon...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function signInWithGoogle() {
+      window.location.href = '../supabase-index.html';
+    }
+
+    function signOut() {
+      window.location.href = '../supabase-index.html';
+    }
+
+    function loadAuthRequired() {
+      const contentEl = document.getElementById('auth-content');
+      contentEl.innerHTML = `
+        <div class="panel" style="text-align:center; padding:48px;">
+          <h3>Authentication Required</h3>
+          <div class="small">Please sign in to access community features.</div>
+          <button onclick="signInWithGoogle()" style="margin-top:16px;">
+            <span style="display:flex; align-items:center; gap:8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M22.56 12.25c0-.13-.11-.25-.25h-1.09c-.41 0-.75.29-1.09.7-.29H9c-.55 0-1 .45-1 1s1 .45 1 1h4.09c.14 0 .26-.11.37-.29l.04.02c.04.01.11.06.13.16.09l.04.06c.07.02.18.01.22.01.13.01.29.01.2.04.23.06.3.08.42.09l.01.02.13.01.15.02.16.04.17.06.18.08.2.09.09.01.13.04.15.1.21.12.24.13.34.14.46.15.58.16.8.01 1.08.02 1.39.04 1.7.05 2.01.06 2.32.07 2.63.08 2.96.09 3.29.1 3.62.11 3.95.12 4.28.13 4.61.14 4.94.15 5.27.16 5.6.17 5.93.18 6.26.19 6.59.2 6.92.21 7.25.22 7.58.23 7.91.24 8.24.25 8.57.26 8.9.27 9.23.28 9.56.29 9.89.3 10.22.31 10.55.32 10.88.33 11.21.34 11.54.35 11.87.36 12.2.37 12.53.38 12.84.39 13.15.4 13.46.41 13.77.42 14.08.43 14.39.44 14.7.45 15.01.46 15.32.47 15.63.48 15.94.49 16.25.5 16.56.51 16.87.52 17.18.53 17.49.54 17.8.55 18.11.56 18.42.57 18.73.58 19.04.59 19.35.6 19.66.61 19.97.62 20.28.63 20.59.64 20.9.65 21.21.66 21.52.67 21.83.68 22.14.69 22.45.7 22.76.71 23.07.72 23.69.74 24 .75 24.31.76 24.62.77 24.93.78 25.24.79 25.55.8 25.86.81 26.17.82 26.48.83 26.79.84 27.1.85 27.41.86 27.72.87 28.03.88 28.34.89 28.65.9 28.96.91 29.27.92 29.58.93 29.89.94 30.2.95 30.51.96 30.82.97 31.13.98 31.44.99 31.75.1 32.06.02 32.37.03 32.68.04 32.99.05 33.3.06 33.61.07 33.92.08 34.23.09 34.54.1 34.85.11 35.16.12 35.47.13 35.78.14 36.09.15 36.4.16 36.71.17 37.02.18 37.33.19 37.64.2 37.95.21 38.26.22 38.57.23 38.88.24 39.19.25 39.5.26 39.81.27 40.12.28 40.43.29 40.74.3 41.05.31 41.36.32 41.67.33 41.98.34 42.29.35 42.6.36 42.91.37 43.22.38 43.53.39 43.84.4 44.15.41 44.46.42 44.77.43 45.08.44 45.39.45 45.7.46 46.01.47 46.32.48 46.63.49 46.94.5 47.25.51 47.56.52 47.87.53 48.18.54 48.49.55 48.8.56 49.11.57 49.42.58 49.73.59 50.04.6 50.35.61 50.66.62 50.97.63 51.28.64 51.59.65 51.9.66 52.21.67 52.52.68 52.83.69 53.14.7 53.45.71 53.76.72 54.07.73 54.38.74 54.69.75 55 .76 55.31.77 55.62.78 55.93.79 56.24.8 56.55.81 56.86.82 57.17.83 57.48.84 57.79.85 58.1.86 58.41.87 58.72.88 59.03.89 59.34.9 59.65.91 59.96.92 60.27.93 60.58.94 60.89.95 61.2.96 61.51.97 61.82.98 62.13.99 62.44.1 62.75.02 63.06.03 63.37.04 63.68.05 63.99.06 64.3.07 64.61.08 64.92.09 65.23.1 65.54.11 65.85.12 66.16.13 66.47.14 66.78.15 67.09.16 67.4.17 67.71.18 68.02.19 68.33.2 68.64.21 68.95.22 69.26.23 69.57.24 69.88.25 70.19.26 70.5.27 70.81.28 71.12.29 71.43.3 71.74.31 72.05.32 72.36.33 72.67.34 72.98.35 73.29.36 73.6.37 73.91.38 74.22.39 74.53.4 74.84.41 75.15.42 75.46.43 75.77.44 76.08.45 76.39.46 76.7.47 77.01.48 77.32.49 77.63.5 77.94.51 78.25.52 78.56.53 78.87.54 79.18.55 79.49.56 79.8.57 80.11.58 80.42.59 80.73.6 81.04.61 81.35.62 81.66.63 81.97.64 82.28.65 82.59.66 82.9.67 83.21.68 83.52.69 83.83.7 84.14.71 84.45.72 84.76.73 85.07.74 85.38.75 85.69.76 86 .77 86.31.78 86.62.79 86.93.8 87.24.81 87.55.82 87.86.83 88.17.84 88.48.85 88.79.86 89.1.87 89.41.88 89.72.89 90.03.9 90.34.91 90.65.92 90.96.93 91.27.94 91.58.95 91.89.96 92.2.97 92.51.98 92.82.99 93.13"/>
+                </svg>
+                Sign in with Google
+              </span>
+            </button>
+          </div>
+        </div>
+      `;
+    }
+
+    function showError(message) {
+      const contentEl = document.getElementById('auth-content');
+      contentEl.innerHTML = `
+        <div class="panel" style="border-color: #ff4444; max-width:400px; margin:0 auto;">
+          <div style="color: #ff4444; font-weight: bold; margin-bottom:8px;">Error</div>
+          <div>${message}</div>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
