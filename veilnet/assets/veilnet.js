@@ -897,6 +897,11 @@
         // Don't add to seen set here - let the socket event handle it
         // This allows the sender to see their own message via socket
         
+        // After sending, refresh conversations to show updated state
+        setTimeout(() => {
+          loadConversations();
+        }, 500);
+        
       } catch (error) {
         console.error('Failed to send message:', error);
         // Restore input text on error
@@ -973,6 +978,11 @@
           
           // Update conversation list to show unread badge and move to top
           renderConversationList(Array.from(conversationsById.values()));
+          
+          // If this is a new conversation not in our list, reload conversations
+          if (!conversationsById.has(payload.conversationId)) {
+            loadConversations();
+          }
           
           // TODO: Add notification popup + sound once accounts exist
         }
