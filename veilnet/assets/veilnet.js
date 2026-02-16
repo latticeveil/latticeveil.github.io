@@ -477,7 +477,7 @@
         try {
           const user = JSON.parse(decodeURIComponent(userData));
           storage.set("veilnet.loggedIn", true);
-          storage.set("veilnet.username", user.email);
+          storage.set("veilnet.username", user.username || user.email);
           storage.set("veilnet.user", JSON.stringify(user));
           
           // Clean URL
@@ -485,7 +485,7 @@
           
           // Update UI
           ensureHeader();
-          console.log('User logged in:', user.email);
+          console.log('User logged in:', user.username || user.email);
         } catch (error) {
           console.error('Failed to parse user data:', error);
         }
@@ -538,7 +538,7 @@
     if(ddImg) ddImg.src = pfp;
     
     if(loggedIn){
-      if(ddTitle) ddTitle.textContent = user.name || user.email;
+      if(ddTitle) ddTitle.textContent = user.username || user.name || user.email;
       if(ddSub) ddSub.textContent = "Online via Google";
       if(ddLogin) ddLogin.style.display="none";
       if(ddLogout) ddLogout.style.display="flex";
