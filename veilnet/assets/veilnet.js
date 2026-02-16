@@ -193,7 +193,7 @@
     }
   }
 
-  // Unread indicator management
+  // Unread indicator management (legacy - kept for compatibility)
   function updateUnreadIndicator() {
     const currentUser = getCurrentUser();
     const indicator = document.getElementById('unreadIndicator');
@@ -203,14 +203,119 @@
       return;
     }
 
-    // Check if we're on messages page
-    if (location.pathname.includes('/veilnet/messages/')) {
-      // Use existing unreadConversationIds from messages page
-      const hasUnread = unreadConversationIds && unreadConversationIds.size > 0;
-      if (indicator) indicator.style.display = hasUnread ? 'block' : 'none';
+    // For now, hide the old indicator since we're using numeric badges
+    if (indicator) indicator.style.display = 'none';
+  }
+
+  // NEW: Unread MESSAGE count logic
+  function setUnreadMessageBadges(total) {
+    const profileBadge = document.getElementById('vnUnreadBadgeProfile');
+    const messagesBadge = document.getElementById('vnUnreadBadgeMessages');
+    
+    if (total <= 0) {
+      // Hide both badges
+      if (profileBadge) profileBadge.classList.add('vn-badge--hidden');
+      if (messagesBadge) messagesBadge.classList.add('vn-badge--hidden');
     } else {
-      // For non-messages pages, fetch conversations to check unread status
-      fetchUnreadStatus(currentUser.username);
+      // Show both badges with count
+      const displayText = total > 99 ? '99+' : String(total);
+      
+      if (profileBadge) {
+        profileBadge.textContent = displayText;
+        profileBadge.classList.remove('vn-badge--hidden');
+      }
+      if (messagesBadge) {
+        messagesBadge.textContent = displayText;
+        messagesBadge.classList.remove('vn-badge--hidden');
+      }
+    }
+  }
+
+  function getTs(obj) {
+    if (!obj) return Date.now();
+    
+    if (obj.timestamp) {
+      return typeof obj.timestamp === 'string' ? Date.parse(obj.timestamp) : obj.timestamp;
+    }
+    if (obj.createdAt) {
+      return typeof obj.createdAt === 'string' ? Date.parse(obj.createdAt) : obj.createdAt;
+    }
+    if (obj.time) {
+      return typeof obj.time === 'string' ? Date.parse(obj.time) : obj.time;
+    }
+    
+    return Date.now();
+  }
+
+  function sumUnreadFromStorage() {
+    let total = 0;
+    const prefix = 'veilnet.unreadCount.';
+    
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(prefix)) {
+        const value = localStorage.getItem(key);
+        const count = parseInt(value, 10) || 0;
+        total += count;
+      }
+    }
+    
+    setUnreadMessageBadges(total);
+    return total;
+  }
+
+  async function refreshUnreadMessageBadges() {
+    const user = getCurrentUser();
+    if (!user.loggedIn || !user.username) {
+      setUnreadMessageBadges(0);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${VEILNET_API_BASE}/api/conversations`, {
+        headers: {
+          'X-Veilnet-User': user.username,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        setUnreadMessageBadges(0);
+        return;
+      }
+      
+      const conversations = await response.json();
+      
+      for (const conv of conversations) {
+        const convId = conv.id;
+        const unreadKey = `veilnet.unreadCount.${convId}`;
+        const lastSeenKey = `veilnet.lastSeenMessageAt.${convId}`;
+        
+        // Prefer backend unread count if available
+        if (conv.unreadCount && typeof conv.unreadCount === 'number') {
+          localStorage.setItem(unreadKey, String(conv.unreadCount));
+        } else if (conv.unreadMessages && typeof conv.unreadMessages === 'number') {
+          localStorage.setItem(unreadKey, String(conv.unreadMessages));
+        } else {
+          // Fallback: set minimum count (1) if there's an unread message
+          const existingCount = parseInt(localStorage.getItem(unreadKey) || '0', 10);
+          const lastSeen = parseInt(localStorage.getItem(lastSeenKey) || '0', 10);
+          
+          if (conv.lastMessage && conv.lastMessage.sender !== user.username) {
+            const msgTs = getTs(conv.lastMessage);
+            if (msgTs > lastSeen) {
+              // At least 1 unread message
+              const newCount = Math.max(existingCount, 1);
+              localStorage.setItem(unreadKey, String(newCount));
+            }
+          }
+        }
+      }
+      
+      sumUnreadFromStorage();
+    } catch (error) {
+      console.error('Failed to refresh unread message badges:', error);
+      setUnreadMessageBadges(0);
     }
   }
 
@@ -223,9 +328,8 @@
       try {
         broadcastChannel = new BroadcastChannel('veilnet');
         broadcastChannel.onmessage = (event) => {
-          if (event.data && event.data.type === 'unread:update') {
-            updateUnreadIndicator();
-            refreshUnreadBadges(); // Update numeric badges
+          if (event.data && event.data.type === 'unread:changed') {
+            sumUnreadFromStorage();
             // If on messages page, also refresh conversation list
             if (location.pathname.includes('/veilnet/messages/')) {
               loadConversations();
@@ -245,8 +349,7 @@
     // Fallback: localStorage events
     window.addEventListener('storage', (event) => {
       if (event.key === 'veilnet.sync') {
-        updateUnreadIndicator();
-        refreshUnreadBadges(); // Update numeric badges
+        sumUnreadFromStorage();
         // If on messages page, also refresh conversation list
         if (location.pathname.includes('/veilnet/messages/')) {
           loadConversations();
@@ -257,7 +360,7 @@
   
   function triggerCrossTabSync() {
     if (broadcastChannel) {
-      broadcastChannel.postMessage({ type: 'unread:update' });
+      broadcastChannel.postMessage({ type: 'unread:changed' });
     } else {
       // Fallback: localStorage
       localStorage.setItem('veilnet.sync', Date.now().toString());
@@ -1012,18 +1115,21 @@
       // Load messages
       await loadMessages(conversationId);
       
-      // Update last seen timestamp for this conversation
+      // Clear unread count for this conversation
+      const unreadKey = `veilnet.unreadCount.${conversationId}`;
       const lastSeenKey = `veilnet.lastSeenMessageAt.${conversationId}`;
+      storage.set(unreadKey, '0');
+      
+      // Update last seen timestamp for this conversation
       const selectedConv = conversationsById.get(conversationId);
       if (selectedConv && selectedConv.lastMessage) {
-        storage.set(lastSeenKey, new Date(selectedConv.lastMessage.timestamp).getTime());
+        storage.set(lastSeenKey, getTs(selectedConv.lastMessage));
       } else {
         storage.set(lastSeenKey, Date.now());
       }
       
-      // Update unread indicator
-      updateUnreadIndicator();
-      refreshUnreadBadges(); // Update numeric badges
+      // Update badges and sync
+      sumUnreadFromStorage();
       triggerCrossTabSync();
       
       // Start resync for this conversation
@@ -1178,49 +1284,64 @@
           });
         }
 
-        if (payload.conversationId === currentConversationId && !isGuest) {
-          // Check for duplicate message
-          if (isDuplicateMessage(payload.message)) {
-            console.log('Duplicate message ignored:', payload.message);
-            return;
-          }
+        // Handle new message with unread MESSAGE count logic
+        const user = getCurrentUser();
+        if (!user.loggedIn || !user.username) {
+          return; // Ignore if not logged in
+        }
+
+        const conversationId = payload.conversationId;
+        const message = payload.message;
+        
+        // Ignore messages from self
+        if (message.sender === user.username) {
+          return;
+        }
+
+        const unreadKey = `veilnet.unreadCount.${conversationId}`;
+        const lastSeenKey = `veilnet.lastSeenMessageAt.${conversationId}`;
+        const messageTs = getTs(message);
+
+        if (conversationId === currentConversationId && !isGuest) {
+          // Message is for currently open conversation - treat as read
+          storage.set(unreadKey, '0');
+          storage.set(lastSeenKey, messageTs);
           
-          // Add message to current conversation
+          // Add message to UI if on messages page
           const container = document.getElementById('messagesContainer');
           if (container) {
-            console.log('Adding message to container:', payload.message);
-            container.insertAdjacentHTML('beforeend', renderMessage(payload.message));
-            container.scrollTop = container.scrollHeight;
+            if (!isDuplicateMessage(message)) {
+              container.insertAdjacentHTML('beforeend', renderMessage(message));
+              container.scrollTop = container.scrollHeight;
+            }
           }
-          
-          // Update last seen timestamp for active conversation
-          const lastSeenKey = `veilnet.lastSeenMessageAt.${payload.conversationId}`;
-          storage.set(lastSeenKey, Date.now());
-          
-          // Update unread indicator (should hide for active conversation)
-          updateUnreadIndicator();
-          refreshUnreadBadges(); // Update numeric badges
-          triggerCrossTabSync();
         } else {
-          // Mark as unread and show indicator
-          unreadConversationIds.add(payload.conversationId);
+          // Message is for different conversation - increment unread count
+          const currentCount = parseInt(storage.get(unreadKey) || '0', 10);
+          const newCount = currentCount + 1;
+          storage.set(unreadKey, String(newCount));
+          storage.set(lastSeenKey, messageTs); // Update last seen to avoid double counting
           
-          // Update conversation list to show unread badge and move to top
-          renderConversationList(Array.from(conversationsById.values()));
-          
-          // If this is a new conversation not in our list, reload conversations
-          if (!conversationsById.has(payload.conversationId)) {
-            console.log('New conversation detected, reloading list');
-            loadConversations();
+          // Update conversation list if on messages page
+          if (location.pathname.includes('/veilnet/messages/')) {
+            const conv = conversationsById.get(conversationId);
+            if (conv && conv.lastMessage) {
+              conv.lastMessage = message;
+              conversationsById.set(conversationId, conv);
+              renderConversationList(Array.from(conversationsById.values()));
+            }
+            
+            // If this is a new conversation not in our list, reload conversations
+            if (!conversationsById.has(conversationId)) {
+              console.log('New conversation detected, reloading list');
+              loadConversations();
+            }
           }
-          
-          // Update unread indicator (should show for non-active conversation)
-          updateUnreadIndicator();
-          refreshUnreadBadges(); // Update numeric badges
-          triggerCrossTabSync();
-          
-          // TODO: Add notification popup + sound once accounts exist
         }
+
+        // Update badges and sync across tabs
+        sumUnreadFromStorage();
+        triggerCrossTabSync();
       });
 
       // Handle messages cleared event
@@ -1230,7 +1351,14 @@
         
         // Clear all local state
         conversationsById.clear();
-        unreadConversationIds.clear();
+        // Clear all unread message counts from localStorage
+        const prefix = 'veilnet.unreadCount.';
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith(prefix)) {
+            localStorage.removeItem(key);
+          }
+        }
         lastMessagePreview.clear();
         seenMessages.clear();
         currentConversationId = null;
@@ -1240,6 +1368,9 @@
         
         // Reload conversations list (will be empty)
         loadConversations();
+        
+        // Update badges to reflect cleared state
+        sumUnreadFromStorage();
         
         // Clear chat panel
         const chat = document.querySelector('[data-veil-chat]');
@@ -1292,8 +1423,8 @@
     // Initialize unread indicator for all pages
     updateUnreadIndicator();
     
-    // Initialize numeric unread badges for all pages
-    refreshUnreadBadges();
+    // Initialize numeric unread MESSAGE badges for all pages
+    refreshUnreadMessageBadges();
     
     // Initialize cross-tab synchronization
     initCrossTabSync();
@@ -1348,8 +1479,8 @@
     // Initialize unread indicator for all pages
     updateUnreadIndicator();
     
-    // Initialize numeric unread badges for all pages
-    refreshUnreadBadges();
+    // Initialize numeric unread MESSAGE badges for all pages
+    refreshUnreadMessageBadges();
     
     // Initialize cross-tab synchronization
     initCrossTabSync();
