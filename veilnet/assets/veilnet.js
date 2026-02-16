@@ -448,47 +448,295 @@
     const chat = document.querySelector("[data-veil-chat]");
     if(!list || !chat) return;
 
-    const convId = new URLSearchParams(location.search).get("c") || demoMessages[0].id;
-    list.innerHTML = demoMessages.map(c=>{
-      const href = "./index.html?c=" + encodeURIComponent(c.id);
-      const active = c.id===convId;
-      return `
-        <a class="side-link" href="${href}" style="${active?'background: rgba(56,225,255,.07); box-shadow: 0 0 0 1px rgba(56,225,255,.12) inset':''}">
-          <span style="font-weight:1000">${escapeHtml(c.with)}</span>
-          ${c.unread? `<span class="tag" style="border-color: rgba(56,225,255,.25); color: var(--cyan)">${c.unread} new</span>`: `<span class="tag">—</span>`}
-        </a>
-      `;
-    }).join("");
+    // Only run on messages page
+    if (!location.pathname.includes("/veilnet/messages/")) return;
 
-    const convo = demoMessages.find(x=>x.id===convId) || demoMessages[0];
-    const pfp = ASSET("default_pfp.png");
-    chat.innerHTML = `
-      <div class="chat panel">
-        <h3 style="padding:14px 14px 10px">Chat with ${escapeHtml(convo.with)}</h3>
-        <div class="msgs">
-          <div class="msg">
-            <div class="meta">${escapeHtml(convo.with)} • 2m ago</div>
-            yo — the new Veilnet logo goes hard.
-          </div>
-          <div class="msg me">
-            <div class="meta">You • 1m ago</div>
-            thanks. here's a screenshot (demo embed):
-            <div style="margin-top:8px">
-              <img src="${pfp}" alt="demo image">
-              <div class="small" style="margin-top:6px">In real Veilnet: images come only from in-game uploads (Imgur) and can be marked downloadable or view-only.</div>
+    const VEILNET_API_BASE = "https://veilnet.onrender.com";
+    let socket = null;
+    let currentConversationId = null;
+    let currentUsername = localStorage.getItem("veilnet_demo_user") || "RedactedDev";
+
+    // Connection banner and retry logic
+    const connectionBanner = document.getElementById('connectionBanner');
+    let connectionAttempts = 0;
+    const maxConnectionAttempts = 10;
+
+    function showConnectionBanner() {
+      if (connectionBanner) {
+        connectionBanner.style.display = 'flex';
+      }
+    }
+
+    function hideConnectionBanner() {
+      if (connectionBanner) {
+        connectionBanner.style.display = 'none';
+      }
+    }
+
+    async function apiCall(url, options = {}) {
+      const defaultOptions = {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Veilnet-User': currentUsername
+        }
+      };
+
+      const response = await fetch(url, { ...defaultOptions, ...options });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function loadConversations() {
+      try {
+        const conversations = await apiCall(`${VEILNET_API_BASE}/api/conversations`);
+        renderConversationList(conversations);
+        hideConnectionBanner();
+        
+        // Auto-select first conversation if available
+        if (conversations.length > 0 && !currentConversationId) {
+          selectConversation(conversations[0].id);
+        }
+      } catch (error) {
+        console.error('Failed to load conversations:', error);
+        if (connectionAttempts < maxConnectionAttempts) {
+          connectionAttempts++;
+          showConnectionBanner();
+          setTimeout(loadConversations, 2000);
+        } else {
+          hideConnectionBanner();
+          renderEmptyState();
+        }
+      }
+    }
+
+    function renderConversationList(conversations) {
+      if (conversations.length === 0) {
+        renderEmptyState();
+        return;
+      }
+
+      list.innerHTML = conversations.map(conv => {
+        const otherUser = conv.participants.find(p => p !== currentUsername) || 'Unknown';
+        const isActive = conv.id === currentConversationId;
+        const lastMsg = conv.lastMessage;
+        
+        return `
+          <a class="side-link conversation-item" href="#" data-conversation-id="${conv.id}" style="${isActive?'background: rgba(56,225,255,.07); box-shadow: 0 0 0 1px rgba(56,225,255,.12) inset':''}">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <span style="font-weight:1000">${escapeHtml(otherUser)}</span>
+              <span class="tag" style="border-color: rgba(56,225,255,.25); color: var(--cyan);">—</span>
             </div>
+            ${lastMsg ? `<div class="small" style="margin-top: 4px; opacity: 0.7;">${escapeHtml(lastMsg.text.substring(0, 50))}${lastMsg.text.length > 50 ? '...' : ''}</div>` : ''}
+          </a>
+        `;
+      }).join('');
+
+      // Add click handlers
+      list.querySelectorAll('.conversation-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          const convId = parseInt(item.dataset.conversationId);
+          selectConversation(convId);
+        });
+      });
+    }
+
+    function renderEmptyState() {
+      list.innerHTML = `
+        <div style="text-align: center; padding: 20px; color: var(--muted);">
+          <div style="margin-bottom: 16px;">No conversations yet</div>
+          <button class="btn" onclick="startNewChat()">Start Chat</button>
+        </div>
+      `;
+    }
+
+    function startNewChat() {
+      const otherUser = prompt('Enter username to chat with:');
+      if (!otherUser || otherUser.trim() === '') return;
+      
+      createConversation(otherUser.trim());
+    }
+
+    async function createConversation(otherUser) {
+      try {
+        const conversation = await apiCall(`${VEILNET_API_BASE}/api/conversations`, {
+          method: 'POST',
+          body: JSON.stringify({ with: otherUser })
+        });
+        
+        // Reload conversations and select the new one
+        await loadConversations();
+        selectConversation(conversation.id);
+      } catch (error) {
+        console.error('Failed to create conversation:', error);
+        alert('Failed to create conversation. Please try again.');
+      }
+    }
+
+    async function selectConversation(conversationId) {
+      currentConversationId = conversationId;
+      
+      // Update UI selection
+      list.querySelectorAll('.conversation-item').forEach(item => {
+        const isActive = parseInt(item.dataset.conversationId) === conversationId;
+        if (isActive) {
+          item.style.background = 'rgba(56,225,255,.07)';
+          item.style.boxShadow = '0 0 0 1px rgba(56,225,255,.12) inset';
+        } else {
+          item.style.background = '';
+          item.style.boxShadow = '';
+        }
+      });
+
+      // Leave previous room and join new one
+      if (socket) {
+        socket.emit('conversation:leave', { conversationId: currentConversationId });
+        socket.emit('conversation:join', { conversationId });
+      }
+
+      // Load messages
+      await loadMessages(conversationId);
+    }
+
+    async function loadMessages(conversationId) {
+      try {
+        const messages = await apiCall(`${VEILNET_API_BASE}/api/conversations/${conversationId}/messages?limit=50`);
+        renderChatMessages(messages);
+      } catch (error) {
+        console.error('Failed to load messages:', error);
+        chat.innerHTML = '<div class="panel" style="padding: 20px; text-align: center; color: var(--red);">Failed to load messages</div>';
+      }
+    }
+
+    function renderChatMessages(messages) {
+      // Find other user from first message or use a default
+      let otherUser = 'Unknown';
+      if (messages.length > 0) {
+        // We'll need to fetch conversation details to get participants
+        // For now, infer from message sender
+        const firstMsg = messages[0];
+        otherUser = firstMsg.sender === currentUsername ? 'Unknown' : firstMsg.sender;
+      }
+
+      chat.innerHTML = `
+        <div class="chat panel">
+          <h3 style="padding:14px 14px 10px">Chat with ${escapeHtml(otherUser)}</h3>
+          <div class="msgs" id="messagesContainer">
+            ${messages.map(msg => renderMessage(msg)).join('')}
           </div>
-          <div class="msg">
-            <div class="meta">${escapeHtml(convo.with)} • just now</div>
-            sick. invite me when you're in the new world.
+          <div class="composer">
+            <input id="messageInput" style="flex:1" placeholder="Message…" onkeypress="if(event.key==='Enter') sendMessage()">
+            <button class="btn" type="button" onclick="sendMessage()">Send</button>
           </div>
         </div>
-        <div class="composer">
-          <input style="flex:1" placeholder="Message… (demo)">
-          <button class="btn" type="button" onclick="alert('Demo only — no backend yet.')">Send</button>
+      `;
+
+      // Auto-scroll to bottom
+      const container = document.getElementById('messagesContainer');
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+    function renderMessage(message) {
+      const isMe = message.sender === currentUsername;
+      const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      return `
+        <div class="msg ${isMe ? 'me' : ''}">
+          <div class="meta">${escapeHtml(message.sender)} • ${time}</div>
+          ${escapeHtml(message.text)}
         </div>
-      </div>
-    `;
+      `;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const text = input.value.trim();
+      
+      if (!text || !currentConversationId) return;
+
+      // Optimistically add message to UI
+      const tempMessage = {
+        id: Date.now(),
+        conversationId: currentConversationId,
+        sender: currentUsername,
+        text,
+        timestamp: new Date().toISOString()
+      };
+      
+      const container = document.getElementById('messagesContainer');
+      if (container) {
+        container.insertAdjacentHTML('beforeend', renderMessage(tempMessage));
+        container.scrollTop = container.scrollHeight;
+      }
+      
+      input.value = '';
+
+      try {
+        const savedMessage = await apiCall(`${VEILNET_API_BASE}/api/conversations/${currentConversationId}/messages`, {
+          method: 'POST',
+          body: JSON.stringify({ text })
+        });
+        
+        // Replace temp message with saved one (optional, for consistency)
+        // For now, the optimistic approach is sufficient
+        
+      } catch (error) {
+        console.error('Failed to send message:', error);
+        // Could show error and revert optimistic update
+      }
+    }
+
+    // Initialize Socket.IO
+    function initSocket() {
+      if (typeof io === 'undefined') return;
+      
+      socket = io(VEILNET_API_BASE, { transports: ["websocket", "polling"] });
+      
+      socket.on('connect', () => {
+        console.log('Connected to Veilnet backend');
+        if (currentConversationId) {
+          socket.emit('conversation:join', { conversationId: currentConversationId });
+        }
+      });
+
+      socket.on('message:new', (payload) => {
+        if (payload.conversationId === currentConversationId) {
+          // Add message to current conversation
+          const container = document.getElementById('messagesContainer');
+          if (container) {
+            container.insertAdjacentHTML('beforeend', renderMessage(payload.message));
+            container.scrollTop = container.scrollHeight;
+          }
+        } else {
+          // Show unread indicator for other conversation
+          const convItem = list.querySelector(`[data-conversation-id="${payload.conversationId}"]`);
+          if (convItem) {
+            const tag = convItem.querySelector('.tag');
+            if (tag) {
+              tag.textContent = 'new';
+              tag.style.borderColor = 'rgba(255,77,77,.5)';
+              tag.style.color = 'var(--red)';
+            }
+          }
+        }
+      });
+
+      socket.on('disconnect', () => {
+        console.log('Disconnected from Veilnet backend');
+      });
+    }
+
+    // Make sendMessage globally available
+    window.sendMessage = sendMessage;
+    window.startNewChat = startNewChat;
+
+    // Initialize
+    initSocket();
+    loadConversations();
   }
 
   function renderSettings(){
