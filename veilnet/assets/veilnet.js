@@ -103,6 +103,13 @@
     del(k){ localStorage.removeItem(k); }
   };
 
+  // Unified identity helper
+  function getCurrentUser() {
+    const loggedIn = storage.get('veilnet.loggedIn', false);
+    const username = storage.get('veilnet.username', null);
+    return { loggedIn, username };
+  }
+
   const demoUsers = {
     "RedactedDev": { role:"Owner", status:"online", source:"In-game", theme:"#38e1ff", about:"Builder of worlds. Keeper of the Veil.", headline:"Tuning worldgen + Veilnet.", },
     "VoxelCrafter": { role:"", status:"online", source:"On Veilnet", theme:"#7cf7ff", about:"I like caves and neon crystals.", headline:"Sharing screenshots.", },
@@ -454,8 +461,9 @@
     const VEILNET_API_BASE = "https://veilnet.onrender.com";
     let socket = null;
     let currentConversationId = null;
-    let currentUsername = localStorage.getItem("veilnet_demo_user") || "RedactedDev";
-    const isGuest = !currentUsername || currentUsername === "guest";
+    const currentUser = getCurrentUser();
+    let currentUsername = currentUser.username || "RedactedDev";
+    const isGuest = !currentUser.loggedIn || !currentUsername || currentUsername === "guest";
     
     // Message deduplication and resync
     const seenMessages = new Set();
@@ -774,6 +782,7 @@
         return;
       }
 
+      const prevConversationId = currentConversationId;
       currentConversationId = conversationId;
       
       // Clear unread for this conversation
@@ -802,7 +811,9 @@
 
       // Leave previous room and join new one
       if (socket) {
-        socket.emit('conversation:leave', { conversationId: currentConversationId });
+        if (prevConversationId && prevConversationId !== conversationId) {
+          socket.emit('conversation:leave', { conversationId: prevConversationId });
+        }
         socket.emit('conversation:join', { conversationId });
       }
 
