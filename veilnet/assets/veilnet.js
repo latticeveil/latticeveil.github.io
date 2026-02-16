@@ -110,6 +110,113 @@
     return { loggedIn, username };
   }
 
+  // Unread indicator management
+  function updateUnreadIndicator() {
+    const currentUser = getCurrentUser();
+    const indicator = document.getElementById('unreadIndicator');
+    
+    if (!currentUser.loggedIn || !currentUser.username) {
+      if (indicator) indicator.style.display = 'none';
+      return;
+    }
+
+    // Check if we're on messages page
+    if (location.pathname.includes('/veilnet/messages/')) {
+      // Use existing unreadConversationIds from messages page
+      const hasUnread = unreadConversationIds && unreadConversationIds.size > 0;
+      if (indicator) indicator.style.display = hasUnread ? 'block' : 'none';
+    } else {
+      // For non-messages pages, fetch conversations to check unread status
+      fetchUnreadStatus(currentUser.username);
+    }
+  }
+
+  // Cross-tab synchronization
+  let broadcastChannel = null;
+  
+  function initCrossTabSync() {
+    // Preferred: BroadcastChannel
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        broadcastChannel = new BroadcastChannel('veilnet');
+        broadcastChannel.onmessage = (event) => {
+          if (event.data && event.data.type === 'unread:update') {
+            updateUnreadIndicator();
+            // If on messages page, also refresh conversation list
+            if (location.pathname.includes('/veilnet/messages/')) {
+              loadConversations();
+            }
+          }
+        };
+      } catch (error) {
+        console.log('BroadcastChannel not available, falling back to localStorage');
+        initLocalStorageSync();
+      }
+    } else {
+      initLocalStorageSync();
+    }
+  }
+  
+  function initLocalStorageSync() {
+    // Fallback: localStorage events
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'veilnet.sync') {
+        updateUnreadIndicator();
+        // If on messages page, also refresh conversation list
+        if (location.pathname.includes('/veilnet/messages/')) {
+          loadConversations();
+        }
+      }
+    });
+  }
+  
+  function triggerCrossTabSync() {
+    if (broadcastChannel) {
+      broadcastChannel.postMessage({ type: 'unread:update' });
+    } else {
+      // Fallback: localStorage
+      localStorage.setItem('veilnet.sync', Date.now().toString());
+    }
+  }
+
+  async function fetchUnreadStatus(username) {
+    const indicator = document.getElementById('unreadIndicator');
+    if (!indicator) return;
+
+    try {
+      const response = await fetch(`${VEILNET_API_BASE}/api/conversations`, {
+        headers: {
+          'X-Veilnet-User': username,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const conversations = await response.json();
+        const hasUnread = conversations.some(conv => {
+          // Check backend unread signals
+          if (conv.hasUnread || conv.unreadCount > 0) return true;
+          
+          // Fallback: check last seen timestamps
+          const lastSeenKey = `veilnet.lastSeenMessageAt.${conv.id}`;
+          const lastSeen = storage.get(lastSeenKey, 0);
+          
+          if (conv.lastMessage && conv.lastMessage.timestamp) {
+            const msgTime = new Date(conv.lastMessage.timestamp).getTime();
+            return msgTime > lastSeen && conv.lastMessage.sender !== username;
+          }
+          
+          return false;
+        });
+        
+        indicator.style.display = hasUnread ? 'block' : 'none';
+      }
+    } catch (error) {
+      console.error('Failed to fetch unread status:', error);
+      indicator.style.display = 'none';
+    }
+  }
+
   const demoUsers = {
     "RedactedDev": { role:"Owner", status:"online", source:"In-game", theme:"#38e1ff", about:"Builder of worlds. Keeper of the Veil.", headline:"Tuning worldgen + Veilnet.", },
     "VoxelCrafter": { role:"", status:"online", source:"On Veilnet", theme:"#7cf7ff", about:"I like caves and neon crystals.", headline:"Sharing screenshots.", },
@@ -820,6 +927,19 @@
       // Load messages
       await loadMessages(conversationId);
       
+      // Update last seen timestamp for this conversation
+      const lastSeenKey = `veilnet.lastSeenMessageAt.${conversationId}`;
+      const selectedConv = conversationsById.get(conversationId);
+      if (selectedConv && selectedConv.lastMessage) {
+        storage.set(lastSeenKey, new Date(selectedConv.lastMessage.timestamp).getTime());
+      } else {
+        storage.set(lastSeenKey, Date.now());
+      }
+      
+      // Update unread indicator
+      updateUnreadIndicator();
+      triggerCrossTabSync();
+      
       // Start resync for this conversation
       startResync();
     }
@@ -986,6 +1106,14 @@
             container.insertAdjacentHTML('beforeend', renderMessage(payload.message));
             container.scrollTop = container.scrollHeight;
           }
+          
+          // Update last seen timestamp for active conversation
+          const lastSeenKey = `veilnet.lastSeenMessageAt.${payload.conversationId}`;
+          storage.set(lastSeenKey, Date.now());
+          
+          // Update unread indicator (should hide for active conversation)
+          updateUnreadIndicator();
+          triggerCrossTabSync();
         } else {
           // Mark as unread and show indicator
           unreadConversationIds.add(payload.conversationId);
@@ -998,6 +1126,10 @@
             console.log('New conversation detected, reloading list');
             loadConversations();
           }
+          
+          // Update unread indicator (should show for non-active conversation)
+          updateUnreadIndicator();
+          triggerCrossTabSync();
           
           // TODO: Add notification popup + sound once accounts exist
         }
@@ -1068,6 +1200,12 @@
     // Initialize
     initSocket();
     loadConversations();
+    
+    // Initialize unread indicator for all pages
+    updateUnreadIndicator();
+    
+    // Initialize cross-tab synchronization
+    initCrossTabSync();
   }
 
   function renderSettings(){
@@ -1115,5 +1253,11 @@
     renderProfile();
     renderMessages();
     renderSettings();
+    
+    // Initialize unread indicator for all pages
+    updateUnreadIndicator();
+    
+    // Initialize cross-tab synchronization
+    initCrossTabSync();
   });
 })();
