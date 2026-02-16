@@ -347,8 +347,8 @@
         broadcastChannel.onmessage = (event) => {
           if (event.data && event.data.type === 'unread:changed') {
             sumUnreadFromStorage();
-            // If on messages page, also refresh conversation list
-            if (location.pathname.includes('/veilnet/messages/')) {
+            // If on messages page and loadConversations is available, refresh conversation list
+            if (location.pathname.includes('/veilnet/messages/') && typeof loadConversations === 'function') {
               loadConversations();
             }
           }
@@ -367,8 +367,8 @@
     window.addEventListener('storage', (event) => {
       if (event.key === 'veilnet.sync') {
         sumUnreadFromStorage();
-        // If on messages page, also refresh conversation list
-        if (location.pathname.includes('/veilnet/messages/')) {
+        // If on messages page and loadConversations is available, refresh conversation list
+        if (location.pathname.includes('/veilnet/messages/') && typeof loadConversations === 'function') {
           loadConversations();
         }
       }
