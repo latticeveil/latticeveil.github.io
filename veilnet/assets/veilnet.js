@@ -455,6 +455,7 @@
     let socket = null;
     let currentConversationId = null;
     let currentUsername = localStorage.getItem("veilnet_demo_user") || "RedactedDev";
+    const isGuest = !currentUsername || currentUsername === "guest";
 
     // Connection banner and retry logic
     const connectionBanner = document.getElementById('connectionBanner');
@@ -470,6 +471,17 @@
     function hideConnectionBanner() {
       if (connectionBanner) {
         connectionBanner.style.display = 'none';
+      }
+    }
+
+    function showGuestBanner() {
+      if (connectionBanner) {
+        connectionBanner.innerHTML = `
+          <div class="banner-content">
+            <span>Log in to message.</span>
+          </div>
+        `;
+        connectionBanner.style.display = 'flex';
       }
     }
 
@@ -494,9 +506,11 @@
         renderConversationList(conversations);
         hideConnectionBanner();
         
-        // Auto-select first conversation if available
-        if (conversations.length > 0 && !currentConversationId) {
+        // Auto-select first conversation if available (non-guest only)
+        if (conversations.length > 0 && !currentConversationId && !isGuest) {
           selectConversation(conversations[0].id);
+        } else if (isGuest) {
+          showGuestBanner();
         }
       } catch (error) {
         console.error('Failed to load conversations:', error);
@@ -506,7 +520,11 @@
           setTimeout(loadConversations, 2000);
         } else {
           hideConnectionBanner();
-          renderEmptyState();
+          if (isGuest) {
+            showGuestBanner();
+          } else {
+            renderEmptyState();
+          }
         }
       }
     }
@@ -544,15 +562,29 @@
     }
 
     function renderEmptyState() {
-      list.innerHTML = `
-        <div style="text-align: center; padding: 20px; color: var(--muted);">
-          <div style="margin-bottom: 16px;">No conversations yet</div>
-          <button class="btn" onclick="startNewChat()">Start Chat</button>
-        </div>
-      `;
+      if (isGuest) {
+        list.innerHTML = `
+          <div style="text-align: center; padding: 20px; color: var(--muted);">
+            <div style="margin-bottom: 16px;">No conversations yet</div>
+            <div style="margin-bottom: 16px; color: var(--red);">Log in to start messaging.</div>
+          </div>
+        `;
+      } else {
+        list.innerHTML = `
+          <div style="text-align: center; padding: 20px; color: var(--muted);">
+            <div style="margin-bottom: 16px;">No conversations yet</div>
+            <button class="btn" onclick="startNewChat()">Start Chat</button>
+          </div>
+        `;
+      }
     }
 
     function startNewChat() {
+      if (isGuest) {
+        alert('Log in to start messaging.');
+        return;
+      }
+      
       const otherUser = prompt('Enter username to chat with:');
       if (!otherUser || otherUser.trim() === '') return;
       
@@ -576,6 +608,11 @@
     }
 
     async function selectConversation(conversationId) {
+      if (isGuest) {
+        alert('Log in to view conversations.');
+        return;
+      }
+
       currentConversationId = conversationId;
       
       // Update UI selection
@@ -620,6 +657,9 @@
         otherUser = firstMsg.sender === currentUsername ? 'Unknown' : firstMsg.sender;
       }
 
+      const isDisabled = isGuest ? 'disabled' : '';
+      const disabledPlaceholder = isGuest ? 'Log in to message...' : 'Message…';
+
       chat.innerHTML = `
         <div class="chat panel">
           <h3 style="padding:14px 14px 10px">Chat with ${escapeHtml(otherUser)}</h3>
@@ -627,8 +667,8 @@
             ${messages.map(msg => renderMessage(msg)).join('')}
           </div>
           <div class="composer">
-            <input id="messageInput" style="flex:1" placeholder="Message…" onkeypress="if(event.key==='Enter') sendMessage()">
-            <button class="btn" type="button" onclick="sendMessage()">Send</button>
+            <input id="messageInput" style="flex:1" placeholder="${disabledPlaceholder}" onkeypress="if(event.key==='Enter') sendMessage()" ${isDisabled}>
+            <button class="btn" type="button" onclick="sendMessage()" ${isDisabled}>Send</button>
           </div>
         </div>
       `;
@@ -653,6 +693,11 @@
     }
 
     async function sendMessage() {
+      if (isGuest) {
+        alert('Log in to send messages.');
+        return;
+      }
+
       const input = document.getElementById('messageInput');
       const text = input.value.trim();
       
@@ -698,13 +743,13 @@
       
       socket.on('connect', () => {
         console.log('Connected to Veilnet backend');
-        if (currentConversationId) {
+        if (currentConversationId && !isGuest) {
           socket.emit('conversation:join', { conversationId: currentConversationId });
         }
       });
 
       socket.on('message:new', (payload) => {
-        if (payload.conversationId === currentConversationId) {
+        if (payload.conversationId === currentConversationId && !isGuest) {
           // Add message to current conversation
           const container = document.getElementById('messagesContainer');
           if (container) {
