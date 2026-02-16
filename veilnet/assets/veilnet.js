@@ -467,7 +467,39 @@
     return "Offline";
   }
 
-  function ensureHeader(){
+  // Handle OAuth callback
+    function handleOAuthCallback() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const loginStatus = urlParams.get('login');
+      const userData = urlParams.get('user');
+      
+      if (loginStatus === 'success' && userData) {
+        try {
+          const user = JSON.parse(decodeURIComponent(userData));
+          storage.set("veilnet.loggedIn", true);
+          storage.set("veilnet.username", user.email);
+          storage.set("veilnet.user", JSON.stringify(user));
+          
+          // Clean URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          // Update UI
+          ensureHeader();
+          console.log('User logged in:', user.email);
+        } catch (error) {
+          console.error('Failed to parse user data:', error);
+        }
+      } else if (loginStatus === 'error') {
+        console.error('Login failed');
+      }
+    }
+    
+    // Check for OAuth callback on page load
+    if (window.location.search.includes('login=')) {
+      handleOAuthCallback();
+    }
+
+    function ensureHeader(){
     // attach dropdown toggles and login mocks
     const avatarBtn = document.querySelector("[data-veil-avatar]");
     const dd = document.querySelector("[data-veil-dropdown]");
@@ -480,7 +512,16 @@
     document.addEventListener("click",()=> dd.classList.remove("open"));
 
     const loggedIn = storage.get("veilnet.loggedIn", false);
-    const username = storage.get("veilnet.username", "RedactedDev");
+    const username = storage.get("veilnet.username", "");
+    const userData = storage.get("veilnet.user", "{}");
+    
+    let user = {};
+    try {
+      user = JSON.parse(userData);
+    } catch (e) {
+      // Fallback to demo user if no real user data
+      user = { email: username };
+    }
 
     // Avatar image
     const avatarImg = document.querySelector("[data-veil-avatar-img]");
@@ -492,13 +533,13 @@
     const ddMyProfile = document.querySelector("[data-veil-myprofile]");
     const ddSettings = document.querySelector("[data-veil-settings]");
 
-    const pfp = ASSET("default_pfp.png");
+    const pfp = user.picture || ASSET("default_pfp.png");
     if(avatarImg) avatarImg.src = pfp;
     if(ddImg) ddImg.src = pfp;
-
+    
     if(loggedIn){
-      if(ddTitle) ddTitle.textContent = username;
-      if(ddSub) ddSub.textContent = statusLabel(username);
+      if(ddTitle) ddTitle.textContent = user.name || user.email;
+      if(ddSub) ddSub.textContent = "Online via Google";
       if(ddLogin) ddLogin.style.display="none";
       if(ddLogout) ddLogout.style.display="flex";
       if(ddMyProfile) ddMyProfile.style.display="flex";
@@ -506,9 +547,8 @@
       // ring color based on user status
       const ring = document.querySelector("[data-veil-ring]");
       const ring2 = document.querySelector("[data-veil-ring2]");
-      const col = ringColor((demoUsers[username]||{}).status || "offline");
-      if(ring){ ring.style.setProperty("--ring", col); }
-      if(ring2){ ring2.style.setProperty("--ring", col); }
+      if(ring){ ring.style.setProperty("--ring", "rgba(56,225,255,.25)"); ring.style.opacity=".55"; }
+      if(ring2){ ring2.style.setProperty("--ring", "rgba(56,225,255,.25)"); ring2.style.opacity=".55"; }
     }else{
       if(ddTitle) ddTitle.textContent = "Not signed in";
       if(ddSub) ddSub.textContent = "Login to access Veilnet features";
@@ -524,15 +564,29 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",()=>{
-        storage.set("veilnet.loggedIn", true);
-        storage.set("veilnet.username", "RedactedDev");
-        location.reload();
+        // Redirect to Google OAuth
+        const authUrl = 'https://veilnet-auth.onrender.com/auth/google';
+        window.location.href = authUrl;
       });
     }
     if(ddLogout){
-      ddLogout.addEventListener("click",()=>{
-        storage.set("veilnet.loggedIn", false);
-        location.reload();
+      ddLogout.addEventListener("click",async ()=>{
+        try {
+          // Call auth server logout
+          const response = await fetch('https://veilnet-auth.onrender.com/api/logout', {
+            method: 'POST',
+            credentials: 'include'
+          });
+          
+          if (response.ok) {
+            storage.set("veilnet.loggedIn", false);
+            storage.set("veilnet.username", "");
+            storage.set("veilnet.user", "");
+            location.reload();
+          }
+        } catch (error) {
+          console.error('Logout error:', error);
+        }
       });
     }
 
