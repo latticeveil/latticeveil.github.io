@@ -824,13 +824,16 @@
     }
 
     function renderChatMessages(messages) {
-      // Find other user from first message or use a default
+      // Get other user from conversation data
       let otherUser = 'Unknown';
-      if (messages.length > 0) {
-        // We'll need to fetch conversation details to get participants
-        // For now, infer from message sender
-        const firstMsg = messages[0];
-        otherUser = firstMsg.sender === currentUsername ? 'Unknown' : firstMsg.sender;
+      const conv = conversationsById.get(currentConversationId);
+      if (conv && conv.participants) {
+        otherUser = conv.participants.find(p => p !== currentUsername) || 'Unknown';
+      } else if (messages.length > 0) {
+        // Fallback: infer from message senders
+        const senders = new Set(messages.map(msg => msg.sender));
+        const otherSenders = Array.from(senders).filter(s => s !== currentUsername);
+        otherUser = otherSenders.length > 0 ? otherSenders[0] : 'Unknown';
       }
 
       // Add all loaded messages to seen set to prevent duplicates
@@ -891,11 +894,8 @@
           body: JSON.stringify({ text })
         });
         
-        // Message will appear via socket event, not optimistic rendering
-        // Add to seen set to prevent duplicates from socket
-        if (savedMessage) {
-          seenMessages.add(getMessageSignature(savedMessage));
-        }
+        // Don't add to seen set here - let the socket event handle it
+        // This allows the sender to see their own message via socket
         
       } catch (error) {
         console.error('Failed to send message:', error);
