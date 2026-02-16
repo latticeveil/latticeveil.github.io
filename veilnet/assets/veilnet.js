@@ -575,7 +575,10 @@
           // Call your existing Veilnet backend logout
           const response = await fetch('https://veilnet.onrender.com/api/logout', {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            }
           });
           
           if (response.ok) {
@@ -583,19 +586,31 @@
             storage.set("veilnet.username", "");
             storage.set("veilnet.user", "");
             location.reload();
+          } else {
+            console.error('Logout failed:', response.status);
+            // Force logout on frontend even if backend fails
+            storage.set("veilnet.loggedIn", false);
+            storage.set("veilnet.username", "");
+            storage.set("veilnet.user", "");
+            location.reload();
           }
         } catch (error) {
           console.error('Logout error:', error);
+          // Force logout on frontend even if network fails
+          storage.set("veilnet.loggedIn", false);
+          storage.set("veilnet.username", "");
+          storage.set("veilnet.user", "");
+          location.reload();
         }
       });
     }
 
     if(ddMyProfile){
       ddMyProfile.addEventListener("click",()=>{
-        // /veilnet/profile/?u=...
+        // /profile/USERNAME or ../profile/?u=USERNAME
         const dest = (location.pathname.includes("/veilnet/") && !location.pathname.endsWith("/veilnet/") && !location.pathname.endsWith("/veilnet/index.html"))
-          ? "../profile/index.html?u=" + encodeURIComponent(username)
-          : "profile/index.html?u=" + encodeURIComponent(username);
+          ? `profile/${encodeURIComponent(username)}`
+          : `profile/${encodeURIComponent(username)}`;
         location.href = dest;
       });
     }
