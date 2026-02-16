@@ -945,6 +945,8 @@
       // Remove existing listener before adding new one
       socket.off('message:new');
       socket.on('message:new', (payload) => {
+        console.log('Received message:new event:', payload);
+        
         // Update conversation state
         const conv = conversationsById.get(payload.conversationId);
         if (conv && payload.message) {
@@ -969,6 +971,7 @@
           // Add message to current conversation
           const container = document.getElementById('messagesContainer');
           if (container) {
+            console.log('Adding message to container:', payload.message);
             container.insertAdjacentHTML('beforeend', renderMessage(payload.message));
             container.scrollTop = container.scrollHeight;
           }
@@ -981,6 +984,7 @@
           
           // If this is a new conversation not in our list, reload conversations
           if (!conversationsById.has(payload.conversationId)) {
+            console.log('New conversation detected, reloading list');
             loadConversations();
           }
           
