@@ -983,16 +983,24 @@
       socket.on('messages:cleared', (payload) => {
         console.log('Messages cleared event received:', payload);
         
-        // If we're in a conversation, reload messages to show they're cleared
-        if (currentConversationId) {
-          loadMessages(currentConversationId);
-        }
-        
-        // Update conversation list to clear last message previews
-        renderConversationList(Array.from(conversationsById.values()));
-        
-        // Clear seen messages set since all messages are gone
+        // Clear all local state
+        conversationsById.clear();
+        unreadConversationIds.clear();
+        lastMessagePreview.clear();
         seenMessages.clear();
+        currentConversationId = null;
+        
+        // Stop resync
+        stopResync();
+        
+        // Reload conversations list (will be empty)
+        loadConversations();
+        
+        // Clear chat panel
+        const chat = document.querySelector('[data-veil-chat]');
+        if (chat) {
+          chat.innerHTML = '<div class="panel" style="padding: 20px; text-align: center; color: var(--cyan);">All conversations have been cleared.</div>';
+        }
       });
     }
 
