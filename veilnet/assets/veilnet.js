@@ -208,6 +208,23 @@
   }
 
   // NEW: Unread MESSAGE count logic
+  function setProfileUnreadBadge(total) {
+    const profileBadge = document.getElementById('vnUnreadBadgeProfile');
+    
+    if (total <= 0) {
+      // Hide badge
+      if (profileBadge) profileBadge.classList.add('vn-badge--hidden');
+    } else {
+      // Show badge with count
+      const displayText = total > 99 ? '99+' : String(total);
+      
+      if (profileBadge) {
+        profileBadge.textContent = displayText;
+        profileBadge.classList.remove('vn-badge--hidden');
+      }
+    }
+  }
+
   function setUnreadMessageBadges(total) {
     const profileBadge = document.getElementById('vnUnreadBadgeProfile');
     const messagesBadge = document.getElementById('vnUnreadBadgeMessages');
@@ -260,14 +277,14 @@
       }
     }
     
-    setUnreadMessageBadges(total);
+    setProfileUnreadBadge(total);
     return total;
   }
 
-  async function refreshUnreadMessageBadges() {
+  async function refreshUnreadFromServer() {
     const user = getCurrentUser();
     if (!user.loggedIn || !user.username) {
-      setUnreadMessageBadges(0);
+      setProfileUnreadBadge(0);
       return;
     }
 
@@ -280,7 +297,7 @@
       });
       
       if (!response.ok) {
-        setUnreadMessageBadges(0);
+        setProfileUnreadBadge(0);
         return;
       }
       
@@ -314,8 +331,8 @@
       
       sumUnreadFromStorage();
     } catch (error) {
-      console.error('Failed to refresh unread message badges:', error);
-      setUnreadMessageBadges(0);
+      console.error('Failed to refresh unread from server:', error);
+      setProfileUnreadBadge(0);
     }
   }
 
@@ -768,7 +785,6 @@
     
     // Conversation state management
     let conversationsById = new Map();
-    let unreadConversationIds = new Set();
     let lastMessagePreview = new Map();
 
     // Connection banner and retry logic
@@ -869,11 +885,6 @@
             // Check if this is a newer message
             if (!existingPreview || newPreview.time > existingPreview.time) {
               lastMessagePreview.set(conv.id, newPreview);
-              
-              // Mark as unread if not the active conversation
-              if (conv.id !== currentConversationId) {
-                unreadConversationIds.add(conv.id);
-              }
             }
           }
         });
@@ -984,14 +995,8 @@
         return;
       }
 
-      // Sort conversations: unread first, then by last message time
+      // Sort conversations by last message time
       const sortedConversations = [...conversations].sort((a, b) => {
-        const aUnread = unreadConversationIds.has(a.id);
-        const bUnread = unreadConversationIds.has(b.id);
-        if (aUnread !== bUnread) {
-          return bUnread ? 1 : -1; // Unread conversations first
-        }
-        // Sort by last message time
         const aTime = a.lastMessage ? new Date(a.lastMessage.timestamp) : new Date(0);
         const bTime = b.lastMessage ? new Date(b.lastMessage.timestamp) : new Date(0);
         return bTime - aTime;
@@ -1000,7 +1005,9 @@
       list.innerHTML = sortedConversations.map(conv => {
         const otherUser = conv.participants.find(p => p !== currentUsername) || 'Unknown';
         const isActive = conv.id === currentConversationId;
-        const isUnread = unreadConversationIds.has(conv.id);
+        const unreadKey = `veilnet.unreadCount.${conv.id}`;
+        const unreadCount = parseInt(storage.get(unreadKey) || '0', 10);
+        const isUnread = unreadCount > 0;
         const lastMsg = conv.lastMessage;
         const preview = lastMessagePreview.get(conv.id);
         
@@ -1079,9 +1086,6 @@
 
       const prevConversationId = currentConversationId;
       currentConversationId = conversationId;
-      
-      // Clear unread for this conversation
-      unreadConversationIds.delete(conversationId);
       
       // Update conversation list to remove unread badge
       const conv = conversationsById.get(conversationId);
@@ -1424,7 +1428,7 @@
     updateUnreadIndicator();
     
     // Initialize numeric unread MESSAGE badges for all pages
-    refreshUnreadMessageBadges();
+    refreshUnreadFromServer();
     
     // Initialize cross-tab synchronization
     initCrossTabSync();
@@ -1480,7 +1484,7 @@
     updateUnreadIndicator();
     
     // Initialize numeric unread MESSAGE badges for all pages
-    refreshUnreadMessageBadges();
+    refreshUnreadFromServer();
     
     // Initialize cross-tab synchronization
     initCrossTabSync();

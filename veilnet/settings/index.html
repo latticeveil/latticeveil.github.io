@@ -29,6 +29,7 @@
         <div class="pfp-wrap">
           <div class="avatar" data-veil-avatar title="Profile">
             <img data-veil-avatar-img src="../assets/default_pfp.png" alt="profile">
+            <span id="vnUnreadBadgeProfile" class="vn-badge vn-badge--hidden"></span>
           </div>
           <div class="status-ring" data-veil-ring style="--ring: rgba(255,255,255,.25); opacity:.55"></div>
 
@@ -43,6 +44,10 @@
 
             <div class="dd-item" onclick="location.href='../index.html'">
               <span>Go to Veilnet</span><small>Home</small>
+            </div>
+
+            <div class="dd-item" onclick="location.href='../messages/index.html'">
+              <span>Messages</span><small>Chat</small>
             </div>
 
             <div class="dd-item" data-veil-myprofile style="display:none">
