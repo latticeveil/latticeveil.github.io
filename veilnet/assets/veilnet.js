@@ -1,5 +1,91 @@
 /* Veilnet Demo JS (no backend) */
 (function(){
+  const VEILNET_API_BASE = "https://veilnet.onrender.com";
+
+  // System Spinning Up Overlay Logic
+  function initSystemOverlay() {
+    // Only run on Veilnet landing page
+    if (!location.pathname.includes("/veilnet/") || 
+        location.pathname.includes("/veilnet/community/") ||
+        location.pathname.includes("/veilnet/messages/") ||
+        location.pathname.includes("/veilnet/profile/") ||
+        location.pathname.includes("/veilnet/settings/") ||
+        location.pathname.includes("/veilnet/post/")) {
+      return;
+    }
+
+    const overlay = document.getElementById('systemOverlay');
+    const retryCount = document.getElementById('retryCount');
+    const failureDiv = document.getElementById('systemFailure');
+    
+    if (!overlay) return;
+
+    let attempt = 0;
+    const maxAttempts = 20;
+
+    function showOverlay() {
+      overlay.style.display = 'flex';
+      setTimeout(() => overlay.classList.add('show'), 10);
+    }
+
+    function hideOverlay() {
+      overlay.classList.remove('show');
+      setTimeout(() => {
+        overlay.style.display = 'none';
+      }, 300);
+    }
+
+    function showFailure() {
+      failureDiv.style.display = 'block';
+    }
+
+    async function checkBackend() {
+      attempt++;
+      retryCount.textContent = attempt;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 800);
+
+      try {
+        const response = await fetch(`${VEILNET_API_BASE}/health`, {
+          mode: 'cors',
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok && response.status === 200) {
+          hideOverlay();
+          return true;
+        } else {
+          throw new Error(`HTTP ${response.status}`);
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+
+        if (attempt >= maxAttempts) {
+          showFailure();
+          return false;
+        }
+
+        // Retry logic: attempts 1-10 every 2s, 11-20 exponential backoff capped at 8s
+        let delay;
+        if (attempt <= 10) {
+          delay = 2000;
+        } else {
+          delay = Math.min(8000, Math.pow(2, attempt - 10) * 1000);
+        }
+
+        setTimeout(checkBackend, delay);
+        return false;
+      }
+    }
+
+    // Start checking immediately
+    showOverlay();
+    checkBackend();
+  }
+
   const ASSET = (p)=> {
     // works from /veilnet/* pages
     const base = location.pathname.includes("/veilnet/") ? "../assets/" : "assets/";
@@ -442,6 +528,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", ()=>{
+    initSystemOverlay(); // Initialize system overlay first
     ensureHeader();
     renderHome();
     renderCommunity();

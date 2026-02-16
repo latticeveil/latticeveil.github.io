@@ -8,6 +8,24 @@
   <link rel="stylesheet" href="assets/veilnet.css">
 </head>
 <body>
+  <!-- System Spinning Up Overlay -->
+  <div id="systemOverlay" class="system-overlay" style="display: none;">
+    <div class="system-overlay-content">
+      <div class="system-spinner"></div>
+      <h1 class="system-title">SYSTEM SPINNING UP...</h1>
+      <p class="system-subtitle">Waking Veilnet services. First load may take a moment.</p>
+      <div class="system-retry">Retry <span id="retryCount">0</span>/20</div>
+      
+      <div id="systemFailure" class="system-failure" style="display: none;">
+        <p>Veilnet is taking too long to respond.</p>
+        <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center;">
+          <button class="btn" onclick="window.location.reload()">Try Again</button>
+          <a href="../" class="btn ghost">Return to main site</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <header class="topbar">
     <div class="container topbar-inner">
       <div class="brand">
