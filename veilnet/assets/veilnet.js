@@ -977,6 +977,23 @@
           // TODO: Add notification popup + sound once accounts exist
         }
       });
+
+      // Handle messages cleared event
+      socket.off('messages:cleared');
+      socket.on('messages:cleared', (payload) => {
+        console.log('Messages cleared event received:', payload);
+        
+        // If we're in a conversation, reload messages to show they're cleared
+        if (currentConversationId) {
+          loadMessages(currentConversationId);
+        }
+        
+        // Update conversation list to clear last message previews
+        renderConversationList(Array.from(conversationsById.values()));
+        
+        // Clear seen messages set since all messages are gone
+        seenMessages.clear();
+      });
     }
 
     // Make sendMessage globally available
