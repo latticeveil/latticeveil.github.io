@@ -247,25 +247,25 @@ a{color:inherit; text-decoration:none}
 
 /* Numeric unread badges */
 .vn-badge {
-  background: #ff4444 !important;
-  color: #ffffff !important;
-  font-size: 14px !important;
-  font-weight: 900 !important;
-  border-radius: 15px !important;
-  min-width: 26px !important;
-  height: 26px !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 0 8px !important;
-  box-shadow: 0 0 20px rgba(255, 68, 68, 0.9), 0 3px 10px rgba(0, 0, 0, 0.4) !important;
-  line-height: 1 !important;
-  text-align: center !important;
-  border: 2px solid rgba(255, 255, 255, 0.4) !important;
+  background: #ff4444;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  border-radius: 15px;
+  min-width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  box-shadow: 0 0 20px rgba(255, 68, 68, 0.9), 0 3px 10px rgba(0, 0, 0, 0.4);
+  line-height: 1;
+  text-align: center;
+  border: 2px solid rgba(255, 255, 255, 0.4);
 }
 
 .vn-badge--hidden {
-  display: none !important;
+  display: none;
 }
 
 /* Profile badge positioning - bigger and more overlap */
@@ -274,10 +274,10 @@ a{color:inherit; text-decoration:none}
 }
 
 #vnUnreadBadgeProfile {
-  position: absolute !important;
-  top: -8px !important;
-  right: -8px !important;
-  z-index: 9999 !important;
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  z-index: 9999;
 }
 
 /* Messages nav badge positioning */
