@@ -457,9 +457,11 @@
     let currentUsername = localStorage.getItem("veilnet_demo_user") || "RedactedDev";
     const isGuest = !currentUsername || currentUsername === "guest";
     
-    // Message deduplication
+    // Message deduplication and resync
     const seenMessages = new Set();
     let socketInitialized = false;
+    let resyncInterval = null;
+    let isResyncing = false;
 
     // Connection banner and retry logic
     const connectionBanner = document.getElementById('connectionBanner');
@@ -475,6 +477,59 @@
     function hideConnectionBanner() {
       if (connectionBanner) {
         connectionBanner.style.display = 'none';
+      }
+    }
+
+    function showReconnectingBanner() {
+      if (connectionBanner) {
+        connectionBanner.innerHTML = `
+          <div class="banner-content">
+            <span>Reconnecting…</span>
+            <div class="banner-spinner"></div>
+          </div>
+        `;
+        connectionBanner.style.display = 'flex';
+      }
+    }
+
+    function startResync() {
+      if (resyncInterval || isGuest || !currentConversationId) return;
+      
+      resyncInterval = setInterval(async () => {
+        // Only resync when page is visible
+        if (document.visibilityState === 'visible' && currentConversationId && !isResyncing) {
+          await resyncConversation(currentConversationId);
+        }
+      }, 5000);
+    }
+
+    function stopResync() {
+      if (resyncInterval) {
+        clearInterval(resyncInterval);
+        resyncInterval = null;
+      }
+    }
+
+    async function resyncConversation(conversationId) {
+      if (isResyncing || !conversationId) return;
+      
+      isResyncing = true;
+      try {
+        const messages = await apiCall(`${VEILNET_API_BASE}/api/conversations/${conversationId}/messages?limit=50`);
+        const container = document.getElementById('messagesContainer');
+        
+        if (container) {
+          messages.forEach(msg => {
+            if (!isDuplicateMessage(msg)) {
+              container.insertAdjacentHTML('beforeend', renderMessage(msg));
+            }
+          });
+          container.scrollTop = container.scrollHeight;
+        }
+      } catch (error) {
+        console.error('Resync failed:', error);
+      } finally {
+        isResyncing = false;
       }
     }
 
@@ -654,6 +709,9 @@
         }
       });
 
+      // Stop previous resync and start new one
+      stopResync();
+
       // Leave previous room and join new one
       if (socket) {
         socket.emit('conversation:leave', { conversationId: currentConversationId });
@@ -662,6 +720,9 @@
 
       // Load messages
       await loadMessages(conversationId);
+      
+      // Start resync for this conversation
+      startResync();
     }
 
     async function loadMessages(conversationId) {
@@ -733,24 +794,7 @@
       
       if (!text || !currentConversationId) return;
 
-      // Optimistically add message to UI
-      const tempMessage = {
-        id: Date.now(),
-        conversationId: currentConversationId,
-        sender: currentUsername,
-        text,
-        timestamp: new Date().toISOString()
-      };
-      
-      // Add to seen messages to prevent duplicate socket events
-      seenMessages.add(getMessageSignature(tempMessage));
-      
-      const container = document.getElementById('messagesContainer');
-      if (container) {
-        container.insertAdjacentHTML('beforeend', renderMessage(tempMessage));
-        container.scrollTop = container.scrollHeight;
-      }
-      
+      // Clear input immediately
       input.value = '';
 
       try {
@@ -759,16 +803,17 @@
           body: JSON.stringify({ text })
         });
         
-        // Update seen messages with the real message ID
-        if (savedMessage.id && savedMessage.id !== tempMessage.id) {
-          const tempSignature = getMessageSignature(tempMessage);
-          seenMessages.delete(tempSignature);
+        // Message will appear via socket event, not optimistic rendering
+        // Add to seen set to prevent duplicates from socket
+        if (savedMessage) {
           seenMessages.add(getMessageSignature(savedMessage));
         }
         
       } catch (error) {
         console.error('Failed to send message:', error);
-        // Could show error and revert optimistic update
+        // Restore input text on error
+        input.value = text;
+        alert('Failed to send message. Please try again.');
       }
     }
 
@@ -781,11 +826,31 @@
       
       socket.on('connect', () => {
         console.log('Connected to Veilnet backend');
+        hideConnectionBanner();
         if (currentConversationId && !isGuest) {
           socket.emit('conversation:join', { conversationId: currentConversationId });
         }
+        // Trigger immediate resync on reconnect
+        if (currentConversationId) {
+          resyncConversation(currentConversationId);
+        }
       });
 
+      socket.on('disconnect', () => {
+        console.log('Disconnected from Veilnet backend');
+        showReconnectingBanner();
+      });
+
+      socket.on('reconnect', () => {
+        console.log('Reconnected to Veilnet backend');
+        hideConnectionBanner();
+        if (currentConversationId) {
+          resyncConversation(currentConversationId);
+        }
+      });
+
+      // Remove existing listener before adding new one
+      socket.off('message:new');
       socket.on('message:new', (payload) => {
         if (payload.conversationId === currentConversationId && !isGuest) {
           // Check for duplicate message
@@ -811,17 +876,23 @@
               tag.style.color = 'var(--red)';
             }
           }
+          // TODO: Add notification popup + sound once accounts exist
         }
-      });
-
-      socket.on('disconnect', () => {
-        console.log('Disconnected from Veilnet backend');
       });
     }
 
     // Make sendMessage globally available
     window.sendMessage = sendMessage;
     window.startNewChat = startNewChat;
+
+    // Handle visibility changes for resync
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && currentConversationId && !isGuest) {
+        startResync();
+      } else {
+        stopResync();
+      }
+    });
 
     // Initialize
     initSocket();
