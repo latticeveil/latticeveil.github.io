@@ -1016,6 +1016,29 @@
           chat.innerHTML = '<div class="panel" style="padding: 20px; text-align: center; color: var(--cyan);">All conversations have been cleared.</div>';
         }
       });
+
+      // Handle conversation updated event (for cross-tab refreshes)
+      socket.off('conversation:updated');
+      socket.on('conversation:updated', (payload) => {
+        console.log('Conversation updated event received:', payload);
+        
+        // Update conversation state
+        const conv = conversationsById.get(payload.conversationId);
+        if (conv && payload.lastMessage) {
+          conv.lastMessage = payload.lastMessage;
+          conversationsById.set(payload.conversationId, conv);
+          
+          // Update message preview
+          lastMessagePreview.set(payload.conversationId, {
+            text: payload.lastMessage.text,
+            author: payload.lastMessage.sender,
+            time: new Date(payload.lastMessage.timestamp)
+          });
+        }
+        
+        // Always refresh conversation list to show latest updates
+        renderConversationList(Array.from(conversationsById.values()));
+      });
     }
 
     // Make sendMessage globally available
