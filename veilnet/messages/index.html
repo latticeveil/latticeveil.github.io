@@ -22,13 +22,14 @@
         <a href="../community/index.html">Community</a>
         <a href="../worlds/index.html" onclick="alert('Demo page not included yet.'); return false;">Worlds</a>
         <a href="../leaderboards/index.html" onclick="alert('Demo page not included yet.'); return false;">Leaderboards</a>
-        <a href="../messages/index.html" class="nav-messages">Messages<span id="unreadIndicator" class="unread-indicator" style="display: none;"></span></a>
+        <a href="../messages/index.html" class="nav-messages">Messages<span id="unreadIndicator" class="unread-indicator" style="display: none;"></span><span id="vnUnreadBadgeMessages" class="vn-badge vn-badge--hidden"></span></a>
       </nav>
 
       <div class="right">
         <div class="pfp-wrap">
           <div class="avatar" data-veil-avatar title="Profile">
             <img data-veil-avatar-img src="../assets/default_pfp.png" alt="profile">
+            <span id="vnUnreadBadgeProfile" class="vn-badge vn-badge--hidden"></span>
           </div>
           <div class="status-ring" data-veil-ring style="--ring: rgba(255,255,255,.25); opacity:.55"></div>
 

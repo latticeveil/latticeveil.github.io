@@ -110,6 +110,89 @@
     return { loggedIn, username };
   }
 
+  // Numeric unread badge management
+  function setUnreadBadges(count) {
+    const profileBadge = document.getElementById('vnUnreadBadgeProfile');
+    const messagesBadge = document.getElementById('vnUnreadBadgeMessages');
+    
+    if (count <= 0) {
+      // Hide both badges
+      if (profileBadge) {
+        profileBadge.classList.add('vn-badge--hidden');
+      }
+      if (messagesBadge) {
+        messagesBadge.classList.add('vn-badge--hidden');
+      }
+    } else {
+      // Show both badges with count
+      const displayText = count > 99 ? '99+' : count.toString();
+      
+      if (profileBadge) {
+        profileBadge.textContent = displayText;
+        profileBadge.classList.remove('vn-badge--hidden');
+      }
+      if (messagesBadge) {
+        messagesBadge.textContent = displayText;
+        messagesBadge.classList.remove('vn-badge--hidden');
+      }
+    }
+  }
+
+  function computeUnreadCountFromConversations(conversations, username) {
+    let unreadCount = 0;
+    
+    for (const conv of conversations) {
+      // Prefer backend fields if available
+      if (conv.unreadCount && typeof conv.unreadCount === 'number') {
+        unreadCount += conv.unreadCount;
+      } else if (conv.hasUnread === true) {
+        unreadCount += 1;
+      } else {
+        // Fallback: use localStorage timestamps
+        const lastSeenKey = `veilnet.lastSeenMessageAt.${conv.id}`;
+        const lastSeen = storage.get(lastSeenKey, 0);
+        
+        if (conv.lastMessage && conv.lastMessage.timestamp) {
+          const msgTime = new Date(conv.lastMessage.timestamp).getTime();
+          if (msgTime > lastSeen && conv.lastMessage.sender !== username) {
+            unreadCount += 1;
+          }
+        }
+      }
+    }
+    
+    return unreadCount;
+  }
+
+  async function refreshUnreadBadges() {
+    const currentUser = getCurrentUser();
+    
+    if (!currentUser.loggedIn || !currentUser.username) {
+      setUnreadBadges(0);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${VEILNET_API_BASE}/api/conversations`, {
+        headers: {
+          'X-Veilnet-User': currentUser.username,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const conversations = await response.json();
+        const unreadCount = computeUnreadCountFromConversations(conversations, currentUser.username);
+        setUnreadBadges(unreadCount);
+      } else {
+        setUnreadBadges(0);
+      }
+    } catch (error) {
+      console.error('Failed to refresh unread badges:', error);
+      setUnreadBadges(0);
+    }
+  }
+
   // Unread indicator management
   function updateUnreadIndicator() {
     const currentUser = getCurrentUser();
@@ -142,6 +225,7 @@
         broadcastChannel.onmessage = (event) => {
           if (event.data && event.data.type === 'unread:update') {
             updateUnreadIndicator();
+            refreshUnreadBadges(); // Update numeric badges
             // If on messages page, also refresh conversation list
             if (location.pathname.includes('/veilnet/messages/')) {
               loadConversations();
@@ -162,6 +246,7 @@
     window.addEventListener('storage', (event) => {
       if (event.key === 'veilnet.sync') {
         updateUnreadIndicator();
+        refreshUnreadBadges(); // Update numeric badges
         // If on messages page, also refresh conversation list
         if (location.pathname.includes('/veilnet/messages/')) {
           loadConversations();
@@ -938,6 +1023,7 @@
       
       // Update unread indicator
       updateUnreadIndicator();
+      refreshUnreadBadges(); // Update numeric badges
       triggerCrossTabSync();
       
       // Start resync for this conversation
@@ -1113,6 +1199,7 @@
           
           // Update unread indicator (should hide for active conversation)
           updateUnreadIndicator();
+          refreshUnreadBadges(); // Update numeric badges
           triggerCrossTabSync();
         } else {
           // Mark as unread and show indicator
@@ -1129,6 +1216,7 @@
           
           // Update unread indicator (should show for non-active conversation)
           updateUnreadIndicator();
+          refreshUnreadBadges(); // Update numeric badges
           triggerCrossTabSync();
           
           // TODO: Add notification popup + sound once accounts exist
@@ -1204,6 +1292,9 @@
     // Initialize unread indicator for all pages
     updateUnreadIndicator();
     
+    // Initialize numeric unread badges for all pages
+    refreshUnreadBadges();
+    
     // Initialize cross-tab synchronization
     initCrossTabSync();
   }
@@ -1256,6 +1347,9 @@
     
     // Initialize unread indicator for all pages
     updateUnreadIndicator();
+    
+    // Initialize numeric unread badges for all pages
+    refreshUnreadBadges();
     
     // Initialize cross-tab synchronization
     initCrossTabSync();
