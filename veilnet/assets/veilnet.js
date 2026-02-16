@@ -456,6 +456,10 @@
     let currentConversationId = null;
     let currentUsername = localStorage.getItem("veilnet_demo_user") || "RedactedDev";
     const isGuest = !currentUsername || currentUsername === "guest";
+    
+    // Message deduplication
+    const seenMessages = new Set();
+    let socketInitialized = false;
 
     // Connection banner and retry logic
     const connectionBanner = document.getElementById('connectionBanner');
@@ -483,6 +487,29 @@
         `;
         connectionBanner.style.display = 'flex';
       }
+    }
+
+    function getMessageSignature(message) {
+      // Create a unique signature for deduplication
+      if (message.id) {
+        return `id:${message.id}`;
+      }
+      // Fallback to content-based signature
+      return `${message.sender}|${message.text}|${message.timestamp}`;
+    }
+
+    function isDuplicateMessage(message) {
+      const signature = getMessageSignature(message);
+      if (seenMessages.has(signature)) {
+        return true;
+      }
+      seenMessages.add(signature);
+      // Keep only last 1000 signatures to prevent memory leak
+      if (seenMessages.size > 1000) {
+        const firstItem = seenMessages.values().next().value;
+        seenMessages.delete(firstItem);
+      }
+      return false;
     }
 
     async function apiCall(url, options = {}) {
@@ -657,6 +684,9 @@
         otherUser = firstMsg.sender === currentUsername ? 'Unknown' : firstMsg.sender;
       }
 
+      // Add all loaded messages to seen set to prevent duplicates
+      messages.forEach(msg => seenMessages.add(getMessageSignature(msg)));
+
       const isDisabled = isGuest ? 'disabled' : '';
       const disabledPlaceholder = isGuest ? 'Log in to message...' : 'Message…';
 
@@ -712,6 +742,9 @@
         timestamp: new Date().toISOString()
       };
       
+      // Add to seen messages to prevent duplicate socket events
+      seenMessages.add(getMessageSignature(tempMessage));
+      
       const container = document.getElementById('messagesContainer');
       if (container) {
         container.insertAdjacentHTML('beforeend', renderMessage(tempMessage));
@@ -726,8 +759,12 @@
           body: JSON.stringify({ text })
         });
         
-        // Replace temp message with saved one (optional, for consistency)
-        // For now, the optimistic approach is sufficient
+        // Update seen messages with the real message ID
+        if (savedMessage.id && savedMessage.id !== tempMessage.id) {
+          const tempSignature = getMessageSignature(tempMessage);
+          seenMessages.delete(tempSignature);
+          seenMessages.add(getMessageSignature(savedMessage));
+        }
         
       } catch (error) {
         console.error('Failed to send message:', error);
@@ -737,9 +774,10 @@
 
     // Initialize Socket.IO
     function initSocket() {
-      if (typeof io === 'undefined') return;
+      if (typeof io === 'undefined' || socketInitialized) return;
       
       socket = io(VEILNET_API_BASE, { transports: ["websocket", "polling"] });
+      socketInitialized = true;
       
       socket.on('connect', () => {
         console.log('Connected to Veilnet backend');
@@ -750,6 +788,12 @@
 
       socket.on('message:new', (payload) => {
         if (payload.conversationId === currentConversationId && !isGuest) {
+          // Check for duplicate message
+          if (isDuplicateMessage(payload.message)) {
+            console.log('Duplicate message ignored:', payload.message);
+            return;
+          }
+          
           // Add message to current conversation
           const container = document.getElementById('messagesContainer');
           if (container) {
