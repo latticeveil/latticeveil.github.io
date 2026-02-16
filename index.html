@@ -28,11 +28,36 @@
 
     </button>
 
-    <button id="profileIcon" onclick="window.location.href='./veilnet/'" title="Veilnet Profile">
-
-        <img src="veilnet/assets/default_pfp.png" alt="Profile" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">
-
-    </button>
+    <div class="profile-dropdown">
+        <button id="profileIcon" title="Veilnet Profile">
+            <img src="veilnet/assets/default_pfp.png" alt="Profile">
+        </button>
+        <div id="profileDropdown" class="dropdown-panel">
+            <div class="dropdown-header">Veilnet</div>
+            <a href="./veilnet/" class="dropdown-item">
+                <span>Go to Veilnet</span>
+            </a>
+            <a href="./veilnet/community/" class="dropdown-item">
+                <span>Community</span>
+            </a>
+            <a href="./veilnet/messages/" class="dropdown-item">
+                <span>Messages</span>
+            </a>
+            <a href="./veilnet/profile/" class="dropdown-item">
+                <span>My Profile</span>
+            </a>
+            <a href="./veilnet/settings/" class="dropdown-item">
+                <span>Settings</span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a href="./veilnet/login/" class="dropdown-item">
+                <span>Login</span>
+            </a>
+            <a href="./veilnet/logout/" class="dropdown-item">
+                <span>Log Out</span>
+            </a>
+        </div>
+    </div>
 
     <header class="site-hero">
 
@@ -2133,6 +2158,41 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             evt.currentTarget.classList.add("active");
 
         }
+
+        // Profile dropdown functionality
+        const profileIcon = document.getElementById('profileIcon');
+        const profileDropdown = document.getElementById('profileDropdown');
+        
+        function toggleDropdown() {
+            profileDropdown.classList.toggle('open');
+        }
+        
+        function closeDropdown() {
+            profileDropdown.classList.remove('open');
+        }
+        
+        profileIcon.addEventListener('click', toggleDropdown);
+        
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.profile-dropdown')) {
+                closeDropdown();
+            }
+        });
+        
+        // Close on ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeDropdown();
+            }
+        });
+        
+        // Close when menu items are clicked
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', () => {
+                closeDropdown();
+            });
+        });
 
     </script>
 
