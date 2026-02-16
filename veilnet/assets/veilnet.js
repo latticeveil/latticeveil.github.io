@@ -564,16 +564,16 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",()=>{
-        // Redirect to Google OAuth
-        const authUrl = 'https://veilnet-auth.onrender.com/auth/google';
+        // Redirect to Google OAuth on your existing Veilnet backend
+        const authUrl = 'https://veilnet.onrender.com/auth/google';
         window.location.href = authUrl;
       });
     }
     if(ddLogout){
       ddLogout.addEventListener("click",async ()=>{
         try {
-          // Call auth server logout
-          const response = await fetch('https://veilnet-auth.onrender.com/api/logout', {
+          // Call your existing Veilnet backend logout
+          const response = await fetch('https://veilnet.onrender.com/api/logout', {
             method: 'POST',
             credentials: 'include'
           });
