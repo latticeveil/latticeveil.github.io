@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Veilnet • Profile</title>
+  <title id="profileTitle">Veilnet • Profile</title>
   <link rel="icon" href="../assets/Veilnet.png">
   <link rel="stylesheet" href="../assets/veilnet.css">
 </head>
@@ -18,21 +18,17 @@
       </div>
 
       <nav class="nav" aria-label="Primary">
-        <a href="../index.html">Home</a>
-        <a href="../community/index.html">Community</a>
-        <a href="../worlds/index.html" onclick="alert('Demo page not included yet.'); return false;">Worlds</a>
-        <a href="../leaderboards/index.html" onclick="alert('Demo page not included yet.'); return false;">Leaderboards</a>
-        <a href="../messages/index.html">Messages</a>
-      </nav>
+        <div class="nav-left">
+          <a href="../index.html" class="nav-item">Home</a>
+          <a href="../community/index.html" class="nav-item">Community</a>
+          <a href="../messages/index.html" class="nav-item">Messages</a>
+        </div>
 
-      <div class="right">
-        <div class="pfp-wrap">
+        <div class="nav-right">
           <div class="avatar" data-veil-avatar title="Profile">
             <img data-veil-avatar-img src="../assets/default_pfp.png" alt="profile">
             <span id="vnUnreadBadgeProfile" class="vn-badge vn-badge--hidden"></span>
           </div>
-          <div class="status-ring" data-veil-ring style="--ring: rgba(255,255,255,.25); opacity:.55"></div>
-
           <div class="dropdown" data-veil-dropdown>
             <div class="dd-head">
               <img data-veil-dd-img src="../assets/default_pfp.png" alt="">
@@ -61,31 +57,160 @@
             <div class="dd-divider"></div>
 
             <div class="dd-item" data-veil-login>
-              <span>Login with Google</span><small>Demo</small>
+              <span>Login</span><small>Google</small>
             </div>
 
             <div class="dd-item" data-veil-logout style="display:none">
-              <span>Log Out</span><small>Demo</small>
+              <span>Logout</span><small>Sign out</small>
             </div>
+          </div>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="profileContent">
+      <!-- Profile content will be loaded here -->
+      <div class="profile-container">
+        <div class="profile-header">
+          <div class="profile-avatar">
+            <img id="profileAvatar" src="../assets/default_pfp.png" alt="Profile">
+          </div>
+          <div class="profile-info">
+            <h1 id="profileUsername">Loading...</h1>
+            <p id="profileStatus">Loading profile...</p>
+          </div>
+        </div>
+
+        <div class="profile-content">
+          <div class="profile-section">
+            <h2>About Me</h2>
+            <p id="profileAbout">No information provided</p>
+          </div>
+
+          <div class="profile-section">
+            <h2>Status</h2>
+            <p id="profileStatusMessage">No status message</p>
+          </div>
+
+          <div class="profile-section">
+            <h2>Theme</h2>
+            <div class="theme-preview" id="profileTheme" style="background: #38e1ff;">
+              <span>Current Theme</span>
+            </div>
+          </div>
+
+          <div class="profile-section">
+            <h2>Member Since</h2>
+            <p id="profileMemberSince">Loading...</p>
           </div>
         </div>
       </div>
     </div>
-  </header>
-
-  
-<main class="container" style="padding: 18px 0 34px">
-  <div class="breadcrumbs"><a href="../index.html">Veilnet</a> / Profile</div>
-  <div data-veil-profile style="margin-top:12px"></div>
-</main>
-
-
-  <footer class="footer">
-    <div class="container">
-      Veilnet demo • Static GitHub Pages layout preview • No backend connections yet
-    </div>
-  </footer>
+  </main>
 
   <script src="../assets/veilnet.js"></script>
+  <script>
+    // Get username from URL parameters or hash
+    let username;
+    
+    // Try URL parameters first (?u=USERNAME)
+    const urlParams = new URLSearchParams(window.location.search);
+    username = urlParams.get('u');
+    
+    // Try hash next (#USERNAME)
+    if (!username && window.location.hash) {
+      username = decodeURIComponent(window.location.hash.substring(1));
+    }
+    
+    // Try path last (/profile/USERNAME)
+    if (!username) {
+      const pathParts = window.location.pathname.split('/');
+      username = pathParts[pathParts.length - 1];
+      // If it's "index.html", try the previous part
+      if (username === 'index.html' && pathParts.length > 2) {
+        username = pathParts[pathParts.length - 2];
+      }
+    }
+    
+    if (!username) {
+      // No username specified, show current user's profile
+      const currentUser = JSON.parse(localStorage.getItem('veilnet.user') || '{}');
+      username = currentUser.username;
+      
+      if (!username) {
+        document.getElementById('profileContent').innerHTML = `
+          <div class="profile-container">
+            <div style="text-align: center; padding: 3rem;">
+              <h2>No Profile Found</h2>
+              <p>Please log in to view your profile or specify a username in the URL.</p>
+              <a href="../index.html" class="btn">Go to Veilnet</a>
+            </div>
+          </div>
+        `;
+        return;
+      }
+    }
+
+    // Set page title
+    document.getElementById('profileTitle').textContent = `Veilnet • ${username}`;
+    
+    // Load user profile data
+    async function loadProfile() {
+      try {
+        const response = await fetch(`https://veilnet.onrender.com/api/user/${username}`);
+        if (response.ok) {
+          const user = await response.json();
+          
+          // Update profile display
+          document.getElementById('profileUsername').textContent = user.username;
+          document.getElementById('profileStatus').textContent = `Online via Google`;
+          document.getElementById('profileAbout').textContent = user.aboutMe || 'No information provided';
+          document.getElementById('profileStatusMessage').textContent = user.statusMessage || 'No status message';
+          document.getElementById('profileTheme').style.background = user.themeColor || '#38e1ff';
+          document.getElementById('profileMemberSince').textContent = new Date(user.createdAt).toLocaleDateString();
+          
+          // Update avatar
+          const avatar = user.picture || '../assets/default_pfp.png';
+          document.getElementById('profileAvatar').src = avatar;
+          
+          // Update header
+          const avatarImg = document.querySelector('[data-veil-avatar-img]');
+          const ddImg = document.querySelector('[data-veil-dd-img]');
+          if (avatarImg) avatarImg.src = avatar;
+          if (ddImg) ddImg.src = avatar;
+          
+        } else {
+          document.getElementById('profileContent').innerHTML = `
+            <div class="profile-container">
+              <div style="text-align: center; padding: 3rem;">
+                <h2>User Not Found</h2>
+                <p>The user "${username}" does not exist on Veilnet.</p>
+                <a href="../index.html" class="btn">Go to Veilnet</a>
+              </div>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+        document.getElementById('profileContent').innerHTML = `
+          <div class="profile-container">
+            <div style="text-align: center; padding: 3rem;">
+              <h2>Error Loading Profile</h2>
+              <p>Unable to load profile data. Please try again later.</p>
+              <a href="../index.html" class="btn">Go to Veilnet</a>
+            </div>
+          </div>
+        `;
+      }
+    }
+    
+    // Load profile on page load
+    loadProfile();
+    
+    // Initialize header functionality
+    ensureHeader();
+  </script>
 </body>
 </html>
