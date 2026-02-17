@@ -150,6 +150,9 @@
               <button id="editUsernameBtn" class="edit-btn" style="display: none;" title="Edit username">
                 ✏️
               </button>
+              <button id="editProfileBtn" class="edit-btn" style="display: none;" title="Edit profile">
+                ⚙️
+              </button>
               <button id="refreshProfileBtn" class="edit-btn" title="Refresh profile" style="opacity: 0.6;">
                 🔄
               </button>
@@ -184,6 +187,37 @@
       </div>
     </div>
   </main>
+
+  <!-- Edit Profile Modal -->
+  <div id="editProfileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: var(--panel); border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
+      <h2 style="margin-top: 0; color: var(--text);">Edit Profile</h2>
+      
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 600;">Username</label>
+        <input type="text" id="editUsernameInput" placeholder="Enter username" style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-size: 1rem;">
+        <small style="color: var(--muted); font-size: 0.85rem;">3-20 characters, letters/numbers/_ only</small>
+      </div>
+      
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 600;">Profile Picture URL</label>
+        <input type="text" id="editPictureInput" placeholder="https://example.com/avatar.jpg" style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-size: 1rem;">
+        <small style="color: var(--muted); font-size: 0.85rem;">Leave empty to use default, or enter HTTP/HTTPS URL</small>
+      </div>
+      
+      <div style="margin-bottom: 1.5rem;">
+        <img id="picturePreview" src="../assets/default_pfp.png" alt="Preview" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border);">
+        <button id="resetPictureBtn" style="margin-left: 1rem; padding: 0.5rem 1rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">Reset to Default</button>
+      </div>
+      
+      <div id="editProfileError" style="color: var(--red); margin-bottom: 1rem; display: none;"></div>
+      
+      <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+        <button id="cancelEditBtn" style="padding: 0.75rem 1.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">Cancel</button>
+        <button id="saveProfileBtn" style="padding: 0.75rem 1.5rem; background: var(--cyan); color: var(--bg); border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Save Profile</button>
+      </div>
+    </div>
+  </div>
 
   <script src="../assets/veilnet.js"></script>
   <script>
@@ -349,12 +383,19 @@
           if (avatarImg) avatarImg.src = avatar;
           if (ddImg) ddImg.src = avatar;
           
-          // Show edit button if viewing own profile
+          // Check if viewing own profile and show appropriate buttons
           const currentUser = JSON.parse(localStorage.getItem('veilnet.user') || '{}');
-          const editBtn = document.getElementById('editUsernameBtn');
-          if (editBtn && currentUser.username === user.username) {
-            editBtn.style.display = 'inline-block';
+          const editUsernameBtn = document.getElementById('editUsernameBtn');
+          const editProfileBtn = document.getElementById('editProfileBtn');
+          
+          if (currentUser.username === user.username || currentUser.id === user.id) {
+            if (editUsernameBtn) editUsernameBtn.style.display = 'inline-block';
+            if (editProfileBtn) editProfileBtn.style.display = 'inline-block';
             setupUsernameEditing(currentUser);
+            setupEditProfile();
+          } else {
+            if (editUsernameBtn) editUsernameBtn.style.display = 'none';
+            if (editProfileBtn) editProfileBtn.style.display = 'none';
           }
           
         } else if (result && result.timeout) {
@@ -407,6 +448,145 @@
           loadProfile();
         });
       }
+    }
+    
+    // Setup edit profile functionality
+    function setupEditProfile() {
+      const editBtn = document.getElementById('editProfileBtn');
+      const modal = document.getElementById('editProfileModal');
+      const cancelBtn = document.getElementById('cancelEditBtn');
+      const saveBtn = document.getElementById('saveProfileBtn');
+      const resetBtn = document.getElementById('resetPictureBtn');
+      const errorDiv = document.getElementById('editProfileError');
+      
+      if (!editBtn || !modal) return;
+      
+      // Get current user data
+      async function getCurrentUser() {
+        try {
+          const response = await fetch('https://veilnet.onrender.com/api/me');
+          if (response.ok) {
+            return await response.json();
+          }
+        } catch (error) {
+          console.error('Failed to get current user:', error);
+        }
+        return null;
+      }
+      
+      // Show modal
+      editBtn.addEventListener('click', async () => {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+          showNotification('Failed to load profile data', 'error');
+          return;
+        }
+        
+        // Populate form
+        document.getElementById('editUsernameInput').value = currentUser.username || '';
+        document.getElementById('editPictureInput').value = currentUser.picture || '';
+        
+        // Update preview
+        updatePicturePreview(currentUser.picture);
+        
+        // Show modal
+        modal.style.display = 'flex';
+        errorDiv.style.display = 'none';
+      });
+      
+      // Hide modal
+      cancelBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+      
+      // Reset picture
+      resetBtn.addEventListener('click', () => {
+        document.getElementById('editPictureInput').value = '';
+        updatePicturePreview('');
+      });
+      
+      // Update picture preview
+      function updatePicturePreview(pictureUrl) {
+        const preview = document.getElementById('picturePreview');
+        if (pictureUrl && pictureUrl.startsWith('http')) {
+          preview.src = pictureUrl;
+        } else {
+          preview.src = '../assets/default_pfp.png';
+        }
+      }
+      
+      // Picture input change
+      document.getElementById('editPictureInput').addEventListener('input', (e) => {
+        updatePicturePreview(e.target.value);
+      });
+      
+      // Save profile
+      saveBtn.addEventListener('click', async () => {
+        const username = document.getElementById('editUsernameInput').value.trim();
+        const picture = document.getElementById('editPictureInput').value.trim();
+        
+        // Clear previous errors
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+        
+        // Show saving state
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+        
+        try {
+          const response = await fetch('https://veilnet.onrender.com/api/me/profile', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username, picture }),
+          });
+          
+          if (response.ok) {
+            const updatedUser = await response.json();
+            
+            // Update page instantly (optimistic update)
+            document.getElementById('profileUsername').textContent = updatedUser.username;
+            const newAvatar = getAvatarUrl(updatedUser.picture);
+            document.getElementById('profileAvatar').src = newAvatar;
+            
+            // Update header avatars
+            const avatarImg = document.querySelector('[data-veil-avatar-img]');
+            const ddImg = document.querySelector('[data-veil-dd-img]');
+            if (avatarImg) avatarImg.src = newAvatar;
+            if (ddImg) ddImg.src = newAvatar;
+            
+            // Update local storage
+            const storedUser = JSON.parse(localStorage.getItem('veilnet.user') || '{}');
+            storedUser.username = updatedUser.username;
+            storedUser.picture = updatedUser.picture;
+            localStorage.setItem('veilnet.user', JSON.stringify(storedUser));
+            
+            // Hide modal
+            modal.style.display = 'none';
+            showNotification('Profile updated successfully!', 'success');
+            
+          } else {
+            const error = await response.json();
+            errorDiv.textContent = error.error || 'Failed to update profile';
+            errorDiv.style.display = 'block';
+          }
+        } catch (error) {
+          errorDiv.textContent = 'Network error. Please try again.';
+          errorDiv.style.display = 'block';
+        } finally {
+          // Reset save button
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save Profile';
+        }
+      });
+      
+      // Close modal on background click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
     }
     
     // Setup username editing functionality
