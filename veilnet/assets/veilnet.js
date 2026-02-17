@@ -663,7 +663,7 @@
     if(!list) return;
     list.innerHTML = demoPosts.map(p=>{
       const postHref = "./../post/index.html?id=" + p.id;
-      const authorHref = "./../profile/index.html?u=" + encodeURIComponent(p.author);
+      const authorHref = "./../profile/user.html#" + encodeURIComponent(p.author);
       return `
         <div class="panel" style="padding:12px; margin: 12px 0">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
@@ -688,7 +688,7 @@
     if(!root) return;
     const id = Number(new URLSearchParams(location.search).get("id") || demoPosts[0].id);
     const p = demoPosts.find(x=>x.id===id) || demoPosts[0];
-    const authorHref = "./../profile/index.html?u=" + encodeURIComponent(p.author);
+    const authorHref = "./../profile/user.html#" + encodeURIComponent(p.author);
     root.innerHTML = `
       <div class="profile-hero">
         <div class="profile-banner"></div>

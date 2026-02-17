@@ -107,9 +107,17 @@
 
   <script src="../assets/veilnet.js"></script>
   <script>
-    // Get username from URL path
-    const pathParts = window.location.pathname.split('/');
-    const username = pathParts[pathParts.length - 2]; // Get username from /profile/USERNAME
+    // Get username from URL hash or path
+    let username;
+    
+    // Try to get from hash first (for community links)
+    if (window.location.hash) {
+      username = decodeURIComponent(window.location.hash.substring(1));
+    } else {
+      // Fallback to path
+      const pathParts = window.location.pathname.split('/');
+      username = pathParts[pathParts.length - 1];
+    }
     
     if (!username) {
       window.location.href = '../index.html';
