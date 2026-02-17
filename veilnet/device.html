@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Veilnet Device Login</title>
+</head>
+<body>
+<script>
+  (function () {
+    const params = new URLSearchParams(window.location.search);
+    const userCode = params.get('user_code') || params.get('userCode') || '';
+    const deviceCode = params.get('device_code') || params.get('deviceCode') || '';
+
+    if (!userCode || !deviceCode) {
+      document.body.textContent = 'Missing login codes. Please return to the launcher and try again.';
+      return;
+    }
+
+    const backendBase = 'https://veilnet.onrender.com';
+    const target = backendBase + '/auth/device/verify?user_code=' + encodeURIComponent(userCode) + '&device_code=' + encodeURIComponent(deviceCode);
+    window.location.replace(target);
+  })();
+</script>
+</body>
+</html>
