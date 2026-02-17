@@ -607,10 +607,10 @@
 
     if(ddMyProfile){
       ddMyProfile.addEventListener("click",()=>{
-        // /profile/USERNAME or ../profile/?u=USERNAME
+        // /profile/?u=USERNAME or ../profile/?u=USERNAME
         const dest = (location.pathname.includes("/veilnet/") && !location.pathname.endsWith("/veilnet/") && !location.pathname.endsWith("/veilnet/index.html"))
-          ? `profile/${encodeURIComponent(username)}`
-          : `profile/${encodeURIComponent(username)}`;
+          ? `../profile/?u=${encodeURIComponent(username)}`
+          : `profile/?u=${encodeURIComponent(username)}`;
         location.href = dest;
       });
     }
@@ -663,7 +663,7 @@
     if(!list) return;
     list.innerHTML = demoPosts.map(p=>{
       const postHref = "./../post/index.html?id=" + p.id;
-      const authorHref = "./../profile/user.html#" + encodeURIComponent(p.author);
+      const authorHref = "./../profile/?u=" + encodeURIComponent(p.author);
       return `
         <div class="panel" style="padding:12px; margin: 12px 0">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
@@ -688,7 +688,7 @@
     if(!root) return;
     const id = Number(new URLSearchParams(location.search).get("id") || demoPosts[0].id);
     const p = demoPosts.find(x=>x.id===id) || demoPosts[0];
-    const authorHref = "./../profile/user.html#" + encodeURIComponent(p.author);
+    const authorHref = "./../profile/?u=" + encodeURIComponent(p.author);
     root.innerHTML = `
       <div class="profile-hero">
         <div class="profile-banner"></div>
