@@ -6,6 +6,34 @@
   <title id="profileTitle">Veilnet • Profile</title>
   <link rel="icon" href="../assets/Veilnet.png">
   <link rel="stylesheet" href="../assets/veilnet.css">
+  <style>
+    .edit-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 4px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    .edit-btn:hover {
+      background-color: rgba(56, 225, 255, 0.1);
+    }
+    .username-input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      margin: 0;
+    }
+    .username-input:focus {
+      outline: none;
+      border-color: var(--cyan);
+    }
+  </style>
 </head>
 <body>
   <header class="topbar">
@@ -78,7 +106,12 @@
             <img id="profileAvatar" src="../assets/default_pfp.png" alt="Profile">
           </div>
           <div class="profile-info">
-            <h1 id="profileUsername">Loading...</h1>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h1 id="profileUsername">Loading...</h1>
+              <button id="editUsernameBtn" class="edit-btn" style="display: none;" title="Edit username">
+                ✏️
+              </button>
+            </div>
             <p id="profileStatus">Loading profile...</p>
           </div>
         </div>
