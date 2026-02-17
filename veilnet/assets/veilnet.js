@@ -607,10 +607,10 @@
 
     if(ddMyProfile){
       ddMyProfile.addEventListener("click",()=>{
-        // /profile/?u=USERNAME or ../profile/?u=USERNAME
+        // /profile/index.html?u=USERNAME or ../profile/index.html?u=USERNAME
         const dest = (location.pathname.includes("/veilnet/") && !location.pathname.endsWith("/veilnet/") && !location.pathname.endsWith("/veilnet/index.html"))
-          ? `../profile/?u=${encodeURIComponent(username)}`
-          : `profile/?u=${encodeURIComponent(username)}`;
+          ? `../profile/index.html?u=${encodeURIComponent(username)}`
+          : `profile/index.html?u=${encodeURIComponent(username)}`;
         location.href = dest;
       });
     }
