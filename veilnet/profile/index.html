@@ -308,16 +308,39 @@
         if (result && result.success) {
           const user = result.user;
           
+          // Safe avatar resolver
+          function getAvatarUrl(picture) {
+            if (!picture || typeof picture !== 'string') {
+              return '../assets/default_pfp.png';
+            }
+            // Allow HTTP/HTTPS URLs and relative paths
+            if (picture.startsWith('http://') || picture.startsWith('https://') || picture.startsWith('/')) {
+              return picture;
+            }
+            // Treat anything else as invalid, use default
+            return '../assets/default_pfp.png';
+          }
+          
           // Update profile display
-          document.getElementById('profileUsername').textContent = user.username;
+          document.getElementById('profileUsername').textContent = user.username || 'Unknown User';
           document.getElementById('profileStatus').textContent = `Online via Google`;
           document.getElementById('profileAbout').textContent = user.aboutMe || 'No information provided';
           document.getElementById('profileStatusMessage').textContent = user.statusMessage || 'No status message';
           document.getElementById('profileTheme').style.background = user.themeColor || '#38e1ff';
-          document.getElementById('profileMemberSince').textContent = new Date(user.createdAt).toLocaleDateString();
           
-          // Update avatar
-          const avatar = user.picture || '../assets/default_pfp.png';
+          // Safe date formatting
+          let memberSinceText = 'Unknown';
+          if (user.createdAt) {
+            try {
+              memberSinceText = new Date(user.createdAt).toLocaleDateString();
+            } catch (e) {
+              memberSinceText = 'Unknown';
+            }
+          }
+          document.getElementById('profileMemberSince').textContent = memberSinceText;
+          
+          // Update avatar with fallback
+          const avatar = getAvatarUrl(user.picture);
           document.getElementById('profileAvatar').src = avatar;
           
           // Update header
