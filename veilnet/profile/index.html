@@ -184,10 +184,38 @@
     
     // Load user profile data
     async function loadProfile() {
+      const debugFlag = localStorage.getItem('VEILNET_DEBUG') === '1';
+      
       try {
-        const response = await fetch(`https://veilnet.onrender.com/api/user/${username}`);
+        // Add timeout to prevent infinite loading
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        
+        const apiUrl = `https://veilnet.onrender.com/api/user/${username}`;
+        
+        if (debugFlag) {
+          console.log('Profile fetch:', { url: apiUrl, username });
+        }
+        
+        const response = await fetch(apiUrl, { 
+          signal: controller.signal,
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (debugFlag) {
+          console.log('Profile response:', { status: response.status, ok: response.ok });
+        }
+        
         if (response.ok) {
           const user = await response.json();
+          
+          if (debugFlag) {
+            console.log('Profile data:', user);
+          }
           
           // Update profile display
           document.getElementById('profileUsername').textContent = user.username;
@@ -215,7 +243,7 @@
             setupUsernameEditing(currentUser);
           }
           
-        } else {
+        } else if (response.status === 404) {
           document.querySelector('.profile-container').innerHTML = `
             <div style="text-align: center; padding: 3rem;">
               <h2>User Not Found</h2>
@@ -223,16 +251,32 @@
               <a href="../index.html" class="btn">Go to Veilnet</a>
             </div>
           `;
+        } else {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
       } catch (error) {
-        console.error('Failed to load profile:', error);
-        document.querySelector('.profile-container').innerHTML = `
-          <div style="text-align: center; padding: 3rem;">
-            <h2>Error Loading Profile</h2>
-            <p>Unable to load profile data. Please try again later.</p>
-            <a href="../index.html" class="btn">Go to Veilnet</a>
-          </div>
-        `;
+        if (error.name === 'AbortError') {
+          document.querySelector('.profile-container').innerHTML = `
+            <div style="text-align: center; padding: 3rem;">
+              <h2>Request Timeout</h2>
+              <p>Profile loading timed out. Please check your connection and try again.</p>
+              <button onclick="location.reload()" class="btn">Retry</button>
+            </div>
+          `;
+        } else {
+          if (debugFlag) {
+            console.error('Profile fetch error:', error);
+          }
+          
+          document.querySelector('.profile-container').innerHTML = `
+            <div style="text-align: center; padding: 3rem;">
+              <h2>Error Loading Profile</h2>
+              <p>Unable to load profile data: ${error.message}</p>
+              <button onclick="location.reload()" class="btn">Retry</button>
+              <a href="../index.html" class="btn" style="margin-left: 0.5rem;">Go to Veilnet</a>
+            </div>
+          `;
+        }
       }
     }
     
