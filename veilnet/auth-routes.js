@@ -1,10 +1,11 @@
 const { OAuth2Client } = require('google-auth-library');
 const session = require('express-session');
 
-// Google OAuth Configuration - using environment variables for security
+// Google OAuth Configuration - using your existing GoogleOauth.json file
+const googleConfig = require('./GoogleOauth.json');
 const oauth2Client = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
+  googleConfig.web.client_id,
+  googleConfig.web.client_secret,
   `${process.env.RENDER_EXTERNAL_URL}/auth/google/callback`
 );
 
