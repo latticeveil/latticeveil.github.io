@@ -186,36 +186,80 @@
     async function loadProfile() {
       const debugFlag = localStorage.getItem('VEILNET_DEBUG') === '1';
       
-      try {
-        // Add timeout to prevent infinite loading
+      // Determine if the identifier is likely an ID or username
+      const isLikelyId = /^[0-9]{21,}$/.test(username) || username.length > 20;
+      
+      // Try different lookup strategies
+      async function tryLookup(identifier, method) {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
         
-        const apiUrl = `https://veilnet.onrender.com/api/user/${username}`;
-        
-        if (debugFlag) {
-          console.log('Profile fetch:', { url: apiUrl, username });
-        }
-        
-        const response = await fetch(apiUrl, { 
-          signal: controller.signal,
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-        
-        clearTimeout(timeoutId);
+        const apiUrl = `https://veilnet.onrender.com/api/user/${identifier}`;
         
         if (debugFlag) {
-          console.log('Profile response:', { status: response.status, ok: response.ok });
+          console.log(`Trying ${method} lookup:`, { url: apiUrl, identifier });
         }
         
-        if (response.ok) {
-          const user = await response.json();
+        try {
+          const response = await fetch(apiUrl, { 
+            signal: controller.signal,
+            headers: { 'Accept': 'application/json' }
+          });
+          
+          clearTimeout(timeoutId);
           
           if (debugFlag) {
-            console.log('Profile data:', user);
+            console.log(`${method} lookup response:`, { status: response.status, ok: response.ok });
           }
+          
+          if (response.ok) {
+            const user = await response.json();
+            if (debugFlag) {
+              console.log(`${method} lookup success:`, user);
+            }
+            return { success: true, user };
+          } else if (response.status === 404) {
+            if (debugFlag) {
+              console.log(`${method} lookup: User not found`);
+            }
+            return { success: false, notFound: true };
+          } else {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+        } catch (error) {
+          clearTimeout(timeoutId);
+          if (error.name === 'AbortError') {
+            if (debugFlag) {
+              console.log(`${method} lookup: Timeout`);
+            }
+            return { success: false, timeout: true };
+          }
+          throw error;
+        }
+      }
+      
+      try {
+        let result;
+        
+        // First attempt: use the identifier as provided
+        result = await tryLookup(username, isLikelyId ? 'ID' : 'username');
+        
+        // If first attempt failed and it wasn't a 404, try the other method
+        if (!result.success && !result.notFound && !result.timeout) {
+          if (debugFlag) {
+            console.log('First attempt failed, trying alternate lookup method');
+          }
+          
+          // Try the opposite method
+          const alternateResult = await tryLookup(username, isLikelyId ? 'username' : 'ID');
+          if (alternateResult.success) {
+            result = alternateResult;
+          }
+        }
+        
+        // Handle the result
+        if (result && result.success) {
+          const user = result.user;
           
           // Update profile display
           document.getElementById('profileUsername').textContent = user.username;
@@ -243,19 +287,7 @@
             setupUsernameEditing(currentUser);
           }
           
-        } else if (response.status === 404) {
-          document.querySelector('.profile-container').innerHTML = `
-            <div style="text-align: center; padding: 3rem;">
-              <h2>User Not Found</h2>
-              <p>The user "${username}" does not exist on Veilnet.</p>
-              <a href="../index.html" class="btn">Go to Veilnet</a>
-            </div>
-          `;
-        } else {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-      } catch (error) {
-        if (error.name === 'AbortError') {
+        } else if (result && result.timeout) {
           document.querySelector('.profile-container').innerHTML = `
             <div style="text-align: center; padding: 3rem;">
               <h2>Request Timeout</h2>
@@ -264,19 +296,28 @@
             </div>
           `;
         } else {
-          if (debugFlag) {
-            console.error('Profile fetch error:', error);
-          }
-          
+          // User not found after all attempts
           document.querySelector('.profile-container').innerHTML = `
             <div style="text-align: center; padding: 3rem;">
-              <h2>Error Loading Profile</h2>
-              <p>Unable to load profile data: ${error.message}</p>
-              <button onclick="location.reload()" class="btn">Retry</button>
-              <a href="../index.html" class="btn" style="margin-left: 0.5rem;">Go to Veilnet</a>
+              <h2>User Not Found</h2>
+              <p>The user "${username}" does not exist on Veilnet.</p>
+              <a href="../index.html" class="btn">Go to Veilnet</a>
             </div>
           `;
         }
+      } catch (error) {
+        if (debugFlag) {
+          console.error('Profile fetch error:', error);
+        }
+        
+        document.querySelector('.profile-container').innerHTML = `
+          <div style="text-align: center; padding: 3rem;">
+            <h2>Error Loading Profile</h2>
+            <p>Unable to load profile data: ${error.message}</p>
+            <button onclick="location.reload()" class="btn">Retry</button>
+            <a href="../index.html" class="btn" style="margin-left: 0.5rem;">Go to Veilnet</a>
+          </div>
+        `;
       }
     }
     
