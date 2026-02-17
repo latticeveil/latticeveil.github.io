@@ -82,8 +82,6 @@
               <span>Settings</span><small>Link + prefs</small>
             </div>
 
-            <div class="dd-divider"></div>
-
             <div class="dd-item" data-veil-login>
               <span>Login</span><small>Google</small>
             </div>
@@ -98,46 +96,43 @@
   </header>
 
   <main class="container">
-    <div id="profileContent">
-      <!-- Profile content will be loaded here -->
-      <div class="profile-container">
-        <div class="profile-header">
-          <div class="profile-avatar">
-            <img id="profileAvatar" src="../assets/default_pfp.png" alt="Profile">
+    <div class="profile-container">
+      <div class="profile-header">
+        <div class="profile-avatar">
+          <img id="profileAvatar" src="../assets/default_pfp.png" alt="Profile">
+        </div>
+        <div class="profile-info">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h1 id="profileUsername">Loading...</h1>
+            <button id="editUsernameBtn" class="edit-btn" style="display: none;" title="Edit username">
+              ✏️
+            </button>
           </div>
-          <div class="profile-info">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <h1 id="profileUsername">Loading...</h1>
-              <button id="editUsernameBtn" class="edit-btn" style="display: none;" title="Edit username">
-                ✏️
-              </button>
-            </div>
-            <p id="profileStatus">Loading profile...</p>
+          <p id="profileStatus">Loading profile...</p>
+        </div>
+      </div>
+
+      <div class="profile-content">
+        <div class="profile-section">
+          <h2>About Me</h2>
+          <p id="profileAbout">No information provided</p>
+        </div>
+
+        <div class="profile-section">
+          <h2>Status</h2>
+          <p id="profileStatusMessage">No status message</p>
+        </div>
+
+        <div class="profile-section">
+          <h2>Theme</h2>
+          <div class="theme-preview" id="profileTheme" style="background: #38e1ff;">
+            <span>Current Theme</span>
           </div>
         </div>
 
-        <div class="profile-content">
-          <div class="profile-section">
-            <h2>About Me</h2>
-            <p id="profileAbout">No information provided</p>
-          </div>
-
-          <div class="profile-section">
-            <h2>Status</h2>
-            <p id="profileStatusMessage">No status message</p>
-          </div>
-
-          <div class="profile-section">
-            <h2>Theme</h2>
-            <div class="theme-preview" id="profileTheme" style="background: #38e1ff;">
-              <span>Current Theme</span>
-            </div>
-          </div>
-
-          <div class="profile-section">
-            <h2>Member Since</h2>
-            <p id="profileMemberSince">Loading...</p>
-          </div>
+        <div class="profile-section">
+          <h2>Member Since</h2>
+          <p id="profileMemberSince">Loading...</p>
         </div>
       </div>
     </div>
@@ -145,7 +140,7 @@
 
   <script src="../assets/veilnet.js"></script>
   <script>
-    // Get username from URL parameters or hash
+    // Get username from URL parameters
     let username;
     
     // Try URL parameters first (?u=USERNAME)
@@ -161,7 +156,7 @@
     if (!username) {
       const pathParts = window.location.pathname.split('/');
       username = pathParts[pathParts.length - 1];
-      // If it's "index.html", try the previous part
+      // If it's "index.html", try previous part
       if (username === 'index.html' && pathParts.length > 2) {
         username = pathParts[pathParts.length - 2];
       }
@@ -173,13 +168,11 @@
       username = currentUser.username;
       
       if (!username) {
-        document.getElementById('profileContent').innerHTML = `
-          <div class="profile-container">
-            <div style="text-align: center; padding: 3rem;">
-              <h2>No Profile Found</h2>
-              <p>Please log in to view your profile or specify a username in the URL.</p>
-              <a href="../index.html" class="btn">Go to Veilnet</a>
-            </div>
+        document.querySelector('.profile-container').innerHTML = `
+          <div style="text-align: center; padding: 3rem;">
+            <h2>No Profile Found</h2>
+            <p>Please log in to view your profile or specify a username in URL.</p>
+            <a href="../index.html" class="btn">Go to Veilnet</a>
           </div>
         `;
         return;
@@ -223,25 +216,21 @@
           }
           
         } else {
-          document.getElementById('profileContent').innerHTML = `
-            <div class="profile-container">
-              <div style="text-align: center; padding: 3rem;">
-                <h2>User Not Found</h2>
-                <p>The user "${username}" does not exist on Veilnet.</p>
-                <a href="../index.html" class="btn">Go to Veilnet</a>
-              </div>
+          document.querySelector('.profile-container').innerHTML = `
+            <div style="text-align: center; padding: 3rem;">
+              <h2>User Not Found</h2>
+              <p>The user "${username}" does not exist on Veilnet.</p>
+              <a href="../index.html" class="btn">Go to Veilnet</a>
             </div>
           `;
         }
       } catch (error) {
         console.error('Failed to load profile:', error);
-        document.getElementById('profileContent').innerHTML = `
-          <div class="profile-container">
-            <div style="text-align: center; padding: 3rem;">
-              <h2>Error Loading Profile</h2>
-              <p>Unable to load profile data. Please try again later.</p>
-              <a href="../index.html" class="btn">Go to Veilnet</a>
-            </div>
+        document.querySelector('.profile-container').innerHTML = `
+          <div style="text-align: center; padding: 3rem;">
+            <h2>Error Loading Profile</h2>
+            <p>Unable to load profile data. Please try again later.</p>
+            <a href="../index.html" class="btn">Go to Veilnet</a>
           </div>
         `;
       }
