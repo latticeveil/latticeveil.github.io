@@ -33,6 +33,47 @@
       outline: none;
       border-color: var(--cyan);
     }
+    
+    /* Profile layout styles */
+    .profile-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    
+    .profile-content {
+      padding: 2rem;
+    }
+    
+    .profile-section {
+      margin-bottom: 2rem;
+    }
+    
+    .profile-section h2 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    
+    .profile-section p {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    
+    .theme-preview {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      color: white;
+      font-size: 0.9rem;
+      font-weight: 500;
+      background: var(--cyan);
+    }
+    
+    .theme-preview span {
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
@@ -97,18 +138,21 @@
 
   <main class="container">
     <div class="profile-container">
-      <div class="profile-header">
-        <div class="profile-avatar">
-          <img id="profileAvatar" src="../assets/default_pfp.png" alt="Profile">
-        </div>
-        <div class="profile-info">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <h1 id="profileUsername">Loading...</h1>
-            <button id="editUsernameBtn" class="edit-btn" style="display: none;" title="Edit username">
-              ✏️
-            </button>
+      <div class="profile-hero">
+        <div class="profile-banner"></div>
+        <div class="profile-header">
+          <div class="profile-avatar">
+            <img id="profileAvatar" src="../assets/default_pfp.png" alt="Profile">
           </div>
-          <p id="profileStatus">Loading profile...</p>
+          <div class="profile-info">
+            <div class="profile-name">
+              <h1 id="profileUsername">Loading...</h1>
+              <button id="editUsernameBtn" class="edit-btn" style="display: none;" title="Edit username">
+                ✏️
+              </button>
+            </div>
+            <p id="profileStatus">Loading profile...</p>
+          </div>
         </div>
       </div>
 
