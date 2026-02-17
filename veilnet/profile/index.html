@@ -150,6 +150,9 @@
               <button id="editUsernameBtn" class="edit-btn" style="display: none;" title="Edit username">
                 ✏️
               </button>
+              <button id="refreshProfileBtn" class="edit-btn" title="Refresh profile" style="opacity: 0.6;">
+                🔄
+              </button>
             </div>
             <p id="profileStatus">Loading profile...</p>
           </div>
@@ -357,11 +360,29 @@
         document.querySelector('.profile-container').innerHTML = `
           <div style="text-align: center; padding: 3rem;">
             <h2>Error Loading Profile</h2>
-            <p>Unable to load profile data: ${error.message}</p>
+            <p>Unable to load profile data. Please try again.</p>
             <button onclick="location.reload()" class="btn">Retry</button>
             <a href="../index.html" class="btn" style="margin-left: 0.5rem;">Go to Veilnet</a>
           </div>
         `;
+      }
+    }
+    
+    // Setup refresh functionality
+    function setupRefreshButton() {
+      const refreshBtn = document.getElementById('refreshProfileBtn');
+      if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+          // Reset loading states
+          document.getElementById('profileUsername').textContent = 'Loading...';
+          document.getElementById('profileStatus').textContent = 'Loading profile...';
+          document.getElementById('profileAbout').textContent = 'No information provided';
+          document.getElementById('profileStatusMessage').textContent = 'No status message';
+          document.getElementById('profileMemberSince').textContent = 'Loading...';
+          
+          // Reload profile
+          loadProfile();
+        });
       }
     }
     
@@ -511,6 +532,9 @@
     
     // Load profile on page load
     loadProfile();
+    
+    // Setup refresh button
+    setupRefreshButton();
     
     // Initialize header functionality
     ensureHeader();
