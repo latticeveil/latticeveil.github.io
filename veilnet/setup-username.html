@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Username - Veilnet</title>
+    <link rel="stylesheet" href="assets/veilnet.css">
+    <style>
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .setup-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .setup-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .setup-header h1 {
+            margin: 0 0 0.5rem 0;
+            color: var(--cyan);
+        }
+        .setup-header p {
+            margin: 0;
+            opacity: 0.8;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 2px rgba(56, 225, 255, 0.2);
+        }
+        .error {
+            color: #ff4444;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--cyan);
+            color: var(--bg);
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .submit-btn:hover {
+            background: #4dd4ff;
+            transform: translateY(-1px);
+        }
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .username-rules {
+            font-size: 0.875rem;
+            opacity: 0.7;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-header">
+            <h1>Choose Your Username</h1>
+            <p>This is how other users will see you on Veilnet</p>
+        </div>
+        
+        <form id="usernameForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input 
+                    type="text" 
+                    id="username" 
+                    name="username" 
+                    placeholder="Enter username"
+                    pattern="[a-zA-Z0-9_-]{3,20}"
+                    required
+                    autocomplete="off"
+                >
+                <div class="username-rules">
+                    3-20 characters • Letters, numbers, underscores, hyphens
+                </div>
+                <div class="error" id="errorMessage"></div>
+            </div>
+            
+            <button type="submit" class="submit-btn" id="submitBtn">
+                Continue to Veilnet
+            </button>
+        </form>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('userId');
+        
+        if (!userId) {
+            window.location.href = 'index.html';
+        }
+        
+        document.getElementById('usernameForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const submitBtn = document.getElementById('submitBtn');
+            const errorMsg = document.getElementById('errorMessage');
+            
+            if (!username) {
+                errorMsg.textContent = 'Please enter a username';
+                errorMsg.style.display = 'block';
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Setting username...';
+            errorMsg.style.display = 'none';
+            
+            try {
+                const response = await fetch('https://veilnet.onrender.com/api/set-username', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId, username })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Username set successfully, redirect to main app
+                    window.location.href = `index.html?login=success&user=${encodeURIComponent(JSON.stringify({
+                        id: userId,
+                        username: username,
+                        name: username,
+                        picture: null
+                    }))}`;
+                } else {
+                    errorMsg.textContent = data.error || 'Failed to set username';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (error) {
+                errorMsg.textContent = 'Network error. Please try again.';
+                errorMsg.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Continue to Veilnet';
+            }
+        });
+        
+        // Real-time validation
+        document.getElementById('username').addEventListener('input', (e) => {
+            const username = e.target.value;
+            const errorMsg = document.getElementById('errorMessage');
+            
+            if (username.length < 3) {
+                errorMsg.textContent = 'Username must be at least 3 characters';
+                errorMsg.style.display = 'block';
+            } else if (username.length > 20) {
+                errorMsg.textContent = 'Username must be 20 characters or less';
+                errorMsg.style.display = 'block';
+            } else if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+                errorMsg.textContent = 'Username can only contain letters, numbers, underscores, and hyphens';
+                errorMsg.style.display = 'block';
+            } else {
+                errorMsg.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

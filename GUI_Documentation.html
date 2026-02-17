@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LatticeVeil GUI Tools | Documentation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/site.css">
+</head>
+<body class="docs-page">
+    <div class="container">
+        <header>
+            <div class="logo">LATTICEVEIL</div>
+            <div class="subtitle">GUI TOOLS DOCUMENTATION</div>
+            <p>Complete guide for using LatticeVeil development and deployment tools</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab('build-gui')">
+                <i class="fas fa-hammer"></i> BUILD GUI
+            </button>
+            <button class="tab-button" onclick="showTab('gatehash-gui')">
+                <i class="fas fa-key"></i> GATEHASH GUI
+            </button>
+            <button class="tab-button" onclick="showTab('gatehash-cli')">
+                <i class="fas fa-sync"></i> GATEHASH CLI
+            </button>
+            <button class="tab-button" onclick="showTab('general')">
+                <i class="fas fa-info-circle"></i> GENERAL INFO
+            </button>
+        </div>
+
+        <!-- Tab Content Container -->
+        <div class="tab-panel">
+
+            <!-- Build GUI Tab -->
+            <div id="build-gui" class="tab-content active">
+                <div class="tool-section">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-hammer"></i></div>
+                        <h2 class="tool-title">BUILD GUI</h2>
+                    </div>
+                    
+                    <div class="tool-description">
+                        <strong>Purpose:</strong> Build and package LatticeVeil for distribution. Creates optimized builds for different platforms and configurations.
+                    </div>
+
+                    <div class="file-path">Location: Tools/BuildGUI.ps1</div>
+
+                    <h3>How to Use:</h3>
+                    <ul class="steps">
+                        <li class="step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <div class="step-title">Launch the Build GUI</div>
+                                <p>Navigate to the Tools folder and run:</p>
+                                <div class="code-block">.\BuildGUI.ps1</div>
+                            </div>
+                        </li>
+                        
+                        <li class="step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <div class="step-title">Select Build Configuration</div>
+                                <ul class="feature-list">
+                                    <li><strong>DEBUG:</strong> Development build with debugging info</li>
+                                    <li><strong>RELEASE:</strong> Optimized production build</li>
+                                    <li><strong>LATEST:</strong> Most recent build available</li>
+                                </ul>
+                            </div>
+                        </li>
+                        
+                        <li class="step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <div class="step-title">Choose Target Platform</div>
+                                <ul class="feature-list">
+                                    <li><strong>AUTO:</strong> Automatically detect from EXE path</li>
+                                    <li><strong>DEV:</strong> Development deployment target</li>
+                                    <li><strong>RELEASE:</strong> Production deployment target</li>
+                                </ul>
+                            </div>
+                        </li>
+                        
+                        <li class="step-item">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <div class="step-title">Configure Build Options</div>
+                                <ul class="feature-list">
+                                    <li>Set output directory (DEV/RELEASE folders)</li>
+                                    <li>Choose compression settings</li>
+                                    <li>Configure include/exclude patterns</li>
+                                </ul>
+                            </div>
+                        </li>
+                        
+                        <li class="step-item">
+                            <div class="step-number">5</div>
+                            <div class="step-content">
+                                <div class="step-title">Execute Build</div>
+                                <p>Click "Build" to start the compilation process. Monitor progress in the output window.</p>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div class="note">
+                        <div class="note-title">💡 PRO TIP</div>
+                        <p>The Build GUI automatically detects your project structure and suggests optimal settings based on your build history.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GateHash GUI Tab -->
+            <div id="gatehash-gui" class="tab-content">
+                <div class="tool-section">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-key"></i></div>
+                        <h2 class="tool-title">GATEHASH GUI</h2>
+                    </div>
+                    
+                    <div class="tool-description">
+                        <strong>Purpose:</strong> Update live gate hashes for Render deployment. Manages runtime allowlists and deployment targets for your LatticeVeil instances.
+                    </div>
+
+                    <div class="file-path">Location: Tools/UpdateGateHashGUI.ps1</div>
+
+                    <h3>How to Use:</h3>
+                    <ul class="steps">
+                        <li class="step-item">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <div class="step-title">Launch the GateHash GUI</div>
+                                <p>Navigate to the Tools folder and run:</p>
+                                <div class="code-block">.\UpdateGateHashGUI.ps1</div>
+                            </div>
+                        </li>
+                        
+                        <li class="step-item">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <div class="step-title">Configure Gate URL</div>
+                                <ul class="feature-list">
+                                    <li>Default shows "EXAMPLE.onrender.com" for new users</li>
+                                    <li>Click "Open Render" to visit the Render website</li>
+                                    <li>Enter your actual gate URL when ready</li>
+                                </ul>
+                            </div>
+                        </li>
+                        
+                        <li class="step-item">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <div class="step-title">Enter Admin Token</div>
+                                <ul class="feature-list">
+                                    <li>Input your Render admin token</li>
+                                    <li>Click "Show" to toggle token visibility</li>
+                                    <li>Token is automatically saved to local config</li>
+                                </ul>
+                            </div>
+                        </li>
+                        
+                        <li class="step-item">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <div class="step-title">Select Deployment Target</div>
+                                <ul class="feature-list">
+                                    <li><strong>AUTO:</strong> Detect from EXE path automatically</li>
+                                    <li><strong>DEV:</strong> Switch to DEV folder (auto-updates EXE path)</li>
+                                    <li><strong>RELEASE:</strong> Switch to RELEASE folder (auto-updates EXE path)</li>
+                                </ul>
+                                <p>🔄 <strong>Auto-Switching:</strong> Changing targets automatically updates the EXE path to the correct folder!</p>
+                            </div>
+                        </li>
+                        
+                        <li class="step-item">
+                            <div class="step-number">5</div>
+                            <div class="step-content">
+                                <div class="step-title">Verify EXE Path</div>
+                                <ul class="feature-list">
+                                    <li>Path auto-switches when changing targets</li>
+                                    <li>Click "Browse" to manually select EXE if needed</li>
+                                    <li>Warning popup appears if EXE doesn't exist at expected path</li>
+                                </ul>
+                            </div>
+                        </li>
+                        
+                        <li class="step-item">
+                            <div class="step-number">6</div>
+                            <div class="step-content">
+                                <div class="step-title">Update Live Hash</div>
+                                <p>Click "Replace Live Hash" to:</p>
+                                <ul class="feature-list">
+                                    <li>Calculate SHA256 hash of your EXE</li>
+                                    <li>Update the gate allowlist with new hash</li>
+                                    <li>Set deployment target (dev/release)</li>
+                                    <li>Copy hash to clipboard automatically</li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ul>
+
+                    <div class="warning">
+                        <div class="warning-title">⚠️ IMPORTANT SECURITY NOTES</div>
+                        <ul class="feature-list">
+                            <li>Admin tokens and gate URLs are saved locally in <code>Tools/gate.cfg</code></li>
+                            <li>This file is protected by .gitignore and will NEVER be committed to the repository</li>
+                            <li>Each developer has their own private configuration</li>
+                            <li>New users see example URL - no sensitive data exposed in public repo</li>
+                        </ul>
+                    </div>
+
+                    <div class="note">
+                        <div class="note-title">💡 AUTO-SAVE FEATURE</div>
+                        <p>All settings are automatically saved instantly when you change them:</p>
+                        <ul class="feature-list">
+                            <li>Typing in gate URL → Config saves</li>
+                            <li>Typing admin token → Config saves</li>
+                            <li>Switching targets → Config saves</li>
+                            <li>Successful hash update → Config saves</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GateHash CLI Tab -->
+            <div id="gatehash-cli" class="tab-content">
+                <div class="tool-section">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-sync"></i></div>
+                        <h2 class="tool-title">UPDATE GATEHASH</h2>
+                    </div>
+                    
+                    <div class="tool-description">
+                        <strong>Purpose:</strong> Command-line version of GateHash updater for automation and scripting. No GUI interface - perfect for CI/CD pipelines.
+                    </div>
+
+                    <div class="file-path">Location: Tools/UpdateGateHash.ps1</div>
+
+                    <h3>Command Line Usage:</h3>
+                    <div class="code-block">
+.\UpdateGateHash.ps1 -GateUrl "your-gate.onrender.com" -AdminToken "your-token" -Target "release" -ExePath "path\to\exe"
+                    </div>
+
+                    <h3>Parameters:</h3>
+                    <ul class="feature-list">
+                        <li><strong>-GateUrl:</strong> Your Render gate URL</li>
+                        <li><strong>-AdminToken:</strong> Your admin authentication token</li>
+                        <li><strong>-Target:</strong> Deployment target (auto/dev/release)</li>
+                        <li><strong>-ExePath:</strong> Path to the executable to hash</li>
+                        <li><strong>-NoUi:</strong> Run without GUI (default for this script)</li>
+                    </ul>
+
+                    <h3>Examples:</h3>
+                    <div class="code-block">
+# Release deployment
+.\UpdateGateHash.ps1 -GateUrl "prod-gate.onrender.com" -AdminToken "abc123" -Target "release" -ExePath "RELEASE\LatticeVeilMonoGame.exe"
+
+# Dev deployment  
+.\UpdateGateHash.ps1 -GateUrl "dev-gate.onrender.com" -AdminToken "def456" -Target "dev" -ExePath "DEV\LatticeVeilMonoGame.exe"
+
+# Auto-detect target
+.\UpdateGateHash.ps1 -GateUrl "gate.onrender.com" -AdminToken "xyz789" -Target "auto" -ExePath "bin\Release\LatticeVeilMonoGame.exe"
+                    </div>
+                </div>
+            </div>
+
+            <!-- General Info Tab -->
+            <div id="general" class="tab-content">
+                <div class="tool-section">
+                    <div class="tool-header">
+                        <div class="tool-icon"><i class="fas fa-info-circle"></i></div>
+                        <h2 class="tool-title">GENERAL INFORMATION</h2>
+                    </div>
+                    
+                    <h3>Folder Structure:</h3>
+                    <div class="code-block">
+LatticeVeil_project/
+├── Tools/                    # GUI tools location
+│   ├── BuildGUI.ps1         # Build interface
+│   ├── UpdateGateHashGUI.ps1 # GateHash GUI
+│   └── UpdateGateHash.ps1    # Command-line version
+├── DEV/                      # Development builds
+├── RELEASE/                  # Production builds
+└── LatticeVeilMonoGame/      # Main project
+                    </div>
+
+                    <h3>Configuration Files:</h3>
+                    <ul class="feature-list">
+                        <li><strong>Tools/gate.cfg:</strong> GateHash GUI configuration (admin token, gate URL, target)</li>
+                        <li><strong>Protected by .gitignore:</strong> Never committed to repository</li>
+                        <li><strong>Auto-created:</strong> Generated when you first use the GUI tools</li>
+                    </ul>
+
+                    <h3>Security Best Practices:</h3>
+                    <ul class="feature-list">
+                        <li>Never share your admin tokens or gate URLs</li>
+                        <li>Configuration files are local-only and protected</li>
+                        <li>Use different tokens for dev and production environments</li>
+                        <li>Regularly rotate your admin tokens</li>
+                    </ul>
+
+                    <h3>Troubleshooting:</h3>
+                    <ul class="feature-list">
+                        <li><strong>PowerShell Execution Policy:</strong> Run <code>Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser</code></li>
+                        <li><strong>Missing EXE Files:</strong> GUI will warn you when EXE doesn't exist at expected paths</li>
+                        <li><strong>Gate Connection Issues:</strong> Verify gate URL and admin token are correct</li>
+                        <li><strong>Build Failures:</strong> Check output window for detailed error messages</li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="https://latticeveil.github.io" onclick="event.preventDefault(); window.location.href='https://latticeveil.github.io'; return false;" class="back-link">← BACK TO MAIN SITE</a>
+        </div>
+    </div>
+
+    <script>
+        // Force redirect if coming from index.html
+        if (window.location.pathname.includes('index.html')) {
+            window.location.replace('https://latticeveil.github.io');
+        }
+        
+        function showTab(tabId) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active class from all tab buttons
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => button.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>
