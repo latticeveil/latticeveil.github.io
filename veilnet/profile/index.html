@@ -214,6 +214,14 @@
           if (avatarImg) avatarImg.src = avatar;
           if (ddImg) ddImg.src = avatar;
           
+          // Show edit button if viewing own profile
+          const currentUser = JSON.parse(localStorage.getItem('veilnet.user') || '{}');
+          const editBtn = document.getElementById('editUsernameBtn');
+          if (editBtn && currentUser.username === user.username) {
+            editBtn.style.display = 'inline-block';
+            setupUsernameEditing(currentUser);
+          }
+          
         } else {
           document.getElementById('profileContent').innerHTML = `
             <div class="profile-container">
@@ -237,6 +245,150 @@
           </div>
         `;
       }
+    }
+    
+    // Setup username editing functionality
+    function setupUsernameEditing(currentUser) {
+      const usernameElement = document.getElementById('profileUsername');
+      const editBtn = document.getElementById('editUsernameBtn');
+      let isEditing = false;
+      
+      editBtn.addEventListener('click', async () => {
+        if (!isEditing) {
+          // Start editing
+          isEditing = true;
+          const currentUsername = usernameElement.textContent;
+          
+          // Create input field
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.value = currentUsername;
+          input.className = 'username-input';
+          input.style.width = Math.max(200, currentUsername.length * 12) + 'px';
+          
+          // Replace h1 with input
+          usernameElement.parentNode.replaceChild(input, usernameElement);
+          input.focus();
+          input.select();
+          
+          editBtn.textContent = '💾';
+          editBtn.title = 'Save username';
+          
+          // Handle save
+          const saveUsername = async () => {
+            const newUsername = input.value.trim();
+            
+            if (newUsername === currentUsername || newUsername.length < 3) {
+              // Cancel edit
+              usernameElement.parentNode.replaceChild(usernameElement, input);
+              editBtn.textContent = '✏️';
+              editBtn.title = 'Edit username';
+              isEditing = false;
+              return;
+            }
+            
+            try {
+              const response = await fetch('https://veilnet.onrender.com/api/update-username', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  userId: currentUser.id,
+                  newUsername: newUsername
+                })
+              });
+              
+              const data = await response.json();
+              
+              if (data.success) {
+                // Update local storage
+                currentUser.username = newUsername;
+                localStorage.setItem('veilnet.user', JSON.stringify(currentUser));
+                localStorage.setItem('veilnet.username', newUsername);
+                
+                // Update display
+                usernameElement.textContent = newUsername;
+                usernameElement.parentNode.replaceChild(usernameElement, input);
+                editBtn.textContent = '✏️';
+                editBtn.title = 'Edit username';
+                isEditing = false;
+                
+                // Update page title
+                document.getElementById('profileTitle').textContent = `Veilnet • ${newUsername}`;
+                
+                // Show success message
+                showNotification('Username updated successfully!', 'success');
+              } else {
+                showNotification(data.error || 'Failed to update username', 'error');
+                // Cancel edit
+                usernameElement.parentNode.replaceChild(usernameElement, input);
+                editBtn.textContent = '✏️';
+                editBtn.title = 'Edit username';
+                isEditing = false;
+              }
+            } catch (error) {
+              console.error('Update username error:', error);
+              showNotification('Network error. Please try again.', 'error');
+              // Cancel edit
+              usernameElement.parentNode.replaceChild(usernameElement, input);
+              editBtn.textContent = '✏️';
+              editBtn.title = 'Edit username';
+              isEditing = false;
+            }
+          };
+          
+          // Save on Enter, cancel on Escape
+          input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              saveUsername();
+            } else if (e.key === 'Escape') {
+              usernameElement.parentNode.replaceChild(usernameElement, input);
+              editBtn.textContent = '✏️';
+              editBtn.title = 'Edit username';
+              isEditing = false;
+            }
+          });
+          
+          // Save on blur
+          input.addEventListener('blur', saveUsername);
+          
+        } else {
+          // Cancel edit (when clicking save button during edit)
+          const input = usernameElement.parentNode.querySelector('.username-input');
+          if (input) {
+            usernameElement.parentNode.replaceChild(usernameElement, input);
+            editBtn.textContent = '✏️';
+            editBtn.title = 'Edit username';
+            isEditing = false;
+          }
+        }
+      });
+    }
+    
+    // Simple notification system
+    function showNotification(message, type = 'info') {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 6px;
+        color: white;
+        font-weight: 600;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        ${type === 'success' ? 'background: #4CAF50;' : type === 'error' ? 'background: #f44336;' : 'background: #2196F3;'}
+      `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
     }
     
     // Load profile on page load
