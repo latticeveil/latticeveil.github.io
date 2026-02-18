@@ -741,6 +741,7 @@ if (document.readyState === 'loading') {
     window.__veilnet_header_wired = true;
     
     // Wire dropdown menu item handlers
+    const dd = document.querySelector("[data-veil-dropdown]");
     const ddLogin = document.querySelector("[data-veil-login]");
     const ddLogout = document.querySelector("[data-veil-logout]");
     const ddMyProfile = document.querySelector("[data-veil-myprofile]");
