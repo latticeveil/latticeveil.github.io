@@ -34,6 +34,19 @@
   // Unified identity helper using Supabase
   async function getCurrentUser() {
     try {
+      // First check if we have a stored session from localStorage
+      const storedUser = localStorage.getItem('veilnet_user');
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        return { 
+          loggedIn: true, 
+          username: user.username,
+          user: user,
+          profile: user
+        };
+      }
+      
+      // Fallback to Supabase session
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error) throw error;
       
@@ -47,7 +60,7 @@
         
         return { 
           loggedIn: true, 
-          username: profile?.username || user.email,
+          username: profile?.username || user.user_metadata?.username || user.email,
           user: user,
           profile: profile
         };
@@ -425,10 +438,30 @@
     const error = urlParams.get('error');
     
     if (code) {
-      // Supabase will handle the OAuth callback automatically
+      // Supabase handles OAuth callback automatically
       window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Get user session and store in localStorage for persistence
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        return;
+      }
+      
+      if (session?.user) {
+        // Store user data in localStorage for persistence across page reloads
+        localStorage.setItem('veilnet_user', JSON.stringify({
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.name || session.user.email,
+          username: session.user.user_metadata?.username || session.user.email,
+          picture: session.user.user_metadata?.picture || session.user.picture
+        }));
+        
+        console.log('User logged in:', session.user.email);
+      }
+      
       await ensureHeader();
-      console.log('OAuth successful with code');
     } else if (error) {
       console.error('OAuth error:', error);
     }
