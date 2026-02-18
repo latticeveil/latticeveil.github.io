@@ -438,7 +438,7 @@
     const error = urlParams.get('error');
     
     if (code) {
-      // Handle OAuth callback directly on GitHub Pages
+      // Supabase handles OAuth callback automatically
       window.history.replaceState({}, document.title, window.location.pathname);
       
       // Get user session and store in localStorage for persistence
@@ -459,6 +459,12 @@
         }));
         
         console.log('User logged in:', session.user.email);
+        
+        // Check if user has username set, if not redirect to setup
+        if (!session.user.user_metadata?.username) {
+          window.location.href = 'https://latticeveil.github.io/veilnet/setup-username.html';
+          return;
+        }
       }
       
       await ensureHeader();
