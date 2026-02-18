@@ -1,12 +1,13 @@
 /* Veilnet Demo JS - Supabase Only */
 (function(){
   // Initialize Supabase client
-  const supabase = window.supabase.createClient(
-    'https://lqghurvonrvrxfwjgkuu.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxZ2h1cnZvbnJ2cnhmd2prdXUiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczOTg0MTQ2MCwiZXhwIjoyMDU1NDE3NDYwfQ.9oJv3M7vQWzjRQ9a_0L5mYJjJ5eJ5k5J5k5J5k5J5k5J5k5J5k5J5k5J5k'
-  );
+  // Supabase client initialization - DISABLED
+  // const supabase = window.supabase.createClient(
+  //   'https://lqghurvonrvrxfwjgkuu.supabase.co',
+  //   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxZ2h1cnZvbnJ2cnhmd2prdXUiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczOTg0MTQ2MCwiZXhwIjoyMDU1NDE3NDYwfQ.9oJv3M7vQWzjRQ9a_0L5mYJjJ5eJ5k5J5k5J5k5J5k5J5k5J5k5J5k5J5k'
+  // );
 
-  const VEILNET_API_BASE = "https://lqghurvonrvrxfwjgkuu.supabase.co/functions/v1";
+  // const VEILNET_API_BASE = "https://lqghurvonrvrxfwjgkuu.supabase.co/functions/v1";
 
   // System Spinning Up Overlay Logic - REMOVED (Supabase only)
   function initSystemOverlay() {
