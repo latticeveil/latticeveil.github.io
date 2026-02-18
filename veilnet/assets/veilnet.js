@@ -1,6 +1,6 @@
 /* Veilnet Demo JS (no backend) */
 (function(){
-  const VEILNET_API_BASE = "https://lqghurvonrvrxfwjgkuu.supabase.co/functions/v1/health";
+  const VEILNET_API_BASE = "https://veilnet.onrender.com";
 
   // System Spinning Up Overlay Logic
   function initSystemOverlay() {
@@ -48,7 +48,6 @@
 
       try {
         const response = await fetch(`${VEILNET_API_BASE}/health`, {
-          mode: 'cors',
           signal: controller.signal
         });
 
@@ -854,7 +853,7 @@
     // Only run on messages page
     if (!location.pathname.includes("/veilnet/messages/")) return;
 
-    const VEILNET_API_BASE = "https://lqghurvonrvrxfwjgkuu.supabase.co/functions/v1/health";
+    const VEILNET_API_BASE = "https://veilnet.onrender.com";
     let socket = null;
     let currentConversationId = null;
     const currentUser = getCurrentUser();
