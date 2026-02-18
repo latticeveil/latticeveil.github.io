@@ -355,6 +355,149 @@
     window.__veilnet_gis_initialized = true;
   }
 
+  // Username modal functions
+  function ensureUsernameModal() {
+    let modal = document.getElementById('veilnet-username-modal');
+    if (modal) return modal;
+
+    modal = document.createElement('div');
+    modal.id = 'veilnet-username-modal';
+    modal.style.cssText = `
+      position:fixed; inset:0; z-index:9999;
+      display:none;
+      align-items:center; justify-content:center;
+      background: rgba(0,0,0,0.65);
+      padding: 24px;
+    `;
+
+    const card = document.createElement('div');
+    card.style.cssText = `
+      width: min(480px, 100%);
+      background: rgba(10,14,20,0.92);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      box-shadow: 0 20px 80px rgba(0,0,0,0.55);
+      padding: 28px 26px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 16px;
+      position:relative;
+    `;
+
+    card.innerHTML = `
+      <h2 style="margin:0; color:var(--text); font-size:1.5rem; font-weight:600;">Choose a username</h2>
+      <div style="color:var(--text); opacity:0.7; text-align:center; font-size:0.875rem;">
+        3-16 characters, letters/numbers/underscore, must start with letter or underscore
+      </div>
+      <input id="veilnet-username-input" type="text" placeholder="Enter username" style="
+        width:100%;
+        padding: 12px 16px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 8px;
+        color:var(--text);
+        font-size:1rem;
+        outline:none;
+        transition:border-color 0.2s;
+      " onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+      <div id="veilnet-username-error" style="
+        color:#ff6b6b;
+        min-height: 20px;
+        text-align:center;
+        font-size:0.875rem;
+      "></div>
+      <div style="display:flex; gap:12px; width:100%;">
+        <button id="veilnet-username-save" style="
+          flex:1;
+          padding: 12px 24px;
+          background: var(--accent);
+          color: var(--bg);
+          border: none;
+          border-radius: 8px;
+          font-weight:600;
+          cursor:pointer;
+          transition:opacity 0.2s;
+        " onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Save Username</button>
+        <button id="veilnet-username-logout" style="
+          padding: 12px 24px;
+          background: rgba(255,255,255,0.1);
+          color: var(--text);
+          border: 1px solid rgba(255,255,255,0.2);
+          border-radius: 8px;
+          cursor:pointer;
+          transition:background 0.2s;
+        " onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Log Out</button>
+      </div>
+    `;
+
+    modal.appendChild(card);
+    document.body.appendChild(modal);
+
+    // Event handlers
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeUsernameModal();
+    });
+    
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    document.getElementById('veilnet-username-save').addEventListener('click', saveUsername);
+    document.getElementById('veilnet-username-logout').addEventListener('click', async () => {
+      await VeilnetAuth.logout();
+      closeUsernameModal();
+      await refreshHeaderUI();
+    });
+
+    // Enter key to save
+    document.getElementById('veilnet-username-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') saveUsername();
+    });
+
+    return modal;
+  }
+
+  function closeUsernameModal() {
+    const modal = document.getElementById('veilnet-username-modal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  async function openUsernameModal() {
+    const modal = ensureUsernameModal();
+    const input = document.getElementById('veilnet-username-input');
+    const errorEl = document.getElementById('veilnet-username-error');
+    
+    modal.style.display = 'flex';
+    input.value = '';
+    errorEl.textContent = '';
+    input.focus();
+  }
+
+  async function saveUsername() {
+    const input = document.getElementById('veilnet-username-input');
+    const errorEl = document.getElementById('veilnet-username-error');
+    const saveBtn = document.getElementById('veilnet-username-save');
+    
+    const username = input.value.trim();
+    
+    try {
+      errorEl.textContent = '';
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      
+      await VeilnetAuth.setUsername(username);
+      
+      closeUsernameModal();
+      await refreshHeaderUI();
+    } catch (e) {
+      errorEl.textContent = e.message || 'Failed to save username';
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save Username';
+    }
+  }
+
   async function openVeilnetLoginModal() {
     const { overlay, gsiBtn, errorEl } = ensureVeilnetLoginModal();
     
@@ -392,7 +535,8 @@
 
         const profile = await VeilnetAuth.ensureMyProfile();
         if (!profile?.username) {
-          window.location.href = "/veilnet/setup-username.html";
+          overlay.style.display = "none";
+          openUsernameModal();
           return;
         }
 
@@ -444,6 +588,12 @@
       // Show setup username link if available
       const setupLink = document.getElementById("veilnet-setup-username");
       if (setupLink) setupLink.style.display = "";
+      
+      // Auto-open username modal if not already open
+      const usernameModal = document.getElementById('veilnet-username-modal');
+      if (!usernameModal || usernameModal.style.display === 'none') {
+        setTimeout(() => openUsernameModal(), 100);
+      }
     } else {
       if (subEl) subEl.textContent = "Online via Google";
       // Hide setup username link if available
