@@ -8,8 +8,8 @@
   <link rel="stylesheet" href="assets/veilnet.css">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="assets/config.js"></script>
-  <script src="assets/auth.js"></script>
+  <script src="/veilnet/assets/config.js"></script>
+  <script src="/veilnet/assets/auth.js"></script>
 </head>
 <body>
   <header class="topbar">
@@ -48,38 +48,25 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
-      // Check if already logged in
       const user = await VeilnetAuth.getUser();
       if (user) {
-        window.location.href = VeilnetAuth.getReturnTo('./');
+        window.location.href = './';
         return;
       }
 
-      // Initialize Google Identity Services
       google.accounts.id.initialize({
         client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
         callback: async (resp) => {
-          try {
-            const { error } = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
-            if (error) {
-              showError('Login failed: ' + error.message);
-              return;
-            }
-
-            // Check if user has profile setup
-            const profile = await VeilnetAuth.getMyProfile();
-            if (!profile || !profile.username) {
-              window.location.href = './setup-username.html';
-            } else {
-              window.location.href = VeilnetAuth.getReturnTo('./');
-            }
-          } catch (err) {
-            showError('Login error: ' + err.message);
+          const { error } = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
+          if (error) {
+            document.getElementById('error-message').textContent = 'Login failed: ' + error.message;
+            document.getElementById('error-message').style.display = 'block';
+            return;
           }
+          window.location.href = './';
         }
       });
 
-      // Render Google Sign-In button
       google.accounts.id.renderButton(
         document.getElementById('google-signin-button'),
         {
@@ -89,12 +76,6 @@
           shape: 'pill'
         }
       );
-
-      function showError(message) {
-        const errorEl = document.getElementById('error-message');
-        errorEl.textContent = message;
-        errorEl.style.display = 'block';
-      }
     });
   </script>
 </body>
