@@ -678,35 +678,69 @@ window.refreshHeaderUI = refreshHeaderUI;
 
 // Add page navigation event listeners for instant UI updates
 window.addEventListener("pageshow", () => {
-  setTimeout(refreshHeaderUI, 100);
+  setTimeout(() => {
+    refreshHeaderUI();
+    wireDropdownToggle(); // Re-wire on navigation
+  }, 100);
 });
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
-    setTimeout(refreshHeaderUI, 100);
+    setTimeout(() => {
+      refreshHeaderUI();
+      wireDropdownToggle(); // Re-wire when page becomes visible
+    }, 100);
   }
 });
 
+// Initial wiring on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    wireDropdownToggle();
+  });
+} else {
+  wireDropdownToggle();
+}
+
+  // Safe dropdown toggle wiring with element-level guard
+  function wireDropdownToggle() {
+    const toggleEl = document.querySelector("[data-veil-avatar]");
+    const dropdownEl = document.querySelector("[data-veil-dropdown]");
+    
+    if (!toggleEl || !dropdownEl) return;
+    
+    // Element-level guard to prevent duplicate handlers
+    if (toggleEl.dataset.veilWired === "1") return;
+    toggleEl.dataset.veilWired = "1";
+    
+    // Add click handler to toggle dropdown
+    toggleEl.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdownEl.classList.toggle("open");
+    });
+    
+    // Document click handler to close dropdown when clicking outside
+    // Only add once globally
+    if (!window.__veil_dropdown_outside_wired) {
+      window.__veil_dropdown_outside_wired = true;
+      document.addEventListener("click", () => {
+        dropdownEl.classList.remove("open");
+      });
+    }
+  }
+
   async function ensureHeader(){
-    // Prevent duplicate event listeners
+    // Wire dropdown toggle (safe to call multiple times)
+    wireDropdownToggle();
+    
+    // Wire other click handlers only once
     if (window.__veilnet_header_wired) {
       await refreshHeaderUI();
       return;
     }
     window.__veilnet_header_wired = true;
     
-    // Only wire dropdown and click handlers
-    const avatarBtn = document.querySelector("[data-veil-avatar]");
-    const dd = document.querySelector("[data-veil-dropdown]");
-    if(!avatarBtn || !dd) return;
-
-    avatarBtn.addEventListener("click",(e)=>{
-      e.stopPropagation();
-      dd.classList.toggle("open");
-    });
-    document.addEventListener("click",()=> dd.classList.remove("open"));
-
-    // Wire click handlers
+    // Wire dropdown menu item handlers
     const ddLogin = document.querySelector("[data-veil-login]");
     const ddLogout = document.querySelector("[data-veil-logout]");
     const ddMyProfile = document.querySelector("[data-veil-myprofile]");
@@ -723,6 +757,8 @@ document.addEventListener("visibilitychange", () => {
         await VeilnetAuth.signOut();
         dd.classList.remove("open");
         await refreshHeaderUI();
+        // Re-wire dropdown toggle in case DOM changed
+        wireDropdownToggle();
       });
     }
     if(ddMyProfile){
