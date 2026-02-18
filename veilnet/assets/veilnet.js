@@ -498,7 +498,7 @@
     
     if (code) {
       // Redirect directly to username setup with the OAuth code
-      // This will ensure user can set username after OAuth
+      // Bypass main app and go straight to setup
       window.location.href = `https://latticeveil.github.io/veilnet/setup-username.html?code=${encodeURIComponent(code)}`;
     } else {
       // No code, redirect to main app
