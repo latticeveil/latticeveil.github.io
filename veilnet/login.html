@@ -6,7 +6,7 @@
   <title>Veilnet • Login</title>
   <link rel="icon" href="assets/Veilnet.png">
   <link rel="stylesheet" href="assets/veilnet.css">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://accounts.google.com/gsi/client"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/veilnet/assets/config.js"></script>
   <script src="/veilnet/assets/auth.js"></script>
@@ -36,9 +36,9 @@
         <p style="color: var(--muted);">Sign in to access the Veilnet social platform</p>
       </div>
 
-      <div id="google-signin-button" style="margin: 2rem 0;"></div>
+      <div id="gsi-button" style="margin: 2rem 0;"></div>
       
-      <div id="error-message" style="display: none; color: var(--red); margin: 1rem 0; padding: 1rem; border: 1px solid var(--red); border-radius: 8px; background: rgba(255, 0, 0, 0.1);"></div>
+      <div id="login-error" style="color: var(--red); margin: 1rem 0; display: none;"></div>
 
       <div style="margin-top: 3rem;">
         <a href="./" style="color: var(--accent); text-decoration: none;">← Back to Veilnet</a>
@@ -47,35 +47,33 @@
   </main>
 
   <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      const user = await VeilnetAuth.getUser();
-      if (user) {
-        window.location.href = './';
-        return;
-      }
+    window.addEventListener("load", async () => {
+      try {
+        if (!window.google || !google.accounts || !google.accounts.id) {
+          throw new Error("Google Identity Services failed to load.");
+        }
 
-      google.accounts.id.initialize({
-        client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
-        callback: async (resp) => {
-          const { error } = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
-          if (error) {
-            document.getElementById('error-message').textContent = 'Login failed: ' + error.message;
-            document.getElementById('error-message').style.display = 'block';
-            return;
+        google.accounts.id.initialize({
+          client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
+          callback: async (resp) => {
+            const result = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
+            if (result?.error) {
+              document.getElementById("login-error").textContent = result.error.message;
+              document.getElementById("login-error").style.display = "block";
+              return;
+            }
+            window.location.href = "/veilnet/";
           }
-          window.location.href = './';
-        }
-      });
+        });
 
-      google.accounts.id.renderButton(
-        document.getElementById('google-signin-button'),
-        {
-          theme: 'filled_blue',
-          size: 'large',
-          text: 'signin_with',
-          shape: 'pill'
-        }
-      );
+        google.accounts.id.renderButton(
+          document.getElementById("gsi-button"),
+          { theme: "outline", size: "large", shape: "pill" }
+        );
+      } catch (e) {
+        document.getElementById("login-error").textContent = e.message || String(e);
+        document.getElementById("login-error").style.display = "block";
+      }
     });
   </script>
 </body>
