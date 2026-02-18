@@ -486,7 +486,8 @@
     
     if (code) {
       // Redirect to main app with the OAuth code for Supabase to handle
-      window.location.href = `https://latticeveil.github.io/veilnet/index.html?code=${encodeURIComponent(code)}`;
+      // Use the same URL pattern that Supabase expects
+      window.location.href = `https://latticeveil.github.io/veilnet/index.html?code=${encodeURIComponent(code)}&provider=google`;
     } else {
       // No code, redirect to main app
       window.location.href = 'https://latticeveil.github.io/veilnet/index.html';
