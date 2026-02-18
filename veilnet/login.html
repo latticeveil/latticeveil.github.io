@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Veilnet • Login</title>
+  <link rel="icon" href="assets/Veilnet.png">
+  <link rel="stylesheet" href="assets/veilnet.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/config.js"></script>
+  <script src="assets/auth.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <a href="./" style="display:flex; align-items:center; gap:12px">
+          <span style="font-weight:1000">LatticeVeil</span>
+          <span class="brand-badge">Veilnet</span>
+        </a>
+      </div>
+      <nav class="nav" aria-label="Primary">
+        <a href="./">Home</a>
+        <a href="./community/">Community</a>
+        <a href="./messages/">Messages</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container" style="padding: 18px 0 34px">
+    <div style="max-width: 400px; margin: 0 auto; text-align: center;">
+      <div style="margin-bottom: 2rem;">
+        <img src="assets/Veilnet.png" alt="Veilnet" style="height: 60px;">
+        <h1 style="margin: 1rem 0 0.5rem;">Veilnet</h1>
+        <p style="color: var(--muted);">Sign in to access the Veilnet social platform</p>
+      </div>
+
+      <div id="google-signin-button" style="margin: 2rem 0;"></div>
+      
+      <div id="error-message" style="display: none; color: var(--red); margin: 1rem 0; padding: 1rem; border: 1px solid var(--red); border-radius: 8px; background: rgba(255, 0, 0, 0.1);"></div>
+
+      <div style="margin-top: 3rem;">
+        <a href="./" style="color: var(--accent); text-decoration: none;">← Back to Veilnet</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Check if already logged in
+      const user = await VeilnetAuth.getUser();
+      if (user) {
+        window.location.href = VeilnetAuth.getReturnTo('./');
+        return;
+      }
+
+      // Initialize Google Identity Services
+      google.accounts.id.initialize({
+        client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
+        callback: async (resp) => {
+          try {
+            const { error } = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
+            if (error) {
+              showError('Login failed: ' + error.message);
+              return;
+            }
+
+            // Check if user has profile setup
+            const profile = await VeilnetAuth.getMyProfile();
+            if (!profile || !profile.username) {
+              window.location.href = './setup-username.html';
+            } else {
+              window.location.href = VeilnetAuth.getReturnTo('./');
+            }
+          } catch (err) {
+            showError('Login error: ' + err.message);
+          }
+        }
+      });
+
+      // Render Google Sign-In button
+      google.accounts.id.renderButton(
+        document.getElementById('google-signin-button'),
+        {
+          theme: 'filled_blue',
+          size: 'large',
+          text: 'signin_with',
+          shape: 'pill'
+        }
+      );
+
+      function showError(message) {
+        const errorEl = document.getElementById('error-message');
+        errorEl.textContent = message;
+        errorEl.style.display = 'block';
+      }
+    });
+  </script>
+</body>
+</html>

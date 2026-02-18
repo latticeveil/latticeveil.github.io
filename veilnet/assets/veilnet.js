@@ -31,14 +31,23 @@
     del(k){ localStorage.removeItem(k); }
   };
 
-  // Unified identity helper using Supabase - DISABLED
+  // Unified identity helper using VeilnetAuth
   async function getCurrentUser() {
     try {
-      // Always return logged out state
-      return { loggedIn: false, username: null };
+      const user = await VeilnetAuth.getUser();
+      if (!user) return { loggedIn: false, user: null, profile: null };
+      
+      let profile = null;
+      try { 
+        profile = await VeilnetAuth.getMyProfile(); 
+      } catch(e) {
+        // Profile might not exist yet
+      }
+      
+      return { loggedIn: true, user, profile };
     } catch (error) {
       console.error('Error getting current user:', error);
-      return { loggedIn: false, username: null };
+      return { loggedIn: false, user: null, profile: null };
     }
   }
 
@@ -301,15 +310,14 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",async ()=>{
-        console.log('Login clicked - login functionality disabled');
-        alert('Login functionality has been disabled');
+        VeilnetAuth.setReturnTo(window.location.href);
+        window.location.href = VEILNET_CONFIG.LOGIN_PATH;
       });
     }
     if(ddLogout){
       ddLogout.addEventListener("click",async ()=>{
-        console.log('Logout clicked - login functionality disabled');
-        alert('Login functionality has been disabled');
-        location.reload();
+        await VeilnetAuth.logout();
+        window.location.reload();
       });
     }
 
