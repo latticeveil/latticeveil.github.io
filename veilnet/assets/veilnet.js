@@ -474,21 +474,43 @@
   
   // Handle Supabase OAuth consent URL patch
   if (window.location.pathname.includes('/oauth/consent')) {
-    // Extract the actual callback URL and custom parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const actualCallback = urlParams.get('callback_url');
-    const customName = urlParams.get('custom_name') || 'Veilnet';
-    
-    if (actualCallback) {
-      // Redirect to actual callback URL with custom name parameter
-      const originalParams = new URLSearchParams(actualCallback.split('?')[1] || '');
-      originalParams.set('custom_name', customName);
-      const newUrl = `${window.location.origin}${window.location.pathname}?${originalParams.toString()}`;
-      window.location.href = newUrl;
-    }
+    (async () => {
+      // Extract Google OAuth code and exchange for Supabase session
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      
+      if (code) {
+        try {
+          // Exchange Google code for Supabase session
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (error) {
+            console.error('Session exchange error:', error);
+            window.location.href = 'https://latticeveil.github.io/veilnet/index.html?login=error';
+            return;
+          }
+          
+          // Store user session and redirect to main app
+          if (data?.user) {
+            localStorage.setItem('veilnet_user', JSON.stringify({
+              id: data.user.id,
+              email: data.user.email,
+              name: data.user.user_metadata?.name || data.user.email,
+              username: data.user.user_metadata?.username || data.user.email,
+              picture: data.user.user_metadata?.picture || data.user.picture
+            }));
+          }
+          
+          window.location.href = 'https://latticeveil.github.io/veilnet/index.html?login=success';
+        } catch (error) {
+          console.error('OAuth processing error:', error);
+          window.location.href = 'https://latticeveil.github.io/veilnet/index.html?login=error';
+        }
+      }
+    })();
   }
 
-    async function ensureHeader(){
+  async function ensureHeader(){
     // attach dropdown toggles and login mocks
     const avatarBtn = document.querySelector("[data-veil-avatar]");
     const dd = document.querySelector("[data-veil-dropdown]");
@@ -543,17 +565,16 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",async ()=>{
-        // Use Supabase built-in Google OAuth with custom consent URL
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: 'https://latticeveil.github.io/veilnet//oauth/consent'
-          }
+        // Use direct Google OAuth with custom consent URL
+        const googleAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
+          client_id: '843782276052-t209v6utfham56dvi1q7i3kser4p9pte.apps.googleusercontent.com',
+          redirect_uri: 'https://latticeveil.github.io/veilnet/oauth/consent',
+          response_type: 'code',
+          scope: 'openid email profile',
+          access_type: 'offline'
         });
         
-        if (error) {
-          console.error('Login error:', error);
-        }
+        window.location.href = googleAuthUrl;
       });
     }
     if(ddLogout){
