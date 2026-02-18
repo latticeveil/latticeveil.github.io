@@ -1,5 +1,32 @@
+# Site settings
+title: Veilnet
+description: Static demo of Veilnet social platform
+baseurl: "/veilnet"
+url: "https://latticeveil.github.io"
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
 permalink: pretty
+
+# Plugins
 plugins:
   - jekyll-sitemap
   - jekyll-feed
   - jekyll-seo-tag
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+
+# Collections
+collections:
+  pages:
+    output: true
+    permalink: /:name/
