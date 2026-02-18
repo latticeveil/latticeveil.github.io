@@ -1,6 +1,6 @@
 /* Veilnet Demo JS (no backend) */
 (function(){
-  const VEILNET_API_BASE = "https://veilnet.onrender.com";
+  const VEILNET_API_BASE = "https://lqghurvonrvrxfwjgkuu.supabase.co/functions/v1/veilnet-auth";
 
   // System Spinning Up Overlay Logic
   function initSystemOverlay() {
@@ -854,7 +854,7 @@
     // Only run on messages page
     if (!location.pathname.includes("/veilnet/messages/")) return;
 
-    const VEILNET_API_BASE = "https://veilnet.onrender.com";
+    const VEILNET_API_BASE = "https://lqghurvonrvrxfwjgkuu.supabase.co/functions/v1/veilnet-auth";
     let socket = null;
     let currentConversationId = null;
     const currentUser = getCurrentUser();
