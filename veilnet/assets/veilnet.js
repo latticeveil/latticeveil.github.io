@@ -1429,7 +1429,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", ()=>{
-    initSystemOverlay(); // Initialize system overlay first
+    // initSystemOverlay(); // DISABLED - No more backend spinning up
     ensureHeader();
     renderHome();
     renderCommunity();
