@@ -256,95 +256,135 @@
   }
 
   // Login modal functions
-  function createLoginModal() {
-    const modal = document.createElement('div');
-    modal.id = 'veilnet-login-modal';
-    modal.style.cssText = `
-      position: fixed; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.8); z-index: 9999; padding: 24px;
+  function ensureVeilnetLoginModal() {
+    let overlay = document.getElementById('veilnet-login-overlay');
+    if (overlay) return { overlay, card: overlay.querySelector('#veilnet-login-card'), gsiBtn: overlay.querySelector('#veilnet-gsi-button'), errorEl: overlay.querySelector('#veilnet-gsi-error') };
+
+    overlay = document.createElement('div');
+    overlay.id = 'veilnet-login-overlay';
+    overlay.style.cssText = `
+      position:fixed; inset:0; z-index:9999;
+      display:none;
+      align-items:center; justify-content:center;
+      background: rgba(0,0,0,0.65);
+      padding: 24px;
     `;
-    
+
     const card = document.createElement('div');
+    card.id = 'veilnet-login-card';
     card.style.cssText = `
-      background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
-      padding: 2rem; margin: 0; transform: none;
-      width: 100%; max-width: 520px; position: relative;
+      width: min(520px, 100%);
+      background: rgba(10,14,20,0.92);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      box-shadow: 0 20px 80px rgba(0,0,0,0.55);
+      padding: 28px 26px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap: 14px;
+      position:relative;
     `;
-    
+
     card.innerHTML = `
       <button id="veilnet-modal-close" style="
-        position: absolute; top: 1rem; right: 1rem; background: none;
-        border: none; color: var(--text); font-size: 1.5rem; cursor: pointer;
+        position:absolute; top:16px; right:16px; cursor:pointer;
+        background:none; border:none; color:var(--text); font-size:1.5rem;
       ">×</button>
-      <h2 style="margin: 0 0 1.5rem 0; text-align: center;">Sign in to Veilnet</h2>
-      <div id="veilnet-gsi-button" style="margin: 1.5rem 0;"></div>
-      <div id="veilnet-gsi-error" style="color: var(--red); margin: 0.5rem 0; display: none;"></div>
-      <div style="text-align: center; margin-top: 1rem;">
-        <a href="${VEILNET_CONFIG.LOGIN_PATH}" style="color: var(--accent); text-decoration: none; font-size: 0.875rem;">
-          Open login page
-        </a>
-      </div>
+      <h2 style="margin:0; color:var(--text); font-size:1.5rem; font-weight:600;">Sign in to Veilnet</h2>
+      <div id="veilnet-gsi-wrap" style="
+        width:100%;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+      "><div id="veilnet-gsi-button"></div></div>
+      <div id="veilnet-gsi-error" style="
+        color:#ff6b6b;
+        min-height: 20px;
+        text-align:center;
+        font-size:0.875rem;
+      "></div>
+      <a id="veilnet-open-login-page" href="/veilnet/login.html" style="
+        color:var(--accent);
+        text-decoration:none;
+        font-size:0.875rem;
+        opacity:0.8;
+      ">Open login page</a>
     `;
-    
-    modal.appendChild(card);
-    document.body.appendChild(modal);
-    
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
     // Close handlers
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeLoginModal();
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeVeilnetLoginModal();
     });
     
-    document.getElementById('veilnet-modal-close').addEventListener('click', closeLoginModal);
-    
-    return modal;
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    document.getElementById('veilnet-modal-close').addEventListener('click', closeVeilnetLoginModal);
+    document.getElementById('veilnet-open-login-page').addEventListener('click', closeVeilnetLoginModal);
+
+    return { overlay, card, gsiBtn: overlay.querySelector('#veilnet-gsi-button'), errorEl: overlay.querySelector('#veilnet-gsi-error') };
   }
 
-  function showLoginModal() {
-    let modal = document.getElementById('veilnet-login-modal');
-    if (!modal) modal = createLoginModal();
+  function closeVeilnetLoginModal() {
+    const overlay = document.getElementById('veilnet-login-overlay');
+    if (overlay) overlay.style.display = 'none';
+    window.__veilnet_gis_handler = null;
+  }
+
+  async function ensureGisInitialized() {
+    if (window.__veilnet_gis_initialized) return;
     
-    modal.style.display = 'flex';
-    
-    // Clear previous errors
-    const errorEl = document.getElementById('veilnet-gsi-error');
-    if (errorEl) {
-      errorEl.style.display = 'none';
-      errorEl.textContent = '';
+    if (!window.google || !google.accounts || !google.accounts.id) {
+      throw new Error("Google Identity Services failed to load.");
     }
     
-    // Initialize GIS if available
-    if (window.google && google.accounts?.id) {
-      google.accounts.id.initialize({
-        client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
-        callback: async (resp) => {
-          const result = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
-          if (result?.error) {
-            const errorEl = document.getElementById('veilnet-gsi-error');
-            errorEl.textContent = result.error.message;
-            errorEl.style.display = 'block';
-            return;
-          }
-          await VeilnetAuth.ensureMyProfile();
-          closeLoginModal();
-          window.location.reload();
+    google.accounts.id.initialize({
+      client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
+      callback: (resp) => {
+        if (typeof window.__veilnet_gis_handler === "function") {
+          window.__veilnet_gis_handler(resp);
         }
-      });
-      
-      google.accounts.id.renderButton(
-        document.getElementById('veilnet-gsi-button'),
-        { theme: 'outline', size: 'large', shape: 'pill' }
-      );
-    } else {
-      const errorEl = document.getElementById('veilnet-gsi-error');
-      errorEl.textContent = 'Google Identity Services failed to load. Please use the login page.';
-      errorEl.style.display = 'block';
-    }
+      }
+    });
+    
+    window.__veilnet_gis_initialized = true;
   }
 
-  function closeLoginModal() {
-    const modal = document.getElementById('veilnet-login-modal');
-    if (modal) modal.style.display = 'none';
+  async function openVeilnetLoginModal() {
+    const { overlay, gsiBtn, errorEl } = ensureVeilnetLoginModal();
+    
+    overlay.style.display = "flex";
+    errorEl.textContent = "";
+    gsiBtn.innerHTML = "";
+
+    await ensureGisInitialized();
+
+    window.__veilnet_gis_handler = async (resp) => {
+      try {
+        errorEl.textContent = "";
+        if (!resp || !resp.credential) throw new Error("No credential returned from Google.");
+
+        const result = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
+        if (result?.error) throw result.error;
+
+        overlay.style.display = "none";
+        window.__veilnet_gis_handler = null;
+        window.location.reload();
+      } catch (e) {
+        console.error("Veilnet login failed:", e);
+        errorEl.textContent = e?.message || String(e);
+      }
+    };
+
+    google.accounts.id.renderButton(
+      gsiBtn,
+      { theme: "outline", size: "large", shape: "pill" }
+    );
   }
 
   async function ensureHeader(){
@@ -405,7 +445,8 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",async ()=>{
-        showLoginModal();
+        dd.classList.remove("open");
+        openVeilnetLoginModal();
       });
     }
     if(ddLogout){
