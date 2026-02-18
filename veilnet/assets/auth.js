@@ -44,16 +44,58 @@ window.VeilnetAuth = (function() {
 
     async getMyProfile() {
       const user = await this.getUser();
-      if (!user) return null;
+      if (!user || !user.email) return null;
       
       const { data, error } = await supa
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select('*')
-        .eq('id', user.id)
-        .single();
+        .select("email, username, picture, name, aboutme, statusmessage, themecolor, createdat")
+        .eq("email", user.email)
+        .maybeSingle();
       
       if (error) throw error;
       return data;
+    },
+
+    async ensureMyProfile() {
+      const user = await this.getUser();
+      if (!user || !user.email) return null;
+      
+      let profile = await this.getMyProfile();
+      
+      if (!profile) {
+        const { data, error } = await supa
+          .from(VEILNET_CONFIG.PROFILE_TABLE)
+          .insert({
+            email: user.email,
+            name: user.user_metadata?.name ?? user.email,
+            picture: user.user_metadata?.picture ?? null,
+            createdat: new Date().toISOString(),
+            username: null,
+            aboutme: null,
+            statusmessage: null,
+            themecolor: null
+          })
+          .select()
+          .single();
+        
+        if (error) throw error;
+        profile = data;
+      }
+      
+      return profile;
+    },
+
+    async getDisplayIdentity() {
+      const user = await this.getUser();
+      if (!user) return null;
+      
+      const profile = await this.ensureMyProfile();
+      const email = user.email;
+      const username = profile?.username;
+      const picture = profile?.picture || user.user_metadata?.picture;
+      const displayName = username || profile?.name || user.user_metadata?.name || email;
+      
+      return { email, username, picture, displayName };
     },
 
     async updateMyProfile(patch) {
