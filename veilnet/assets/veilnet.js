@@ -493,7 +493,7 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",async ()=>{
-        // Use Supabase Google OAuth
+        // Use Supabase built-in Google OAuth
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
