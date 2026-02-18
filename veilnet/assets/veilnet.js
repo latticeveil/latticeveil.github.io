@@ -488,6 +488,7 @@
       
       closeUsernameModal();
       await refreshHeaderUI();
+      wireProfileMenuToggle();
     } catch (e) {
       errorEl.textContent = e.message || 'Failed to save username';
     } finally {
@@ -497,14 +498,16 @@
   }
 
   async function cancelUsername() {
-    await VeilnetAuth.signOut();
+    await VeilnetAuth.logout();
     closeUsernameModal();
     await refreshHeaderUI();
+    wireProfileMenuToggle();
   }
 
   // Bootstrap auth on page load
   async function bootstrapAuth() {
     await VeilnetAuth.init();
+    wireProfileMenuToggle();
     await refreshHeaderUI();
   }
 
@@ -552,6 +555,7 @@
         
         // Instant UI update after successful login
         await refreshHeaderUI();
+        wireProfileMenuToggle();
       } catch (e) {
         console.error("Veilnet login failed:", e);
         errorEl.textContent = e?.message || String(e);
@@ -564,152 +568,180 @@
     );
   }
 
-  async function refreshHeaderUI() {
-    // Get ALL header elements
-    const nameEl = document.getElementById("veilnet-display-name");
-    const subEl = document.getElementById("veilnet-display-subtext");
-    const avatarEl = document.getElementById("veilnet-avatar");
-    const loginItem = document.getElementById("veilnet-login-item");
-    const logoutItem = document.getElementById("veilnet-logout-item");
-    
-    // Data attribute elements (used in most pages)
-    const avatarImg = document.querySelector("[data-veil-avatar-img]");
-    const ddImg = document.querySelector("[data-veil-dd-img]");
-    const ddTitle = document.querySelector("[data-veil-dd-title]");
-    const ddSub = document.querySelector("[data-veil-dd-sub]");
-    const ddLogin = document.querySelector("[data-veil-login]");
-    const ddLogout = document.querySelector("[data-veil-logout]");
-    const ddMyProfile = document.querySelector("[data-veil-myprofile]");
-    const ddSettings = document.querySelector("[data-veil-settings]");
+  function uniqueElements(elements) {
+    const seen = new Set();
+    return elements.filter((el) => {
+      if (!el || seen.has(el)) return false;
+      seen.add(el);
+      return true;
+    });
+  }
+
+  function setMenuItemVisible(el, visible) {
+    if (!el) return;
+    el.style.display = visible ? "flex" : "none";
+  }
+
+  function appendAvatarVersion(url, versionToken) {
+    if (!url) return url;
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}v=${encodeURIComponent(versionToken)}`;
+  }
+
+  function setHeaderAvatarSource(src) {
+    const targets = uniqueElements([
+      ...document.querySelectorAll("[data-veil-avatar-img]"),
+      ...document.querySelectorAll("[data-veil-dd-img]"),
+      document.getElementById("veilnet-avatar")
+    ]);
+
+    targets.forEach((img) => {
+      if (img.getAttribute("src") !== src) {
+        img.setAttribute("src", src);
+      }
+    });
+  }
+
+  
+  const VN_CACHE_AVATAR = "veilnet_last_avatar";
+  const VN_CACHE_NAME = "veilnet_last_name";
+
+  function cacheSet(k, v) {
+    try { if (v) localStorage.setItem(k, v); } catch {}
+  }
+  function cacheGet(k) {
+    try { return localStorage.getItem(k); } catch { return null; }
+  }
+  function cacheClear() {
+    try { localStorage.removeItem(VN_CACHE_AVATAR); localStorage.removeItem(VN_CACHE_NAME); } catch {}
+  }
+
+  // Expose clearCachedProfile for auth.js to call during logout
+  window.clearCachedProfile = cacheClear;
+
+  function getUserAvatarFromAuth(user) {
+    // Try common metadata keys
+    const meta = user?.user_metadata || {};
+    const fromMeta = meta.picture || meta.avatar_url || meta.avatarUrl || meta.photoURL || "";
+    if (fromMeta) return fromMeta;
+
+    // Try identities (google)
+    const ids = user?.identities || [];
+    const google = ids.find(x => (x.provider || "").toLowerCase() === "google");
+    const idData = google?.identity_data || google?.identityData || {};
+    return idData.picture || idData.avatar_url || idData.avatarUrl || "";
+  }
+async function refreshHeaderUI() {
+    const titleTargets = uniqueElements([
+      document.getElementById("veilnet-display-name"),
+      document.querySelector("[data-veil-dd-title]")
+    ]);
+    const subTargets = uniqueElements([
+      document.getElementById("veilnet-display-subtext"),
+      document.querySelector("[data-veil-dd-sub]")
+    ]);
+    const loginItems = uniqueElements([
+      document.getElementById("veilnet-login-item"),
+      document.querySelector("[data-veil-login]")
+    ]);
+    const logoutItems = uniqueElements([
+      document.getElementById("veilnet-logout-item"),
+      document.querySelector("[data-veil-logout]")
+    ]);
+    const profileItems = uniqueElements([document.querySelector("[data-veil-myprofile]")]);
+    const settingsItems = uniqueElements([document.querySelector("[data-veil-settings]")]);
     const ring = document.querySelector("[data-veil-ring]");
-    
+    const defaultAvatar = ASSET("default_pfp.png");
+
     try {
       const user = await VeilnetAuth.getUser();
-      
+
       if (!user) {
-        // Logged out state
-        const defaultAvatar = "assets/default_pfp.png";
-        
-        // Update ALL avatar locations
-        if (avatarEl) avatarEl.src = defaultAvatar;
-        if (avatarImg) avatarImg.src = defaultAvatar;
-        if (ddImg) ddImg.src = defaultAvatar;
-        
-        // Update ALL text locations
-        if (nameEl) nameEl.textContent = "Not signed in";
-        if (ddTitle) ddTitle.textContent = "Not signed in";
-        if (subEl) subEl.textContent = "Login to access Veilnet features";
-        if (ddSub) ddSub.textContent = "Login to access Veilnet features";
-        
-        // Show/hide elements
-        if (loginItem) loginItem.style.display = "";
-        if (ddLogin) ddLogin.style.display = "flex";
-        if (logoutItem) logoutItem.style.display = "none";
-        if (ddLogout) ddLogout.style.display = "none";
-        if (ddMyProfile) ddMyProfile.style.display = "none";
-        if (ddSettings) ddSettings.style.display = "none";
-        
-        // Ring color (logged out)
+        window.__veilAvatarVersion = null;
+        cacheClear();
+        setHeaderAvatarSource(defaultAvatar);
+
+        const dropdown = document.querySelector('[data-veil-dropdown]');
+        if (dropdown && dropdown.style && dropdown.style.display === 'none') dropdown.style.display = '';
+
+        titleTargets.forEach((el) => { el.textContent = "Not signed in"; });
+        subTargets.forEach((el) => { el.textContent = "Login to access Veilnet features"; });
+        loginItems.forEach((el) => setMenuItemVisible(el, true));
+        logoutItems.forEach((el) => setMenuItemVisible(el, false));
+        profileItems.forEach((el) => setMenuItemVisible(el, false));
+        settingsItems.forEach((el) => setMenuItemVisible(el, false));
+
         if (ring) {
           ring.style.setProperty("--ring", "rgba(255,255,255,.25)");
           ring.style.opacity = ".55";
         }
         return;
       }
-      
-      // Logged in state - get profile info
+
       let profile = null;
       try {
         profile = await VeilnetAuth.getMyProfile();
       } catch (e) {
-        // Profile might not exist yet
+        console.warn("getMyProfile failed during refreshHeaderUI:", e);
       }
-      
-      const displayName = profile?.username || profile?.name || user.user_metadata?.name || user.email;
-      const avatarUrl = profile?.picture || user.user_metadata?.picture || "assets/default_pfp.png";
-      
-      // Update ALL avatar locations with cache-busting if needed
-      const updateAvatar = (el) => {
-        if (el && el.src !== avatarUrl) {
-          el.src = avatarUrl + (el.src.includes('default_pfp') ? '' : '?t=' + Date.now());
+
+      const displayName = profile?.username || profile?.name || user.user_metadata?.name || user.email || "Not signed in";
+      cacheSet(VN_CACHE_NAME, displayName);
+      const signedInSubtext = user.email || "Online via Google";
+      const rawAvatar = profile?.picture || getUserAvatarFromAuth(user) || "";
+      let avatarSrc = defaultAvatar;
+
+      if (rawAvatar && !/default_pfp\.png/i.test(rawAvatar)) {
+        const avatarVersion = profile?.updatedat || window.__veilAvatarVersion || Date.now();
+        if (!profile?.updatedat && !window.__veilAvatarVersion) {
+          window.__veilAvatarVersion = avatarVersion;
         }
-      };
-      
-      updateAvatar(avatarEl);
-      updateAvatar(avatarImg);
-      updateAvatar(ddImg);
-      
-      // Update ALL text locations
-      if (nameEl) nameEl.textContent = displayName;
-      if (ddTitle) ddTitle.textContent = displayName;
-      
-      if (subEl) subEl.textContent = profile?.username ? "Online via Google" : "Choose a username";
-      if (ddSub) ddSub.textContent = profile?.username ? "Online via Google" : "Choose a username";
-      
-      // Show/hide elements
-      if (loginItem) loginItem.style.display = "none";
-      if (ddLogin) ddLogin.style.display = "none";
-      if (logoutItem) logoutItem.style.display = "";
-      if (ddLogout) ddLogout.style.display = "flex";
-      if (ddMyProfile) ddMyProfile.style.display = profile?.username ? "flex" : "none";
-      if (ddSettings) ddSettings.style.display = profile?.username ? "flex" : "none";
-      
-      // Ring color (logged in)
+        avatarSrc = appendAvatarVersion(rawAvatar, avatarVersion);
+      } else {
+        window.__veilAvatarVersion = null;
+      }
+
+      if (avatarSrc && avatarSrc !== defaultAvatar) {
+        cacheSet(VN_CACHE_AVATAR, avatarSrc);
+      } else {
+        const cached = cacheGet(VN_CACHE_AVATAR);
+        if (cached) avatarSrc = cached;
+      }
+
+      setHeaderAvatarSource(avatarSrc);
+      titleTargets.forEach((el) => { el.textContent = displayName; });
+      subTargets.forEach((el) => { el.textContent = signedInSubtext; });
+      loginItems.forEach((el) => setMenuItemVisible(el, false));
+      logoutItems.forEach((el) => setMenuItemVisible(el, true));
+
+      const hasUsername = Boolean(profile?.username);
+      profileItems.forEach((el) => setMenuItemVisible(el, hasUsername));
+      settingsItems.forEach((el) => setMenuItemVisible(el, hasUsername));
+
       if (ring) {
         ring.style.setProperty("--ring", "rgba(56,225,255,.25)");
         ring.style.opacity = ".55";
       }
-      
-      // Auto-open username modal if needed
+
       if (!profile?.username) {
-        const usernameModal = document.getElementById('veilnet-username-modal');
-        if (!usernameModal || usernameModal.style.display === 'none') {
+        const usernameModal = document.getElementById("veilnet-username-modal");
+        if (!usernameModal || usernameModal.style.display === "none") {
           setTimeout(() => openUsernameModal(), 100);
         }
       }
-      
     } catch (e) {
       console.error("refreshHeaderUI failed:", e);
     }
   }
 
-// Expose for debugging
-window.refreshHeaderUI = refreshHeaderUI;
-
-// Add page navigation event listeners for instant UI updates
-window.addEventListener("pageshow", (e) => {
-  wireDropdownToggle();
-  refreshHeaderUI();
-  // If BFCache restored, also force dropdown closed
-  if (e.persisted) document.querySelector("[data-veil-dropdown]")?.classList.remove("open");
-});
-
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) {
-    wireDropdownToggle();
-    refreshHeaderUI();
-  }
-});
-
-// Initial wiring on DOM ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    wireDropdownToggle();
-    refreshHeaderUI();
-  });
-} else {
-  wireDropdownToggle();
-  refreshHeaderUI();
-}
-
-  // Robust dropdown toggle wiring that works after BFCache restore
-  function wireDropdownToggle() {
-    const toggle = document.querySelector(".pfp-wrap .avatar, [data-veil-avatar]");
+  function wireProfileMenuToggle() {
+    const toggle = document.querySelector(".pfp-wrap .avatar") || document.querySelector("[data-veil-avatar]") || document.querySelector(".pfp-wrap");
     const dropdown = document.querySelector("[data-veil-dropdown]");
     if (!toggle || !dropdown) return;
 
-    // Remove any existing handler to avoid duplicates
-    if (toggle.__veilToggleHandler) toggle.removeEventListener("click", toggle.__veilToggleHandler);
+    if (toggle.__veilToggleHandler) {
+      toggle.removeEventListener("click", toggle.__veilToggleHandler);
+    }
 
     toggle.__veilToggleHandler = (e) => {
       e.preventDefault();
@@ -718,52 +750,82 @@ if (document.readyState === 'loading') {
     };
     toggle.addEventListener("click", toggle.__veilToggleHandler);
 
-    // Outside click close (wire once globally)
-    if (!window.__veil_outside_click_wired) {
-      window.__veil_outside_click_wired = true;
+    if (!window.__veilOutsideCloseWired) {
+      window.__veilOutsideCloseWired = true;
       document.addEventListener("click", (e) => {
         const wrap = document.querySelector(".pfp-wrap");
-        if (!wrap) return;
-        if (!wrap.contains(e.target)) dropdown.classList.remove("open");
+        const activeDropdown = document.querySelector("[data-veil-dropdown]");
+        if (wrap && activeDropdown && !wrap.contains(e.target)) {
+          activeDropdown.classList.remove("open");
+        }
       });
     }
   }
 
+  // Expose for debugging and cross-file callbacks
+  window.refreshHeaderUI = refreshHeaderUI;
+  window.wireProfileMenuToggle = wireProfileMenuToggle;
+
+  // Keep UI and toggle behavior healthy after BFCache/page lifecycle transitions
+  window.addEventListener("pageshow", (e) => {
+    if (e.persisted) {
+      document.querySelector("[data-veil-dropdown]")?.classList.remove("open");
+    }
+    wireProfileMenuToggle();
+    refreshHeaderUI();
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      wireProfileMenuToggle();
+      refreshHeaderUI();
+    }
+  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      wireProfileMenuToggle();
+      refreshHeaderUI();
+    });
+  } else {
+    wireProfileMenuToggle();
+    refreshHeaderUI();
+  }
+
   async function ensureHeader(){
-    // Wire dropdown toggle (safe to call multiple times)
-    wireDropdownToggle();
-    
-    // Wire other click handlers only once
+    wireProfileMenuToggle();
+
     if (window.__veilnet_header_wired) {
       await refreshHeaderUI();
+      wireProfileMenuToggle();
       return;
     }
     window.__veilnet_header_wired = true;
-    
-    // Wire dropdown menu item handlers
+
     const dd = document.querySelector("[data-veil-dropdown]");
     const ddLogin = document.querySelector("[data-veil-login]");
     const ddLogout = document.querySelector("[data-veil-logout]");
     const ddMyProfile = document.querySelector("[data-veil-myprofile]");
     const ddSettings = document.querySelector("[data-veil-settings]");
-    
+
     if(ddLogin){
-      ddLogin.addEventListener("click",async ()=>{
-        dd.classList.remove("open");
-        openVeilnetLoginModal();
+      ddLogin.addEventListener("click", async ()=>{
+        dd?.classList.remove("open");
+        await openVeilnetLoginModal();
+        wireProfileMenuToggle();
+        await refreshHeaderUI();
       });
     }
     if(ddLogout){
-      ddLogout.addEventListener("click",async ()=>{
-        await VeilnetAuth.signOut();
-        dropdown.classList.remove("open");
+      ddLogout.addEventListener("click", async ()=>{
+        await VeilnetAuth.logout();
+        dd?.classList.remove("open");
         await refreshHeaderUI();
-        // Re-wire dropdown toggle (safe without page reload)
-        wireDropdownToggle();
+        wireProfileMenuToggle();
       });
     }
     if(ddMyProfile){
-      ddMyProfile.addEventListener("click",async ()=>{
+      ddMyProfile.addEventListener("click", async ()=>{
         const currentUser = await getCurrentUser();
         const username = currentUser.profile?.username || currentUser.user?.email;
         const dest = (location.pathname.includes("/veilnet/") && !location.pathname.endsWith("/veilnet/") && !location.pathname.endsWith("/veilnet/index.html"))
@@ -773,19 +835,17 @@ if (document.readyState === 'loading') {
       });
     }
     if(ddSettings){
-      ddSettings.addEventListener("click",()=>{
+      ddSettings.addEventListener("click", ()=>{
         const dest = (location.pathname.includes("/veilnet/") && !location.pathname.endsWith("/veilnet/") && !location.pathname.endsWith("/veilnet/index.html"))
           ? "../settings/"
           : "settings/";
         location.href = dest;
       });
     }
-    
-    // Initial UI refresh
+
     await refreshHeaderUI();
-    // Ensure dropdown toggle is wired
-    wireDropdownToggle();
-  }  
+    wireProfileMenuToggle();
+  }
 
   function renderHome(){
     const feed = document.querySelector("[data-veil-feed]");
