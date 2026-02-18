@@ -474,49 +474,17 @@
   
   // Handle Supabase OAuth consent URL patch
   if (window.location.pathname.includes('/oauth/consent')) {
-    (async () => {
-      // Extract Google OAuth code and exchange for Supabase session
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      
-      if (code) {
-        try {
-          // Exchange Google code for Supabase session using signInWithOAuth
-          const { data, error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-              skipBrowserRedirect: true,
-              flowType: 'pkce',
-              queryParams: {
-                code: code
-              }
-            }
-          });
-          
-          if (error) {
-            console.error('Session exchange error:', error);
-            window.location.href = 'https://latticeveil.github.io/veilnet/index.html?login=error';
-            return;
-          }
-          
-          // Store user session and redirect to main app
-          if (data?.user) {
-            localStorage.setItem('veilnet_user', JSON.stringify({
-              id: data.user.id,
-              email: data.user.email,
-              name: data.user.user_metadata?.name || data.user.email,
-              username: data.user.user_metadata?.username || data.user.email,
-              picture: data.user.user_metadata?.picture || data.user.picture
-            }));
-          }
-          
-          window.location.href = 'https://latticeveil.github.io/veilnet/index.html?login=success';
-        } catch (error) {
-          console.error('OAuth processing error:', error);
-          window.location.href = 'https://latticeveil.github.io/veilnet/index.html?login=error';
-        }
-      }
-    })();
+    // Extract Google OAuth code and redirect to main app with code
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    
+    if (code) {
+      // Redirect to main app with the OAuth code for Supabase to handle
+      window.location.href = `https://latticeveil.github.io/veilnet/index.html?code=${encodeURIComponent(code)}`;
+    } else {
+      // No code, redirect to main app
+      window.location.href = 'https://latticeveil.github.io/veilnet/index.html';
+    }
   }
 
   async function ensureHeader(){
