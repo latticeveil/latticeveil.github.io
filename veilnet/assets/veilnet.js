@@ -31,41 +31,10 @@
     del(k){ localStorage.removeItem(k); }
   };
 
-  // Unified identity helper using Supabase
+  // Unified identity helper using Supabase - DISABLED
   async function getCurrentUser() {
     try {
-      // First check if we have a stored session from localStorage
-      const storedUser = localStorage.getItem('veilnet_user');
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        return { 
-          loggedIn: true, 
-          username: user.username,
-          user: user,
-          profile: user
-        };
-      }
-      
-      // Fallback to Supabase session
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) throw error;
-      
-      if (user) {
-        // Get user profile from database
-        const { data: profile } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        return { 
-          loggedIn: true, 
-          username: profile?.username || user.user_metadata?.username || user.email,
-          user: user,
-          profile: profile
-        };
-      }
-      
+      // Always return logged out state
       return { loggedIn: false, username: null };
     } catch (error) {
       console.error('Error getting current user:', error);
@@ -431,60 +400,14 @@
     return "Offline";
   }
 
-  // Handle OAuth callback using Supabase
+  // OAuth callback functionality disabled
   async function handleOAuthCallback() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    const error = urlParams.get('error');
-    
-    console.log('OAuth callback triggered:', { code, error, pathname: window.location.pathname });
-    
-    if (code) {
-      // Supabase handles OAuth callback automatically
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      // Get user session and store in localStorage for persistence
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      console.log('Session retrieved:', { session, sessionError });
-      
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        return;
-      }
-      
-      if (session?.user) {
-        console.log('User found:', session.user);
-        console.log('User metadata:', session.user.user_metadata);
-        
-        // Store user data in localStorage for persistence across page reloads
-        localStorage.setItem('veilnet_user', JSON.stringify({
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.user_metadata?.name || session.user.email,
-          username: session.user.user_metadata?.username || session.user.email,
-          picture: session.user.user_metadata?.picture || session.user.picture
-        }));
-        
-        console.log('User logged in:', session.user.email);
-        
-        // Check if user has username set, if not redirect to setup
-        if (!session.user.user_metadata?.username) {
-          console.log('No username found, redirecting to setup');
-          window.location.href = 'https://latticeveil.github.io/veilnet/setup-username.html';
-          return;
-        } else {
-          console.log('Username found:', session.user.user_metadata.username);
-        }
-      }
-      
-      await ensureHeader();
-    } else if (error) {
-      console.error('OAuth error:', error);
-    }
+    console.log('OAuth callback disabled');
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
   
-  // Check for OAuth callback on page load
-  if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
+  // Check for OAuth callback on page load - disabled
+  if (false && (window.location.search.includes('code=') || window.location.search.includes('error='))) {
     handleOAuthCallback();
   }
 
@@ -543,32 +466,15 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",async ()=>{
-        console.log('Login clicked - using simple Google OAuth');
-        
-        // Use simple direct Google OAuth
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: 'https://latticeveil.github.io/veilnet/setup-username.html'
-          }
-        });
-        
-        if (error) {
-          console.error('Login error:', error);
-        } else {
-          console.log('OAuth initiated successfully');
-        }
+        console.log('Login clicked - login functionality disabled');
+        alert('Login functionality has been disabled');
       });
     }
     if(ddLogout){
       ddLogout.addEventListener("click",async ()=>{
-        try {
-          await supabase.auth.signOut();
-          location.reload();
-        } catch (error) {
-          console.error('Logout error:', error);
-          location.reload();
-        }
+        console.log('Logout clicked - login functionality disabled');
+        alert('Login functionality has been disabled');
+        location.reload();
       });
     }
 
