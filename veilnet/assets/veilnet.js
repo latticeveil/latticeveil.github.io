@@ -419,7 +419,7 @@
           cursor:pointer;
           transition:opacity 0.2s;
         " onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">Save Username</button>
-        <button id="veilnet-username-logout" style="
+        <button id="veilnet-username-cancel" style="
           padding: 12px 24px;
           background: rgba(255,255,255,0.1);
           color: var(--text);
@@ -427,16 +427,17 @@
           border-radius: 8px;
           cursor:pointer;
           transition:background 0.2s;
-        " onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Log Out</button>
+        " onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Cancel</button>
       </div>
     `;
 
     modal.appendChild(card);
     document.body.appendChild(modal);
 
-    // Event handlers
+    // Event handlers - prevent closing modal
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeUsernameModal();
+      // Don't close modal when clicking outside - user MUST choose username or cancel
+      e.stopPropagation();
     });
     
     card.addEventListener('click', (e) => {
@@ -444,11 +445,7 @@
     });
 
     document.getElementById('veilnet-username-save').addEventListener('click', saveUsername);
-    document.getElementById('veilnet-username-logout').addEventListener('click', async () => {
-      await VeilnetAuth.logout();
-      closeUsernameModal();
-      await refreshHeaderUI();
-    });
+    document.getElementById('veilnet-username-cancel').addEventListener('click', cancelUsername);
 
     // Enter key to save
     document.getElementById('veilnet-username-input').addEventListener('keypress', (e) => {
@@ -498,6 +495,18 @@
     }
   }
 
+  async function cancelUsername() {
+    await VeilnetAuth.signOut();
+    closeUsernameModal();
+    await refreshHeaderUI();
+  }
+
+  // Bootstrap auth on page load
+  async function bootstrapAuth() {
+    await VeilnetAuth.init();
+    await refreshHeaderUI();
+  }
+
   async function openVeilnetLoginModal() {
     const { overlay, gsiBtn, errorEl } = ensureVeilnetLoginModal();
     
@@ -530,18 +539,14 @@
         errorEl.textContent = "";
         if (!resp || !resp.credential) throw new Error("No credential returned from Google.");
 
+        // Store pending profile from Google token
+        await VeilnetAuth.ensureUserRowFromGoogleToken(resp.credential);
+
         const { error } = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
         if (error) throw error;
 
-        const profile = await VeilnetAuth.ensureMyProfile();
-        if (!profile?.username) {
-          overlay.style.display = "none";
-          openUsernameModal();
-          return;
-        }
-
         overlay.style.display = "none";
-        await refreshHeaderUI();
+        openUsernameModal();
       } catch (e) {
         console.error("Veilnet login failed:", e);
         errorEl.textContent = e?.message || String(e);
@@ -565,9 +570,9 @@
   if (!nameEl && !subEl && !avatarEl && !loginItem && !logoutItem) return;
 
   try {
-    const user = await VeilnetAuth.getUser();
+    const identity = await VeilnetAuth.getDisplayIdentity();
 
-    if (!user) {
+    if (!identity) {
       if (nameEl) nameEl.textContent = "Not signed in";
       if (subEl) subEl.textContent = "Login to access Veilnet features";
       if (avatarEl) avatarEl.src = "assets/default_pfp.png";
@@ -576,18 +581,13 @@
       return;
     }
 
-    const profile = await VeilnetAuth.ensureMyProfile();
-    const displayName = profile?.username || profile?.name || user.email || "Signed in";
-    const avatarUrl = profile?.picture || "assets/default_pfp.png";
+    const { email, username, picture, displayName } = identity;
 
     if (nameEl) nameEl.textContent = displayName;
-    if (avatarEl) avatarEl.src = avatarUrl;
+    if (avatarEl) avatarEl.src = picture || "assets/default_pfp.png";
 
-    if (!profile?.username) {
+    if (!username) {
       if (subEl) subEl.textContent = "Choose a username";
-      // Show setup username link if available
-      const setupLink = document.getElementById("veilnet-setup-username");
-      if (setupLink) setupLink.style.display = "";
       
       // Auto-open username modal if not already open
       const usernameModal = document.getElementById('veilnet-username-modal');
@@ -596,9 +596,6 @@
       }
     } else {
       if (subEl) subEl.textContent = "Online via Google";
-      // Hide setup username link if available
-      const setupLink = document.getElementById("veilnet-setup-username");
-      if (setupLink) setupLink.style.display = "none";
     }
 
     if (loginItem) loginItem.style.display = "none";
@@ -971,7 +968,7 @@ window.refreshHeaderUI = refreshHeaderUI;
     // Initialize cross-tab synchronization
     // initCrossTabSync(); // DISABLED
     
-    // Refresh header UI with auth state
-    refreshHeaderUI();
+    // Bootstrap auth system
+    bootstrapAuth();
   });
 })();
