@@ -709,8 +709,14 @@ if (document.readyState === 'loading') {
     
     if (!toggleEl || !dropdownEl) return;
     
-    // Element-level guard to prevent duplicate handlers
-    if (toggleEl.dataset.veilWired === "1") return;
+    // Clear guard to allow re-wiring (needed after logout/DOM changes)
+    if (toggleEl.dataset.veilWired === "1") {
+      // Remove existing handler by cloning the element
+      const newToggleEl = toggleEl.cloneNode(true);
+      toggleEl.parentNode.replaceChild(newToggleEl, toggleEl);
+      return wireDropdownToggle(); // Re-call with new element
+    }
+    
     toggleEl.dataset.veilWired = "1";
     
     // Add click handler to toggle dropdown
