@@ -487,24 +487,6 @@
   if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
     handleOAuthCallback();
   }
-  
-  // Handle Supabase OAuth consent URL patch
-  if (window.location.pathname.includes('/oauth/consent')) {
-    // Extract Google OAuth code and redirect to username setup
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    
-    console.log('OAuth consent page - code:', code);
-    
-    if (code) {
-      // Redirect directly to username setup with the OAuth code
-      // Bypass main app and go straight to setup
-      window.location.href = `https://latticeveil.github.io/veilnet/setup-username.html?code=${encodeURIComponent(code)}`;
-    } else {
-      // No code, redirect to main app
-      window.location.href = 'https://latticeveil.github.io/veilnet/index.html';
-    }
-  }
 
   async function ensureHeader(){
     // attach dropdown toggles and login mocks
@@ -561,19 +543,21 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",async ()=>{
-        console.log('Login clicked - using direct Google OAuth');
+        console.log('Login clicked - using simple Google OAuth');
         
-        // Use direct Google OAuth with custom consent URL
-        const googleAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
-          client_id: '843782276052-t209v6utfham56dvi1q7i3kser4p9pte.apps.googleusercontent.com',
-          redirect_uri: 'https://latticeveil.github.io/veilnet/oauth/consent',
-          response_type: 'code',
-          scope: 'openid email profile',
-          access_type: 'offline'
+        // Use simple direct Google OAuth
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: 'https://latticeveil.github.io/veilnet/setup-username.html'
+          }
         });
         
-        console.log('Redirecting to:', googleAuthUrl);
-        window.location.href = googleAuthUrl;
+        if (error) {
+          console.error('Login error:', error);
+        } else {
+          console.log('OAuth initiated successfully');
+        }
       });
     }
     if(ddLogout){
