@@ -770,8 +770,8 @@ if (document.readyState === 'loading') {
         await VeilnetAuth.signOut();
         dd.classList.remove("open");
         await refreshHeaderUI();
-        // Re-wire dropdown toggle in case DOM changed
-        wireDropdownToggle();
+        // Force page refresh to ensure dropdown works reliably
+        window.location.reload();
       });
     }
     if(ddMyProfile){
