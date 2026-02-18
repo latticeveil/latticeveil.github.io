@@ -1516,11 +1516,31 @@
   }
 
   document.addEventListener("DOMContentLoaded", ()=>{
+    // Check for OAuth callback first
+    if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
+      handleOAuthCallback();
+    }
+    
+    // Handle Supabase OAuth consent URL patch
+    if (window.location.pathname.includes('/oauth/consent')) {
+      // Extract actual callback URL from consent URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const actualCallback = urlParams.get('callback_url');
+      
+      if (actualCallback) {
+        // Redirect to actual callback URL with original parameters
+        const originalParams = new URLSearchParams(actualCallback.split('?')[1] || '');
+        const newUrl = `${window.location.origin}${window.location.pathname}?${originalParams.toString()}`;
+        window.location.href = newUrl;
+      }
+    }
+    
     initSystemOverlay(); // Initialize system overlay first
     ensureHeader();
     renderHome();
     renderCommunity();
     renderPost();
+    
     renderProfile();
     renderMessages();
     renderSettings();
