@@ -105,19 +105,37 @@ window.VeilnetAuth = (function() {
       return { email, username, picture, displayName };
     },
 
+    async checkUsernameAvailable(username) {
+      if (!username) return false;
+      
+      const { data, error } = await supa
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .select("username")
+        .eq("username", username)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return !data; // available if no data found
+    },
+
     async updateMyProfile(patch) {
       const user = await this.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user || !user.email) throw new Error('Not authenticated or missing email');
       
       const { data, error } = await supa
         .from(VEILNET_CONFIG.PROFILE_TABLE)
         .update(patch)
-        .eq('id', user.id)
-        .select()
+        .eq("email", user.email)
+        .select("email, username, picture, name, aboutme, statusmessage, themecolor, createdat")
         .single();
       
       if (error) throw error;
       return data;
-    }
+    },
+
+    async needsUsername() {
+      const profile = await this.getMyProfile();
+      return !profile || !profile.username;
+    },
   };
 })();
