@@ -481,8 +481,17 @@
       
       if (code) {
         try {
-          // Exchange Google code for Supabase session
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          // Exchange Google code for Supabase session using signInWithOAuth
+          const { data, error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              skipBrowserRedirect: true,
+              flowType: 'pkce',
+              queryParams: {
+                code: code
+              }
+            }
+          });
           
           if (error) {
             console.error('Session exchange error:', error);
