@@ -1,6 +1,12 @@
-/* Veilnet Demo JS (no backend) */
+/* Veilnet Demo JS - Supabase Only */
 (function(){
-  const VEILNET_API_BASE = "https://veilnet.onrender.com";
+  // Initialize Supabase client
+  const supabase = window.supabase.createClient(
+    'https://lqghurvonrvrxfwjgkuu.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxZ2h1cnZvbnJ2cnhmd2prdXUiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczOTg0MTQ2MCwiZXhwIjoyMDU1NDE3NDYwfQ.9oJv3M7vQWzjRQ9a_0L5mYJjJ5eJ5k5J5k5J5k5J5k5J5k5J5k5J5k5J5k'
+  );
+
+  const VEILNET_API_BASE = "https://lqghurvonrvrxfwjgkuu.supabase.co/functions/v1";
 
   // System Spinning Up Overlay Logic
   function initSystemOverlay() {
@@ -47,7 +53,7 @@
       const timeoutId = setTimeout(() => controller.abort(), 800);
 
       try {
-        const response = await fetch(`${VEILNET_API_BASE}/health`, {
+        const response = await fetch(`${VEILNET_API_BASE}/health-simple/health`, {
           signal: controller.signal
         });
 
@@ -102,11 +108,33 @@
     del(k){ localStorage.removeItem(k); }
   };
 
-  // Unified identity helper
-  function getCurrentUser() {
-    const loggedIn = storage.get('veilnet.loggedIn', false);
-    const username = storage.get('veilnet.username', null);
-    return { loggedIn, username };
+  // Unified identity helper using Supabase
+  async function getCurrentUser() {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      
+      if (user) {
+        // Get user profile from database
+        const { data: profile } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        return { 
+          loggedIn: true, 
+          username: profile?.username || user.email,
+          user: user,
+          profile: profile
+        };
+      }
+      
+      return { loggedIn: false, username: null };
+    } catch (error) {
+      console.error('Error getting current user:', error);
+      return { loggedIn: false, username: null };
+    }
   }
 
   // Numeric unread badge management
@@ -164,24 +192,25 @@
   }
 
   async function refreshUnreadBadges() {
-    const currentUser = getCurrentUser();
+    const currentUser = await getCurrentUser();
     
-    if (!currentUser.loggedIn || !currentUser.username) {
+    if (!currentUser.loggedIn || !currentUser.profile?.username) {
       setUnreadBadges(0);
       return;
     }
 
     try {
-      const response = await fetch(`${VEILNET_API_BASE}/api/conversations`, {
+      const response = await fetch(`${VEILNET_API_BASE}/veilnet-auth/api/conversations`, {
         headers: {
-          'X-Veilnet-User': currentUser.username,
-          'Content-Type': 'application/json'
+          'X-Veilnet-User': currentUser.profile.username,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
         }
       });
       
       if (response.ok) {
         const conversations = await response.json();
-        const unreadCount = computeUnreadCountFromConversations(conversations, currentUser.username);
+        const unreadCount = computeUnreadCountFromConversations(conversations, currentUser.profile.username);
         setUnreadBadges(unreadCount);
       } else {
         setUnreadBadges(0);
@@ -466,39 +495,27 @@
     return "Offline";
   }
 
-  // Handle OAuth callback
-    function handleOAuthCallback() {
-      const urlParams = new URLSearchParams(window.location.search);
-      const loginStatus = urlParams.get('login');
-      const userData = urlParams.get('user');
-      
-      if (loginStatus === 'success' && userData) {
-        try {
-          const user = JSON.parse(decodeURIComponent(userData));
-          storage.set("veilnet.loggedIn", true);
-          storage.set("veilnet.username", user.username || user.email);
-          storage.set("veilnet.user", JSON.stringify(user));
-          
-          // Clean URL
-          window.history.replaceState({}, document.title, window.location.pathname);
-          
-          // Update UI
-          ensureHeader();
-          console.log('User logged in:', user.username || user.email);
-        } catch (error) {
-          console.error('Failed to parse user data:', error);
-        }
-      } else if (loginStatus === 'error') {
-        console.error('Login failed');
-      }
-    }
+  // Handle OAuth callback using Supabase
+  async function handleOAuthCallback() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const loginStatus = urlParams.get('login');
     
-    // Check for OAuth callback on page load
-    if (window.location.search.includes('login=')) {
-      handleOAuthCallback();
+    if (loginStatus === 'success') {
+      // Supabase handles the callback automatically
+      window.history.replaceState({}, document.title, window.location.pathname);
+      await ensureHeader();
+      console.log('User logged in via Supabase');
+    } else if (loginStatus === 'error') {
+      console.error('Login failed');
     }
+  }
+  
+  // Check for OAuth callback on page load
+  if (window.location.search.includes('login=')) {
+    handleOAuthCallback();
+  }
 
-    function ensureHeader(){
+    async function ensureHeader(){
     // attach dropdown toggles and login mocks
     const avatarBtn = document.querySelector("[data-veil-avatar]");
     const dd = document.querySelector("[data-veil-dropdown]");
@@ -510,18 +527,8 @@
     });
     document.addEventListener("click",()=> dd.classList.remove("open"));
 
-    const loggedIn = storage.get("veilnet.loggedIn", false);
-    const username = storage.get("veilnet.username", "");
-    const userData = storage.get("veilnet.user", "{}");
+    const currentUser = await getCurrentUser();
     
-    let user = {};
-    try {
-      user = JSON.parse(userData);
-    } catch (e) {
-      // Fallback to demo user if no real user data
-      user = { email: username };
-    }
-
     // Avatar image
     const avatarImg = document.querySelector("[data-veil-avatar-img]");
     const ddImg = document.querySelector("[data-veil-dd-img]");
@@ -532,12 +539,12 @@
     const ddMyProfile = document.querySelector("[data-veil-myprofile]");
     const ddSettings = document.querySelector("[data-veil-settings]");
 
-    const pfp = user.picture || ASSET("default_pfp.png");
+    const pfp = currentUser.user?.user_metadata?.picture || ASSET("default_pfp.png");
     if(avatarImg) avatarImg.src = pfp;
     if(ddImg) ddImg.src = pfp;
     
-    if(loggedIn){
-      if(ddTitle) ddTitle.textContent = user.username || user.name || user.email;
+    if(currentUser.loggedIn){
+      if(ddTitle) ddTitle.textContent = currentUser.profile?.username || currentUser.user?.user_metadata?.name || currentUser.user?.email;
       if(ddSub) ddSub.textContent = "Online via Google";
       if(ddLogin) ddLogin.style.display="none";
       if(ddLogout) ddLogout.style.display="flex";
@@ -562,43 +569,27 @@
     }
 
     if(ddLogin){
-      ddLogin.addEventListener("click",()=>{
-        // Redirect to Google OAuth on your existing Veilnet backend
-        const authUrl = 'https://veilnet.onrender.com/auth/google';
-        window.location.href = authUrl;
+      ddLogin.addEventListener("click",async ()=>{
+        // Use Supabase Google OAuth
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: 'https://latticeveil.github.io/veilnet/index.html?login=success'
+          }
+        });
+        
+        if (error) {
+          console.error('Login error:', error);
+        }
       });
     }
     if(ddLogout){
       ddLogout.addEventListener("click",async ()=>{
         try {
-          // Call your existing Veilnet backend logout
-          const response = await fetch('https://veilnet.onrender.com/api/logout', {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (response.ok) {
-            storage.set("veilnet.loggedIn", false);
-            storage.set("veilnet.username", "");
-            storage.set("veilnet.user", "");
-            location.reload();
-          } else {
-            console.error('Logout failed:', response.status);
-            // Force logout on frontend even if backend fails
-            storage.set("veilnet.loggedIn", false);
-            storage.set("veilnet.username", "");
-            storage.set("veilnet.user", "");
-            location.reload();
-          }
+          await supabase.auth.signOut();
+          location.reload();
         } catch (error) {
           console.error('Logout error:', error);
-          // Force logout on frontend even if network fails
-          storage.set("veilnet.loggedIn", false);
-          storage.set("veilnet.username", "");
-          storage.set("veilnet.user", "");
           location.reload();
         }
       });
@@ -606,7 +597,7 @@
 
     if(ddMyProfile){
       ddMyProfile.addEventListener("click",()=>{
-        // /profile/?u=USERNAME or ../profile/?u=USERNAME
+        const username = currentUser.profile?.username || currentUser.user?.email;
         const dest = (location.pathname.includes("/veilnet/") && !location.pathname.endsWith("/veilnet/") && !location.pathname.endsWith("/veilnet/index.html"))
           ? `../profile/?u=${encodeURIComponent(username)}`
           : `profile/?u=${encodeURIComponent(username)}`;
@@ -845,7 +836,7 @@
     picker?.addEventListener("change", ()=> location.reload());
   }
 
-  function renderMessages(){
+  async function renderMessages(){
     const list = document.querySelector("[data-veil-convos]");
     const chat = document.querySelector("[data-veil-chat]");
     if(!list || !chat) return;
@@ -853,11 +844,11 @@
     // Only run on messages page
     if (!location.pathname.includes("/veilnet/messages/")) return;
 
-    const VEILNET_API_BASE = "https://veilnet.onrender.com";
+    const VEILNET_API_BASE = "https://lqghurvonrvrxfwjgkuu.supabase.co/functions/v1";
     let socket = null;
     let currentConversationId = null;
-    const currentUser = getCurrentUser();
-    let currentUsername = currentUser.username || "RedactedDev";
+    const currentUser = await getCurrentUser();
+    let currentUsername = currentUser.profile?.username || currentUser.user?.email || "RedactedDev";
     const isGuest = !currentUser.loggedIn || !currentUsername || currentUsername === "guest";
     
     // Message deduplication and resync
