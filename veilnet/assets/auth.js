@@ -1,59 +1,84 @@
 window.VeilnetAuth = (function() {
-  const supa = supabase.createClient(
-    VEILNET_CONFIG.SUPABASE_URL,
-    VEILNET_CONFIG.SUPABASE_ANON_KEY,
-    {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: false
-      }
-    }
-  );
+  let supa = null;
+  let pendingProfile = null;
 
-  // Listen for auth state changes
-  supa.auth.onAuthStateChange(() => {
-    if (typeof window.refreshHeaderUI === 'function') {
-      window.refreshHeaderUI();
+  // Initialize Supabase client
+  function init() {
+    if (supa) return supa;
+    
+    supa = supabase.createClient(
+      VEILNET_CONFIG.SUPABASE_URL,
+      VEILNET_CONFIG.SUPABASE_ANON_KEY,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: false
+        }
+      }
+    );
+
+    // Listen for auth state changes
+    supa.auth.onAuthStateChange((event) => {
+      if (typeof window.refreshHeaderUI === 'function') {
+        window.refreshHeaderUI();
+      }
+    });
+
+    return supa;
+  }
+
+  // Decode Google ID token without verification (client-side only)
+  function decodeGoogleToken(token) {
+    try {
+      const payload = token.split('.')[1];
+      const decoded = JSON.parse(atob(payload));
+      return decoded;
+    } catch (e) {
+      console.error('Failed to decode Google token:', e);
+      return null;
     }
-  });
+  }
 
   return {
-    async getUser() {
-      const { data: { user } } = await supa.auth.getUser();
-      return user;
+    init() {
+      return init();
     },
 
     async getSession() {
-      const { data: { session } } = await supa.auth.getSession();
+      const client = init();
+      const { data: { session } } = await client.auth.getSession();
       return session;
     },
 
-    async logout() {
-      await supa.auth.signOut();
+    async getUser() {
+      const client = init();
+      const { data: { user } } = await client.auth.getUser();
+      return user;
+    },
+
+    async signOut() {
+      const client = init();
+      pendingProfile = null;
+      sessionStorage.removeItem('veilnet_pending_profile');
+      await client.auth.signOut();
     },
 
     async signInWithGoogleIdToken(idToken) {
-      const { data, error } = await supa.auth.signInWithIdToken({
+      const client = init();
+      const { data, error } = await client.auth.signInWithIdToken({
         provider: "google",
         token: idToken
       });
       return { data, error };
     },
 
-    async requireAuth() {
-      const user = await this.getUser();
-      if (user) return true;
-      
-      window.location.href = VEILNET_CONFIG.LOGIN_PATH;
-      return false;
-    },
-
     async getMyProfile() {
       const user = await this.getUser();
       if (!user || !user.email) return null;
       
-      const { data, error } = await supa
+      const client = init();
+      const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
         .select("id, email, username, picture, name, aboutme, statusmessage, themecolor, createdat")
         .eq("email", user.email)
@@ -66,69 +91,18 @@ window.VeilnetAuth = (function() {
       return data;
     },
 
-    async ensureMyProfile() {
-      const user = await this.getUser();
-      if (!user || !user.email) return null;
-      
-      let profile = await this.getMyProfile();
-      
-      if (!profile) {
-        const profileData = {
-          id: user.id, // Required non-null field
-          email: user.email,
-          name: user.user_metadata?.name ?? user.email,
-          picture: user.user_metadata?.picture ?? null,
-          createdat: new Date().toISOString(),
-          username: null,
-          aboutme: null,
-          statusmessage: null,
-          themecolor: null
-        };
-        
-        const { data, error } = await supa
-          .from(VEILNET_CONFIG.PROFILE_TABLE)
-          .insert(profileData)
-          .select()
-          .single();
-        
-        if (error) {
-          console.error("ensureMyProfile insert error:", error);
-          throw new Error(`Failed to create profile: ${error.message}`);
-        }
-        profile = data;
-      }
-      
-      return profile;
-    },
+    async ensureUserRowFromGoogleToken(idToken) {
+      // Decode token to get user info
+      const tokenData = decodeGoogleToken(idToken);
+      if (!tokenData) throw new Error('Invalid Google ID token');
 
-    async getDisplayIdentity() {
-      const user = await this.getUser();
-      if (!user) return null;
+      const { sub, email, name, picture } = tokenData;
       
-      const profile = await this.ensureMyProfile();
-      const email = user.email;
-      const username = profile?.username;
-      const picture = profile?.picture || user.user_metadata?.picture;
-      const displayName = username || profile?.name || user.user_metadata?.name || email;
+      // Store pending profile info in memory and sessionStorage
+      pendingProfile = { id: sub, email, name, picture };
+      sessionStorage.setItem('veilnet_pending_profile', JSON.stringify(pendingProfile));
       
-      return { email, username, picture, displayName };
-    },
-
-    async isUsernameAvailable(username) {
-      if (!username) return false;
-      
-      // Check case-insensitive availability
-      const { data, error } = await supa
-        .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select("username")
-        .ilike("username", username)
-        .maybeSingle();
-      
-      if (error) {
-        console.error("isUsernameAvailable error:", error);
-        throw error;
-      }
-      return !data; // available if no data found
+      return pendingProfile;
     },
 
     async setUsername(username) {
@@ -145,31 +119,101 @@ window.VeilnetAuth = (function() {
       if (!available) {
         throw new Error('Username is already taken');
       }
+
+      const client = init();
+      const profileData = {
+        id: pendingProfile?.id || user.id,
+        email: user.email,
+        name: pendingProfile?.name || user.user_metadata?.name || user.email,
+        picture: pendingProfile?.picture || user.user_metadata?.picture || null,
+        username: username,
+        createdat: new Date().toISOString()
+      };
+
+      // Check if row exists
+      const existing = await this.getMyProfile();
+      let result;
       
-      return await this.updateMyProfile({ username });
+      if (existing) {
+        // Update existing row
+        const { data, error } = await client
+          .from(VEILNET_CONFIG.PROFILE_TABLE)
+          .update({ username })
+          .eq("email", user.email)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      } else {
+        // Insert new row
+        const { data, error } = await client
+          .from(VEILNET_CONFIG.PROFILE_TABLE)
+          .insert(profileData)
+          .select()
+          .single();
+        
+        if (error) throw error;
+        result = data;
+      }
+
+      // Clear pending profile
+      pendingProfile = null;
+      sessionStorage.removeItem('veilnet_pending_profile');
+      
+      return result;
     },
 
-    async updateMyProfile(patch) {
-      const user = await this.getUser();
-      if (!user || !user.email) throw new Error('Not authenticated or missing email');
+    async isUsernameAvailable(username) {
+      if (!username) return false;
       
-      const { data, error } = await supa
+      const client = init();
+      const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .update(patch)
-        .eq("email", user.email)
-        .select("id, email, username, picture, name, aboutme, statusmessage, themecolor, createdat")
-        .single();
+        .select("username")
+        .ilike("username", username)
+        .maybeSingle();
       
       if (error) {
-        console.error("updateMyProfile error:", error);
+        console.error("isUsernameAvailable error:", error);
         throw error;
       }
-      return data;
+      return !data; // available if no data found
     },
 
-    async needsUsername() {
+    getPendingProfile() {
+      if (pendingProfile) return pendingProfile;
+      
+      try {
+        const stored = sessionStorage.getItem('veilnet_pending_profile');
+        return stored ? JSON.parse(stored) : null;
+      } catch (e) {
+        return null;
+      }
+    },
+
+    async getDisplayIdentity() {
+      const user = await this.getUser();
+      if (!user) return null;
+      
+      // Check for pending profile first
+      const pending = this.getPendingProfile();
+      if (pending) {
+        return {
+          email: pending.email,
+          username: null,
+          picture: pending.picture,
+          displayName: pending.name || pending.email
+        };
+      }
+      
       const profile = await this.getMyProfile();
-      return !profile || !profile.username;
+      const email = user.email;
+      const username = profile?.username;
+      const picture = profile?.picture || user.user_metadata?.picture;
+      const displayName = username || profile?.name || user.user_metadata?.name || email;
+      
+      return { email, username, picture, displayName };
     }
   };
 })();
