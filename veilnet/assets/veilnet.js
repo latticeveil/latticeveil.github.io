@@ -437,18 +437,25 @@
     const code = urlParams.get('code');
     const error = urlParams.get('error');
     
+    console.log('OAuth callback triggered:', { code, error, pathname: window.location.pathname });
+    
     if (code) {
       // Supabase handles OAuth callback automatically
       window.history.replaceState({}, document.title, window.location.pathname);
       
       // Get user session and store in localStorage for persistence
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      console.log('Session retrieved:', { session, sessionError });
+      
       if (sessionError) {
         console.error('Session error:', sessionError);
         return;
       }
       
       if (session?.user) {
+        console.log('User found:', session.user);
+        console.log('User metadata:', session.user.user_metadata);
+        
         // Store user data in localStorage for persistence across page reloads
         localStorage.setItem('veilnet_user', JSON.stringify({
           id: session.user.id,
@@ -462,8 +469,11 @@
         
         // Check if user has username set, if not redirect to setup
         if (!session.user.user_metadata?.username) {
+          console.log('No username found, redirecting to setup');
           window.location.href = 'https://latticeveil.github.io/veilnet/setup-username.html';
           return;
+        } else {
+          console.log('Username found:', session.user.user_metadata.username);
         }
       }
       
