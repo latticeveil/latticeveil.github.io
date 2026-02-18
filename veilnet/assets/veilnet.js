@@ -439,29 +439,8 @@
     
     if (code) {
       // Supabase handles OAuth callback automatically
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      // Get user session and store in localStorage for persistence
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError) {
-        console.error('Session error:', sessionError);
-        return;
-      }
-      
-      if (session?.user) {
-        // Store user data in localStorage for persistence across page reloads
-        localStorage.setItem('veilnet_user', JSON.stringify({
-          id: session.user.id,
-          email: session.user.email,
-          name: session.user.user_metadata?.name || session.user.email,
-          username: session.user.user_metadata?.username || session.user.email,
-          picture: session.user.user_metadata?.picture || session.user.picture
-        }));
-        
-        console.log('User logged in:', session.user.email);
-      }
-      
-      await ensureHeader();
+      // Redirect to our site after Supabase processing
+      window.location.href = 'https://latticeveil.github.io/veilnet/index.html?login=success';
     } else if (error) {
       console.error('OAuth error:', error);
     }
@@ -1516,31 +1495,11 @@
   }
 
   document.addEventListener("DOMContentLoaded", ()=>{
-    // Check for OAuth callback first
-    if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
-      handleOAuthCallback();
-    }
-    
-    // Handle Supabase OAuth consent URL patch
-    if (window.location.pathname.includes('/oauth/consent')) {
-      // Extract actual callback URL from consent URL
-      const urlParams = new URLSearchParams(window.location.search);
-      const actualCallback = urlParams.get('callback_url');
-      
-      if (actualCallback) {
-        // Redirect to actual callback URL with original parameters
-        const originalParams = new URLSearchParams(actualCallback.split('?')[1] || '');
-        const newUrl = `${window.location.origin}${window.location.pathname}?${originalParams.toString()}`;
-        window.location.href = newUrl;
-      }
-    }
-    
     initSystemOverlay(); // Initialize system overlay first
     ensureHeader();
     renderHome();
     renderCommunity();
     renderPost();
-    
     renderProfile();
     renderMessages();
     renderSettings();
