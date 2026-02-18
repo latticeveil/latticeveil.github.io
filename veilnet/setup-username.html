@@ -1,121 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choose Username - Veilnet</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="assets/veilnet.css">
-    <style>
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: inherit;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-        .setup-container {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 2rem;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
-        .setup-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .setup-header h1 {
-            margin: 0 0 0.5rem 0;
-            color: var(--cyan);
-        }
-        .setup-header p {
-            margin: 0;
-            opacity: 0.8;
-        }
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 600;
-        }
-        .form-group input {
-            width: 100%;
-            padding: 0.75rem;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            color: var(--text);
-            font-size: 1rem;
-            font-family: inherit;
-        }
-        .form-group input:focus {
-            outline: none;
-            border-color: var(--cyan);
-            box-shadow: 0 0 0 2px rgba(56, 225, 255, 0.2);
-        }
-        .error {
-            color: #ff4444;
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
-            display: none;
-        }
-        .submit-btn {
-            width: 100%;
-            padding: 0.875rem;
-            background: var(--cyan);
-            color: var(--bg);
-            border: none;
-            border-radius: 6px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        .submit-btn:hover {
-            background: #4dd4ff;
-            transform: translateY(-1px);
-        }
-        .submit-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-        .username-rules {
-            font-size: 0.875rem;
-            opacity: 0.7;
-            margin-top: 0.5rem;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Veilnet • Setup Username</title>
+  <link rel="icon" href="assets/Veilnet.png">
+  <link rel="stylesheet" href="assets/veilnet.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/config.js"></script>
+  <script src="assets/auth.js"></script>
+  <script src="assets/veilnet.js"></script>
 </head>
 <body>
-    <div class="setup-container">
-        <!-- Content will be replaced by JavaScript -->
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <a href="./" style="display:flex; align-items:center; gap:12px">
+          <span style="font-weight:1000">LatticeVeil</span>
+          <span class="brand-badge">Veilnet</span>
+        </a>
+      </div>
     </div>
+  </header>
 
-    <script>
-        // Login functionality disabled
-        document.addEventListener('DOMContentLoaded', () => {
-            const container = document.querySelector('.setup-container');
-            container.innerHTML = `
-                <div class="setup-header">
-                    <h1>Login Disabled</h1>
-                    <p>Login functionality has been disabled for this site.</p>
-                </div>
-                <div style="text-align: center; margin-top: 2rem;">
-                    <a href="../" class="submit-btn" style="display: inline-block; text-decoration: none; width: auto; padding: 0.875rem 2rem;">
-                        Back to Veilnet
-                    </a>
-                </div>
-            `;
-        });
-    </script>
+  <main class="container" style="padding: 18px 0 34px">
+    <div class="setup-container">
+      <!-- Content will be replaced by JavaScript -->
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Require authentication
+      if (!await VeilnetAuth.requireAuth()) return;
+
+      // Load my profile
+      const profile = await VeilnetAuth.getMyProfile();
+      
+      // If username already set, redirect to profile
+      if (profile && profile.username) {
+        window.location.href = './profile/user.html?u=' + encodeURIComponent(profile.username);
+        return;
+      }
+
+      // Show username setup form
+      const container = document.querySelector('.setup-container');
+      container.innerHTML = `
+        <div class="setup-header">
+          <h1>Choose Username</h1>
+          <p>Your Google account is linked. Choose a username to complete setup.</p>
+        </div>
+        
+        <div class="setup-form">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="Enter username (A-Z, 0-9, underscore, 3-20 chars)" maxlength="20" required>
+            <div id="username-error" style="color: var(--red); font-size: 0.875rem; margin-top: 0.5rem; display: none;"></div>
+          </div>
+          
+          <div class="form-group">
+            <button type="button" id="saveUsernameBtn" class="submit-btn">Save Username</button>
+          </div>
+        </div>
+      `;
+
+      const usernameInput = document.getElementById('username');
+      const saveBtn = document.getElementById('saveUsernameBtn');
+      const errorDiv = document.getElementById('username-error');
+
+      // Username validation
+      function validateUsername(username) {
+        if (!username || username.length < 3 || username.length > 20) {
+          return 'Username must be 3-20 characters';
+        }
+        if (!/^[A-Za-z0-9_]+$/.test(username)) {
+          return 'Username can only contain letters, numbers, and underscores';
+        }
+        return null;
+      }
+
+      // Check availability
+      async function checkAvailability() {
+        const username = usernameInput.value.trim();
+        const error = validateUsername(username);
+        
+        if (error) {
+          errorDiv.textContent = error;
+          errorDiv.style.display = 'block';
+          return false;
+        }
+
+        errorDiv.style.display = 'none';
+        
+        try {
+          const available = await VeilnetAuth.checkUsernameAvailable(username);
+          if (!available) {
+            errorDiv.textContent = 'Username already taken';
+            errorDiv.style.display = 'block';
+            return false;
+          }
+          return true;
+        } catch (err) {
+          errorDiv.textContent = 'Error checking username availability';
+          errorDiv.style.display = 'block';
+          return false;
+        }
+      }
+
+      // Save username
+      async function saveUsername() {
+        if (!await checkAvailability()) return;
+
+        const username = usernameInput.value.trim();
+        
+        try {
+          await VeilnetAuth.updateMyProfile({ username });
+          window.location.href = './profile/user.html?u=' + encodeURIComponent(username);
+        } catch (err) {
+          errorDiv.textContent = 'Error saving username: ' + err.message;
+          errorDiv.style.display = 'block';
+        }
+      }
+
+      // Event listeners
+      usernameInput.addEventListener('input', () => {
+        errorDiv.style.display = 'none';
+      });
+
+      saveBtn.addEventListener('click', saveUsername);
+      usernameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') saveUsername();
+      });
+
+      // Focus input
+      usernameInput.focus();
+    });
+  </script>
 </body>
 </html>
