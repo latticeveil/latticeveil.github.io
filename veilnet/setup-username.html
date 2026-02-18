@@ -97,162 +97,24 @@
 </head>
 <body>
     <div class="setup-container">
-        <div class="setup-header">
-            <h1>Choose Your Username</h1>
-            <p>This is how other users will see you on Veilnet</p>
-        </div>
-        
-        <form id="usernameForm">
-            <div class="form-group">
-                <label for="username">Username</label>
-                <input 
-                    type="text" 
-                    id="username" 
-                    name="username" 
-                    placeholder="Enter username"
-                    pattern="[a-zA-Z0-9_-]{3,20}"
-                    required
-                    autocomplete="off"
-                >
-                <div class="username-rules">
-                    3-20 characters • Letters, numbers, underscores, hyphens
-                </div>
-                <div class="error" id="errorMessage"></div>
-            </div>
-            
-            <button type="submit" class="submit-btn" id="submitBtn">
-                Continue to Veilnet
-            </button>
-        </form>
+        <!-- Content will be replaced by JavaScript -->
     </div>
 
     <script>
-        // Initialize Supabase client
-        const supabase = window.supabase.createClient(
-            'https://lqghurvonrvrxfwjgkuu.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlbiI6Imd1ZWQnZXItYmUiLCJpc3MiOiJzdXBhYmFzZSIsInJlbiIsInR5cCI6ImlhdCI6MTczOTg0MTYwMDAwMH0.9oJv3M7vQWzjRQ9a_0L5mYJjJ5k5J5k5J5k5J5k5J5k5J5k5J5k5J5k'
-        );
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('userId');
-        const oauthCode = urlParams.get('code');
-        
-        // Handle OAuth code from consent page
-        if (oauthCode && !userId) {
-            // Exchange OAuth code for session
-            try {
-                const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider: 'google',
-                    options: {
-                        skipBrowserRedirect: true,
-                        flowType: 'pkce',
-                        queryParams: {
-                            code: oauthCode
-                        }
-                    }
-                });
-                
-                if (error) {
-                    console.error('OAuth exchange error:', error);
-                    errorMsg.textContent = 'Authentication failed';
-                    errorMsg.style.display = 'block';
-                    return;
-                }
-                
-                if (data?.user) {
-                    userId = data.user.id;
-                }
-            } catch (error) {
-                console.error('OAuth processing error:', error);
-                errorMsg.textContent = 'Authentication failed';
-                errorMsg.style.display = 'block';
-                return;
-            }
-        }
-        
-        if (!userId) {
-            window.location.href = 'index.html';
-        }
-        
-        document.getElementById('usernameForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value.trim();
-            const submitBtn = document.getElementById('submitBtn');
-            const errorMsg = document.getElementById('errorMessage');
-            
-            if (!username) {
-                errorMsg.textContent = 'Please enter a username';
-                errorMsg.style.display = 'block';
-                return;
-            }
-            
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Setting username...';
-            errorMsg.style.display = 'none';
-            
-            try {
-                // Check if username is already taken
-                const { data: existingUser } = await supabase
-                    .from('users')
-                    .select('id')
-                    .eq('username', username)
-                    .single();
-                
-                if (existingUser) {
-                    errorMsg.textContent = 'Username already taken';
-                    errorMsg.style.display = 'block';
-                    return;
-                }
-                
-                // Update user profile with username
-                const { data: { user } } = await supabase.auth.getUser();
-                
-                const { error } = await supabase
-                    .from('users')
-                    .upsert({
-                        id: user.id,
-                        username: username,
-                        email: user.email,
-                        name: user.user_metadata?.name || user.email,
-                        picture: user.user_metadata?.picture,
-                        updated_at: new Date().toISOString()
-                    });
-                
-                if (error) {
-                    throw error;
-                }
-                
-                // Username set successfully, redirect to main app
-                window.location.href = `https://latticeveil.github.io/veilnet/index.html?login=success`;
-                
-            } catch (error) {
-                console.error('Username setup error:', error);
-                errorMsg.textContent = error.message || 'Failed to set username';
-                errorMsg.style.display = 'block';
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Continue to Veilnet';
-            }
-        });
-        
-        // Real-time validation
-        document.getElementById('username').addEventListener('input', (e) => {
-            const username = e.target.value;
-            const errorMsg = document.getElementById('errorMessage');
-            
-            if (username.length < 3) {
-                errorMsg.textContent = 'Username must be at least 3 characters';
-                errorMsg.style.display = 'block';
-            } else if (username.length > 20) {
-                errorMsg.textContent = 'Username must be 20 characters or less';
-                errorMsg.style.display = 'block';
-            } else if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-                errorMsg.textContent = 'Username can only contain letters, numbers, underscores, and hyphens';
-                errorMsg.style.display = 'block';
-            } else {
-                errorMsg.style.display = 'none';
-            }
+        // Login functionality disabled
+        document.addEventListener('DOMContentLoaded', () => {
+            const container = document.querySelector('.setup-container');
+            container.innerHTML = `
+                <div class="setup-header">
+                    <h1>Login Disabled</h1>
+                    <p>Login functionality has been disabled for this site.</p>
+                </div>
+                <div style="text-align: center; margin-top: 2rem;">
+                    <a href="index.html" class="submit-btn" style="display: inline-block; text-decoration: none; width: auto; padding: 0.875rem 2rem;">
+                        Back to Veilnet
+                    </a>
+                </div>
+            `;
         });
     </script>
 </body>
