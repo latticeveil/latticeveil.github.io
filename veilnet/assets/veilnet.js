@@ -260,15 +260,16 @@
     const modal = document.createElement('div');
     modal.id = 'veilnet-login-modal';
     modal.style.cssText = `
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.8); z-index: 9999; display: none;
-      align-items: center; justify-content: center;
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.8); z-index: 9999; padding: 24px;
     `;
     
     const card = document.createElement('div');
     card.style.cssText = `
       background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
-      padding: 2rem; max-width: 400px; width: 90%; position: relative;
+      padding: 2rem; margin: 0; transform: none;
+      width: 100%; max-width: 520px; position: relative;
     `;
     
     card.innerHTML = `
@@ -324,6 +325,7 @@
             errorEl.style.display = 'block';
             return;
           }
+          await VeilnetAuth.ensureMyProfile();
           closeLoginModal();
           window.location.reload();
         }
@@ -359,6 +361,9 @@
 
     const currentUser = await getCurrentUser();
     
+    // Get display identity from VeilnetAuth
+    const identity = await VeilnetAuth.getDisplayIdentity();
+    
     // Avatar image
     const avatarImg = document.querySelector("[data-veil-avatar-img]");
     const ddImg = document.querySelector("[data-veil-dd-img]");
@@ -369,12 +374,12 @@
     const ddMyProfile = document.querySelector("[data-veil-myprofile]");
     const ddSettings = document.querySelector("[data-veil-settings]");
 
-    const pfp = currentUser.user?.user_metadata?.picture || ASSET("default_pfp.png");
+    const pfp = identity?.picture || ASSET("default_pfp.png");
     if(avatarImg) avatarImg.src = pfp;
     if(ddImg) ddImg.src = pfp;
     
-    if(currentUser.loggedIn){
-      if(ddTitle) ddTitle.textContent = currentUser.profile?.username || currentUser.user?.user_metadata?.name || currentUser.user?.email;
+    if(identity){
+      if(ddTitle) ddTitle.textContent = identity.displayName;
       if(ddSub) ddSub.textContent = "Online via Google";
       if(ddLogin) ddLogin.style.display="none";
       if(ddLogout) ddLogout.style.display="flex";
