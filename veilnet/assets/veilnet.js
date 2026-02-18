@@ -363,29 +363,46 @@
     gsiBtn.innerHTML = "";
     gsiBtn.style.cssText = "display:flex; justify-content:center; width:100%";
 
-    // Re-initialize GIS every time modal opens
-    if (!window.google || !google.accounts || !google.accounts.id) {
-      throw new Error("Google Identity Services failed to load.");
-    }
-    
-    google.accounts.id.initialize({
-      client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
-      callback: async (resp) => {
-        try {
-          errorEl.textContent = "";
-          if (!resp || !resp.credential) throw new Error("No credential returned from Google.");
-
-          const result = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
-          if (result?.error) throw result.error;
-
-          overlay.style.display = "none";
-          await refreshHeaderUI();
-        } catch (e) {
-          console.error("Veilnet login failed:", e);
-          errorEl.textContent = e?.message || String(e);
-        }
+    // Initialize GIS only once
+    if (!window.__veilnet_gis_inited) {
+      if (!window.google || !google.accounts || !google.accounts.id) {
+        throw new Error("Google Identity Services failed to load.");
       }
-    });
+      
+      google.accounts.id.initialize({
+        client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
+        callback: (resp) => {
+          if (typeof window.__veilnet_gis_handler === "function") {
+            window.__veilnet_gis_handler(resp);
+          }
+        }
+      });
+      
+      window.__veilnet_gis_inited = true;
+    }
+
+    // Set handler for this modal session
+    window.__veilnet_gis_handler = async (resp) => {
+      try {
+        errorEl.textContent = "";
+        if (!resp || !resp.credential) throw new Error("No credential returned from Google.");
+
+        const { error } = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
+        if (error) throw error;
+
+        const profile = await VeilnetAuth.ensureMyProfile();
+        if (!profile?.username) {
+          window.location.href = "/veilnet/setup-username.html";
+          return;
+        }
+
+        overlay.style.display = "none";
+        await refreshHeaderUI();
+      } catch (e) {
+        console.error("Veilnet login failed:", e);
+        errorEl.textContent = e?.message || String(e);
+      }
+    };
 
     google.accounts.id.renderButton(
       gsiBtn,
@@ -415,13 +432,24 @@
       return;
     }
 
-    const profile = await VeilnetAuth.getMyProfile();
+    const profile = await VeilnetAuth.ensureMyProfile();
     const displayName = profile?.username || profile?.name || user.email || "Signed in";
     const avatarUrl = profile?.picture || "assets/default_pfp.png";
 
     if (nameEl) nameEl.textContent = displayName;
-    if (subEl) subEl.textContent = "Online via Google";
     if (avatarEl) avatarEl.src = avatarUrl;
+
+    if (!profile?.username) {
+      if (subEl) subEl.textContent = "Choose a username";
+      // Show setup username link if available
+      const setupLink = document.getElementById("veilnet-setup-username");
+      if (setupLink) setupLink.style.display = "";
+    } else {
+      if (subEl) subEl.textContent = "Online via Google";
+      // Hide setup username link if available
+      const setupLink = document.getElementById("veilnet-setup-username");
+      if (setupLink) setupLink.style.display = "none";
+    }
 
     if (loginItem) loginItem.style.display = "none";
     if (logoutItem) logoutItem.style.display = "";
