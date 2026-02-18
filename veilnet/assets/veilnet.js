@@ -310,7 +310,6 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",async ()=>{
-        VeilnetAuth.setReturnTo(window.location.href);
         window.location.href = VEILNET_CONFIG.LOGIN_PATH;
       });
     }
