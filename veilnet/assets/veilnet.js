@@ -711,10 +711,16 @@ if (document.readyState === 'loading') {
     
     // Clear guard to allow re-wiring (needed after logout/DOM changes)
     if (toggleEl.dataset.veilWired === "1") {
-      // Remove existing handler by cloning the element
+      // Remove existing handler by cloning element
       const newToggleEl = toggleEl.cloneNode(true);
       toggleEl.parentNode.replaceChild(newToggleEl, toggleEl);
-      return wireDropdownToggle(); // Re-call with new element
+      // Set up the new element and return - NO recursive call
+      newToggleEl.dataset.veilWired = "1";
+      newToggleEl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        dropdownEl.classList.toggle("open");
+      });
+      return;
     }
     
     toggleEl.dataset.veilWired = "1";
