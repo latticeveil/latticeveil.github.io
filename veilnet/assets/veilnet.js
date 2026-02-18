@@ -438,9 +438,30 @@
     const error = urlParams.get('error');
     
     if (code) {
-      // Supabase handles OAuth callback automatically
-      // Redirect to our site after Supabase processing
-      window.location.href = 'https://latticeveil.github.io/veilnet/index.html?login=success';
+      // Handle OAuth callback directly on GitHub Pages
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Get user session and store in localStorage for persistence
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        return;
+      }
+      
+      if (session?.user) {
+        // Store user data in localStorage for persistence across page reloads
+        localStorage.setItem('veilnet_user', JSON.stringify({
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.user_metadata?.name || session.user.email,
+          username: session.user.user_metadata?.username || session.user.email,
+          picture: session.user.user_metadata?.picture || session.user.picture
+        }));
+        
+        console.log('User logged in:', session.user.email);
+      }
+      
+      await ensureHeader();
     } else if (error) {
       console.error('OAuth error:', error);
     }
