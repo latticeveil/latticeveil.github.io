@@ -308,6 +308,7 @@
         color:var(--accent);
         text-decoration:none;
         font-size:0.875rem;
+        display:none; /* Hidden to keep single-flow UX */
         opacity:0.8;
       ">Open login page</a>
     `;
@@ -515,6 +516,11 @@
     gsiBtn.innerHTML = "";
     gsiBtn.style.cssText = "display:flex; justify-content:center; width:100%";
 
+    // Reset Google button state
+    if (window.google && window.google.accounts && window.google.accounts.id && window.google.accounts.id.cancel) {
+      google.accounts.id.cancel();
+    }
+
     // Initialize GIS only once
     if (!window.__veilnet_gis_inited) {
       if (!window.google || !google.accounts || !google.accounts.id) {
@@ -539,14 +545,18 @@
         errorEl.textContent = "";
         if (!resp || !resp.credential) throw new Error("No credential returned from Google.");
 
-        // Store pending profile from Google token
-        await VeilnetAuth.ensureUserRowFromGoogleToken(resp.credential);
-
         const { error } = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
         if (error) throw error;
 
         overlay.style.display = "none";
-        openUsernameModal();
+        
+        // Check if user needs username
+        const identity = await VeilnetAuth.getDisplayIdentity();
+        if (!identity.username) {
+          openUsernameModal(); // Keep modal open and blocking
+        } else {
+          refreshHeaderUI(); // Update UI with username
+        }
       } catch (e) {
         console.error("Veilnet login failed:", e);
         errorEl.textContent = e?.message || String(e);
@@ -608,7 +618,22 @@
 // Expose for debugging
 window.refreshHeaderUI = refreshHeaderUI;
 
+// Add page navigation event listeners for instant UI updates
+window.addEventListener("pageshow", () => {
+  setTimeout(refreshHeaderUI, 100);
+});
+
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    setTimeout(refreshHeaderUI, 100);
+  }
+});
+
   async function ensureHeader(){
+    // Prevent duplicate event listeners
+    if (window.__veilnet_header_wired) return;
+    window.__veilnet_header_wired = true;
+    
     // attach dropdown toggles and login mocks
     const avatarBtn = document.querySelector("[data-veil-avatar]");
     const dd = document.querySelector("[data-veil-dropdown]");
@@ -672,7 +697,7 @@ window.refreshHeaderUI = refreshHeaderUI;
     }
     if(ddLogout){
       ddLogout.addEventListener("click",async ()=>{
-        await VeilnetAuth.logout();
+        await VeilnetAuth.signOut();
         await refreshHeaderUI();
       });
     }

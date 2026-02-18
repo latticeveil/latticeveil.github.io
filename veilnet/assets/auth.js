@@ -91,6 +91,11 @@ window.VeilnetAuth = (function() {
       }
     },
 
+    // Backwards compatibility alias
+    async logout() {
+      return await this.signOut();
+    },
+
     async signInWithGoogleIdToken(idToken) {
       const client = init();
       const { data, error } = await client.auth.signInWithIdToken({
@@ -141,15 +146,31 @@ window.VeilnetAuth = (function() {
         throw new Error('Username must be 3-16 characters, start with letter or underscore, and contain only letters, numbers, and underscores');
       }
       
-      // Check availability
+      // Check availability (case-insensitive)
       const available = await this.isUsernameAvailable(username);
       if (!available) {
         throw new Error('Username is already taken');
       }
 
       const client = init();
+      
+      // Get user ID in priority order
+      let userId;
+      if (user.identities && user.identities.length > 0) {
+        const googleIdentity = user.identities.find(id => id.provider === 'google');
+        if (googleIdentity) {
+          userId = googleIdentity.id;
+        }
+      }
+      if (!userId && user.user_metadata && user.user_metadata.sub) {
+        userId = user.user_metadata.sub;
+      }
+      if (!userId) {
+        userId = user.id; // fallback to Supabase auth UUID
+      }
+      
       const profileData = {
-        id: pendingProfile?.id || user.id,
+        id: userId,
         email: user.email,
         name: pendingProfile?.name || user.user_metadata?.name || user.email,
         picture: pendingProfile?.picture || user.user_metadata?.picture || null,
@@ -198,7 +219,7 @@ window.VeilnetAuth = (function() {
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
         .select("username")
-        .ilike("username", username)
+        .eq("lower(username)", username.toLowerCase())
         .maybeSingle();
       
       if (error) {
