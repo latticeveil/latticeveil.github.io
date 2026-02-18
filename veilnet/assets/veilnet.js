@@ -677,19 +677,17 @@
 window.refreshHeaderUI = refreshHeaderUI;
 
 // Add page navigation event listeners for instant UI updates
-window.addEventListener("pageshow", () => {
-  setTimeout(() => {
-    refreshHeaderUI();
-    wireDropdownToggle(); // Re-wire on navigation
-  }, 100);
+window.addEventListener("pageshow", (e) => {
+  wireDropdownToggle();
+  refreshHeaderUI();
+  // If BFCache restored, also force dropdown closed
+  if (e.persisted) document.querySelector("[data-veil-dropdown]")?.classList.remove("open");
 });
 
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) {
-    setTimeout(() => {
-      refreshHeaderUI();
-      wireDropdownToggle(); // Re-wire when page becomes visible
-    }, 100);
+    wireDropdownToggle();
+    refreshHeaderUI();
   }
 });
 
@@ -697,46 +695,36 @@ document.addEventListener("visibilitychange", () => {
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     wireDropdownToggle();
+    refreshHeaderUI();
   });
 } else {
   wireDropdownToggle();
+  refreshHeaderUI();
 }
 
-  // Safe dropdown toggle wiring with element-level guard
+  // Robust dropdown toggle wiring that works after BFCache restore
   function wireDropdownToggle() {
-    const toggleEl = document.querySelector("[data-veil-avatar]");
-    const dropdownEl = document.querySelector("[data-veil-dropdown]");
-    
-    if (!toggleEl || !dropdownEl) return;
-    
-    // Clear guard to allow re-wiring (needed after logout/DOM changes)
-    if (toggleEl.dataset.veilWired === "1") {
-      // Remove existing handler by cloning element
-      const newToggleEl = toggleEl.cloneNode(true);
-      toggleEl.parentNode.replaceChild(newToggleEl, toggleEl);
-      // Set up the new element and return - NO recursive call
-      newToggleEl.dataset.veilWired = "1";
-      newToggleEl.addEventListener("click", (e) => {
-        e.stopPropagation();
-        dropdownEl.classList.toggle("open");
-      });
-      return;
-    }
-    
-    toggleEl.dataset.veilWired = "1";
-    
-    // Add click handler to toggle dropdown
-    toggleEl.addEventListener("click", (e) => {
+    const toggle = document.querySelector(".pfp-wrap .avatar, [data-veil-avatar]");
+    const dropdown = document.querySelector("[data-veil-dropdown]");
+    if (!toggle || !dropdown) return;
+
+    // Remove any existing handler to avoid duplicates
+    if (toggle.__veilToggleHandler) toggle.removeEventListener("click", toggle.__veilToggleHandler);
+
+    toggle.__veilToggleHandler = (e) => {
+      e.preventDefault();
       e.stopPropagation();
-      dropdownEl.classList.toggle("open");
-    });
-    
-    // Document click handler to close dropdown when clicking outside
-    // Only add once globally
-    if (!window.__veil_dropdown_outside_wired) {
-      window.__veil_dropdown_outside_wired = true;
-      document.addEventListener("click", () => {
-        dropdownEl.classList.remove("open");
+      dropdown.classList.toggle("open");
+    };
+    toggle.addEventListener("click", toggle.__veilToggleHandler);
+
+    // Outside click close (wire once globally)
+    if (!window.__veil_outside_click_wired) {
+      window.__veil_outside_click_wired = true;
+      document.addEventListener("click", (e) => {
+        const wrap = document.querySelector(".pfp-wrap");
+        if (!wrap) return;
+        if (!wrap.contains(e.target)) dropdown.classList.remove("open");
       });
     }
   }
@@ -768,10 +756,10 @@ if (document.readyState === 'loading') {
     if(ddLogout){
       ddLogout.addEventListener("click",async ()=>{
         await VeilnetAuth.signOut();
-        dd.classList.remove("open");
+        dropdown.classList.remove("open");
         await refreshHeaderUI();
-        // Force page refresh to ensure dropdown works reliably
-        window.location.reload();
+        // Re-wire dropdown toggle (safe without page reload)
+        wireDropdownToggle();
       });
     }
     if(ddMyProfile){
@@ -795,6 +783,8 @@ if (document.readyState === 'loading') {
     
     // Initial UI refresh
     await refreshHeaderUI();
+    // Ensure dropdown toggle is wired
+    wireDropdownToggle();
   }  
 
   function renderHome(){
