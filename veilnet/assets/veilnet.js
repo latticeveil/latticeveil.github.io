@@ -490,14 +490,16 @@
   
   // Handle Supabase OAuth consent URL patch
   if (window.location.pathname.includes('/oauth/consent')) {
-    // Extract Google OAuth code and redirect to main app with code
+    // Extract Google OAuth code and redirect to username setup
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     
+    console.log('OAuth consent page - code:', code);
+    
     if (code) {
-      // Redirect to main app with the OAuth code for Supabase to handle
-      // Use the same URL pattern that Supabase expects
-      window.location.href = `https://latticeveil.github.io/veilnet/index.html?code=${encodeURIComponent(code)}&provider=google`;
+      // Redirect directly to username setup with the OAuth code
+      // This will ensure user can set username after OAuth
+      window.location.href = `https://latticeveil.github.io/veilnet/setup-username.html?code=${encodeURIComponent(code)}`;
     } else {
       // No code, redirect to main app
       window.location.href = 'https://latticeveil.github.io/veilnet/index.html';
