@@ -4,10 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Veilnet Device Login</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <script>
   (function () {
+    // Initialize Supabase client
+    const supabase = window.supabase.createClient(
+        'https://lqghurvonrvrxfwjgkuu.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxZ2h1cnZvbnJ2cnhmd2prdXUiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczOTg0MTQ2MCwiZXhwIjoyMDU1NDE3NDYwfQ.9oJv3M7vQWzjRQ9a_0L5mYJjJ5eJ5k5J5k5J5k5J5k5J5k5J5k5J5k5J5k'
+    );
+
     const params = new URLSearchParams(window.location.search);
     const userCode = params.get('user_code') || params.get('userCode') || '';
     const deviceCode = params.get('device_code') || params.get('deviceCode') || '';
@@ -17,9 +24,8 @@
       return;
     }
 
-    const backendBase = 'https://veilnet.onrender.com';
-    const target = backendBase + '/auth/device/verify?user_code=' + encodeURIComponent(userCode) + '&device_code=' + encodeURIComponent(deviceCode);
-    window.location.replace(target);
+    // Redirect to Supabase device authorization
+    window.location.href = `https://lqghurvonrvrxfwjgkuu.supabase.co/functions/v1/veilnet-auth/device/verify?user_code=${encodeURIComponent(userCode)}&device_code=${encodeURIComponent(deviceCode)}`;
   })();
 </script>
 </body>

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Choose Username - Veilnet</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="assets/veilnet.css">
     <style>
         body {
@@ -126,6 +127,12 @@
     </div>
 
     <script>
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(
+            'https://lqghurvonrvrxfwjgkuu.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxxZ2h1cnZvbnJ2cnhmd2prdXUiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczOTg0MTQ2MCwiZXhwIjoyMDU1NDE3NDYwfQ.9oJv3M7vQWzjRQ9a_0L5mYJjJ5eJ5k5J5k5J5k5J5k5J5k5J5k5J5k5J5k'
+        );
+
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('userId');
         
@@ -151,30 +158,43 @@
             errorMsg.style.display = 'none';
             
             try {
-                const response = await fetch('https://veilnet.onrender.com/api/set-username', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ userId, username })
-                });
+                // Check if username is already taken
+                const { data: existingUser } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('username', username)
+                    .single();
                 
-                const data = await response.json();
-                
-                if (data.success) {
-                    // Username set successfully, redirect to main app
-                    window.location.href = `index.html?login=success&user=${encodeURIComponent(JSON.stringify({
-                        id: userId,
-                        username: username,
-                        name: username,
-                        picture: null
-                    }))}`;
-                } else {
-                    errorMsg.textContent = data.error || 'Failed to set username';
+                if (existingUser) {
+                    errorMsg.textContent = 'Username already taken';
                     errorMsg.style.display = 'block';
+                    return;
                 }
+                
+                // Update user profile with username
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const { error } = await supabase
+                    .from('users')
+                    .upsert({
+                        id: user.id,
+                        username: username,
+                        email: user.email,
+                        name: user.user_metadata?.name || user.email,
+                        picture: user.user_metadata?.picture,
+                        updated_at: new Date().toISOString()
+                    });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                // Username set successfully, redirect to main app
+                window.location.href = `index.html?login=success`;
+                
             } catch (error) {
-                errorMsg.textContent = 'Network error. Please try again.';
+                console.error('Username setup error:', error);
+                errorMsg.textContent = error.message || 'Failed to set username';
                 errorMsg.style.display = 'block';
             } finally {
                 submitBtn.disabled = false;
