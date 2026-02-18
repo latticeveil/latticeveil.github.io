@@ -474,13 +474,15 @@
   
   // Handle Supabase OAuth consent URL patch
   if (window.location.pathname.includes('/oauth/consent')) {
-    // Extract the actual callback URL from the consent URL
+    // Extract the actual callback URL and custom parameters
     const urlParams = new URLSearchParams(window.location.search);
     const actualCallback = urlParams.get('callback_url');
+    const customName = urlParams.get('custom_name') || 'Veilnet';
     
     if (actualCallback) {
-      // Redirect to the actual callback URL with the original parameters
+      // Redirect to actual callback URL with custom name parameter
       const originalParams = new URLSearchParams(actualCallback.split('?')[1] || '');
+      originalParams.set('custom_name', customName);
       const newUrl = `${window.location.origin}${window.location.pathname}?${originalParams.toString()}`;
       window.location.href = newUrl;
     }
@@ -541,11 +543,11 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",async ()=>{
-        // Use Supabase built-in Google OAuth with correct callback
+        // Use Supabase built-in Google OAuth with custom consent URL
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: 'https://latticeveil.github.io/veilnet/auth/v1/callback'
+            redirectTo: 'https://latticeveil.github.io/veilnet//oauth/consent'
           }
         });
         
