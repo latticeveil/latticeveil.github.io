@@ -438,6 +438,20 @@
   if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
     handleOAuthCallback();
   }
+  
+  // Handle Supabase OAuth consent URL patch
+  if (window.location.pathname.includes('/oauth/consent')) {
+    // Extract the actual callback URL from the consent URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const actualCallback = urlParams.get('callback_url');
+    
+    if (actualCallback) {
+      // Redirect to the actual callback URL with the original parameters
+      const originalParams = new URLSearchParams(actualCallback.split('?')[1] || '');
+      const newUrl = `${window.location.origin}${window.location.pathname}?${originalParams.toString()}`;
+      window.location.href = newUrl;
+    }
+  }
 
     async function ensureHeader(){
     // attach dropdown toggles and login mocks
