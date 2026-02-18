@@ -565,6 +565,8 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",async ()=>{
+        console.log('Login clicked - using direct Google OAuth');
+        
         // Use direct Google OAuth with custom consent URL
         const googleAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth?' + new URLSearchParams({
           client_id: '843782276052-t209v6utfham56dvi1q7i3kser4p9pte.apps.googleusercontent.com',
@@ -574,6 +576,7 @@
           access_type: 'offline'
         });
         
+        console.log('Redirecting to:', googleAuthUrl);
         window.location.href = googleAuthUrl;
       });
     }
