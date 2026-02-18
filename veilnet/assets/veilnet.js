@@ -374,7 +374,7 @@
 
         overlay.style.display = "none";
         window.__veilnet_gis_handler = null;
-        window.location.reload();
+        await refreshHeaderUI();
       } catch (e) {
         console.error("Veilnet login failed:", e);
         errorEl.textContent = e?.message || String(e);
@@ -386,6 +386,40 @@
       { theme: "outline", size: "large", shape: "pill" }
     );
   }
+
+  async function refreshHeaderUI() {
+  try {
+    const nameEl = document.getElementById("veilnet-display-name");
+    const subEl = document.getElementById("veilnet-display-subtext");
+    const avatarEl = document.getElementById("veilnet-avatar");
+    const loginItem = document.getElementById("veilnet-login-item");
+    const logoutItem = document.getElementById("veilnet-logout-item");
+
+    const user = await VeilnetAuth.getUser();
+
+    if (!user) {
+      if (nameEl) nameEl.textContent = "Not signed in";
+      if (subEl) subEl.textContent = "Login to access Veilnet features";
+      if (avatarEl) avatarEl.src = "assets/default_pfp.png";
+      if (loginItem) loginItem.style.display = "";
+      if (logoutItem) logoutItem.style.display = "none";
+      return;
+    }
+
+    const profile = await VeilnetAuth.getMyProfile();
+    const displayName = profile?.username || profile?.name || user.email;
+    const avatarUrl = profile?.picture || "assets/default_pfp.png";
+
+    if (nameEl) nameEl.textContent = displayName;
+    if (subEl) subEl.textContent = "Online via Google";
+    if (avatarEl) avatarEl.src = avatarUrl;
+
+    if (loginItem) loginItem.style.display = "none";
+    if (logoutItem) logoutItem.style.display = "";
+  } catch (e) {
+    console.error("refreshHeaderUI failed:", e);
+  }
+}
 
   async function ensureHeader(){
     // attach dropdown toggles and login mocks
@@ -452,7 +486,7 @@
     if(ddLogout){
       ddLogout.addEventListener("click",async ()=>{
         await VeilnetAuth.logout();
-        window.location.reload();
+        await refreshHeaderUI();
       });
     }
 
@@ -473,6 +507,9 @@
         location.href = dest;
       });
     }
+    
+    // Refresh header UI with auth state
+    await refreshHeaderUI();
   }
 
   function renderHome(){

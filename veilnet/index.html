@@ -35,10 +35,10 @@
 
           <div class="dropdown" data-veil-dropdown>
             <div class="dd-head">
-              <img data-veil-dd-img src="assets/default_pfp.png" alt="">
+              <img id="veilnet-avatar" data-veil-dd-img src="assets/default_pfp.png" alt="">
               <div>
-                <div class="dd-title" data-veil-dd-title>Not signed in</div>
-                <div class="dd-sub" data-veil-dd-sub>Login to access Veilnet features</div>
+                <div id="veilnet-display-name" class="dd-title" data-veil-dd-title>Not signed in</div>
+                <div id="veilnet-display-subtext" class="dd-sub" data-veil-dd-sub>Login to access Veilnet features</div>
               </div>
             </div>
 
@@ -60,11 +60,11 @@
 
             <div class="dd-divider"></div>
 
-            <div class="dd-item" data-veil-login>
+            <div id="veilnet-login-item" class="dd-item" data-veil-login>
               <span>Login with Google</span><small>Demo</small>
             </div>
 
-            <div class="dd-item" data-veil-logout style="display:none">
+            <div id="veilnet-logout-item" class="dd-item" data-veil-logout style="display:none">
               <span>Log Out</span><small>Demo</small>
             </div>
           </div>
