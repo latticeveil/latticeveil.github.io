@@ -11,6 +11,13 @@ window.VeilnetAuth = (function() {
     }
   );
 
+  // Listen for auth state changes
+  supa.auth.onAuthStateChange(() => {
+    if (typeof window.refreshHeaderUI === 'function') {
+      window.refreshHeaderUI();
+    }
+  });
+
   return {
     async getUser() {
       const { data: { user } } = await supa.auth.getUser();

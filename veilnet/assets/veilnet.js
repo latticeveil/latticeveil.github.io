@@ -361,25 +361,31 @@
     overlay.style.display = "flex";
     errorEl.textContent = "";
     gsiBtn.innerHTML = "";
+    gsiBtn.style.cssText = "display:flex; justify-content:center; width:100%";
 
-    await ensureGisInitialized();
+    // Re-initialize GIS every time modal opens
+    if (!window.google || !google.accounts || !google.accounts.id) {
+      throw new Error("Google Identity Services failed to load.");
+    }
+    
+    google.accounts.id.initialize({
+      client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
+      callback: async (resp) => {
+        try {
+          errorEl.textContent = "";
+          if (!resp || !resp.credential) throw new Error("No credential returned from Google.");
 
-    window.__veilnet_gis_handler = async (resp) => {
-      try {
-        errorEl.textContent = "";
-        if (!resp || !resp.credential) throw new Error("No credential returned from Google.");
+          const result = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
+          if (result?.error) throw result.error;
 
-        const result = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
-        if (result?.error) throw result.error;
-
-        overlay.style.display = "none";
-        window.__veilnet_gis_handler = null;
-        await refreshHeaderUI();
-      } catch (e) {
-        console.error("Veilnet login failed:", e);
-        errorEl.textContent = e?.message || String(e);
+          overlay.style.display = "none";
+          await refreshHeaderUI();
+        } catch (e) {
+          console.error("Veilnet login failed:", e);
+          errorEl.textContent = e?.message || String(e);
+        }
       }
-    };
+    });
 
     google.accounts.id.renderButton(
       gsiBtn,
@@ -388,13 +394,16 @@
   }
 
   async function refreshHeaderUI() {
-  try {
-    const nameEl = document.getElementById("veilnet-display-name");
-    const subEl = document.getElementById("veilnet-display-subtext");
-    const avatarEl = document.getElementById("veilnet-avatar");
-    const loginItem = document.getElementById("veilnet-login-item");
-    const logoutItem = document.getElementById("veilnet-logout-item");
+  const nameEl = document.getElementById("veilnet-display-name");
+  const subEl = document.getElementById("veilnet-display-subtext");
+  const avatarEl = document.getElementById("veilnet-avatar");
+  const loginItem = document.getElementById("veilnet-login-item");
+  const logoutItem = document.getElementById("veilnet-logout-item");
 
+  // if dropdown not present, just return (avoid errors on other pages)
+  if (!nameEl && !subEl && !avatarEl && !loginItem && !logoutItem) return;
+
+  try {
     const user = await VeilnetAuth.getUser();
 
     if (!user) {
@@ -407,7 +416,7 @@
     }
 
     const profile = await VeilnetAuth.getMyProfile();
-    const displayName = profile?.username || profile?.name || user.email;
+    const displayName = profile?.username || profile?.name || user.email || "Signed in";
     const avatarUrl = profile?.picture || "assets/default_pfp.png";
 
     if (nameEl) nameEl.textContent = displayName;
@@ -420,6 +429,9 @@
     console.error("refreshHeaderUI failed:", e);
   }
 }
+
+// Expose for debugging
+window.refreshHeaderUI = refreshHeaderUI;
 
   async function ensureHeader(){
     // attach dropdown toggles and login mocks
@@ -780,5 +792,8 @@
     
     // Initialize cross-tab synchronization
     // initCrossTabSync(); // DISABLED
+    
+    // Refresh header UI with auth state
+    refreshHeaderUI();
   });
 })();
