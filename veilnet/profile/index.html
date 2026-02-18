@@ -150,12 +150,9 @@
               <button id="editUsernameBtn" class="edit-btn" style="display: none;" title="Edit username">
                 ✏️
               </button>
-<<<<<<< HEAD
-=======
               <button id="editProfileBtn" class="edit-btn" style="display: none;" title="Edit profile">
                 ⚙️
               </button>
->>>>>>> clean-master
               <button id="refreshProfileBtn" class="edit-btn" title="Refresh profile" style="opacity: 0.6;">
                 🔄
               </button>
@@ -191,8 +188,6 @@
     </div>
   </main>
 
-<<<<<<< HEAD
-=======
   <!-- Edit Profile Modal -->
   <div id="editProfileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
     <div style="background: var(--panel); border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
@@ -352,10 +347,6 @@
         if (result && result.success) {
           const user = result.user;
           
-<<<<<<< HEAD
-          // Update profile display
-          document.getElementById('profileUsername').textContent = user.username;
-=======
           // Safe avatar resolver
           function getAvatarUrl(picture) {
             if (!picture || typeof picture !== 'string') {
@@ -371,17 +362,10 @@
           
           // Update profile display
           document.getElementById('profileUsername').textContent = user.username || 'Unknown User';
->>>>>>> clean-master
           document.getElementById('profileStatus').textContent = `Online via Google`;
           document.getElementById('profileAbout').textContent = user.aboutMe || 'No information provided';
           document.getElementById('profileStatusMessage').textContent = user.statusMessage || 'No status message';
           document.getElementById('profileTheme').style.background = user.themeColor || '#38e1ff';
-<<<<<<< HEAD
-          document.getElementById('profileMemberSince').textContent = new Date(user.createdAt).toLocaleDateString();
-          
-          // Update avatar
-          const avatar = user.picture || '../assets/default_pfp.png';
-=======
           
           // Safe date formatting
           let memberSinceText = 'Unknown';
@@ -396,7 +380,6 @@
           
           // Update avatar with fallback
           const avatar = getAvatarUrl(user.picture);
->>>>>>> clean-master
           document.getElementById('profileAvatar').src = avatar;
           
           // Update header
@@ -405,15 +388,7 @@
           if (avatarImg) avatarImg.src = avatar;
           if (ddImg) ddImg.src = avatar;
           
-<<<<<<< HEAD
-          // Show edit button if viewing own profile
-          const currentUser = JSON.parse(localStorage.getItem('veilnet.user') || '{}');
-          const editBtn = document.getElementById('editUsernameBtn');
-          if (editBtn && currentUser.username === user.username) {
-            editBtn.style.display = 'inline-block';
-            setupUsernameEditing(currentUser);
-=======
-          // Check if viewing own profile and show appropriate buttons
+// Check if viewing own profile and show appropriate buttons
           const currentUser = JSON.parse(localStorage.getItem('veilnet.user') || '{}');
           const editUsernameBtn = document.getElementById('editUsernameBtn');
           const editProfileBtn = document.getElementById('editProfileBtn');
@@ -426,7 +401,6 @@
           } else {
             if (editUsernameBtn) editUsernameBtn.style.display = 'none';
             if (editProfileBtn) editProfileBtn.style.display = 'none';
->>>>>>> clean-master
           }
           
         } else if (result && result.timeout) {
@@ -481,9 +455,7 @@
       }
     }
     
-<<<<<<< HEAD
-=======
-    // Setup edit profile functionality
+// Setup edit profile functionality
     function setupEditProfile() {
       const editBtn = document.getElementById('editProfileBtn');
       const modal = document.getElementById('editProfileModal');
@@ -622,7 +594,6 @@
       });
     }
     
->>>>>>> clean-master
     // Setup username editing functionality
     function setupUsernameEditing(currentUser) {
       const usernameElement = document.getElementById('profileUsername');

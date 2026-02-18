@@ -6,7 +6,12 @@ window.VeilnetAuth = (function() {
   function init() {
     if (supa) return supa;
     
-    supa = supabase.createClient(
+    // Defensive check: ensure Supabase JS is loaded
+    if (typeof window.supabase === "undefined") {
+      throw new Error("Supabase JS not loaded. Ensure <script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'></script> is included BEFORE auth.js");
+    }
+    
+    supa = window.supabase.createClient(
       VEILNET_CONFIG.SUPABASE_URL,
       VEILNET_CONFIG.SUPABASE_ANON_KEY,
       {
@@ -19,9 +24,14 @@ window.VeilnetAuth = (function() {
     );
 
     // Listen for auth state changes
-    supa.auth.onAuthStateChange((event) => {
+    supa.auth.onAuthStateChange((event, session) => {
+      // Refresh header UI immediately
       if (typeof window.refreshHeaderUI === 'function') {
         window.refreshHeaderUI();
+      }
+      // Update unread indicators if available
+      if (typeof window.updateUnreadIndicator === 'function') {
+        window.updateUnreadIndicator();
       }
     });
 
@@ -61,7 +71,24 @@ window.VeilnetAuth = (function() {
       const client = init();
       pendingProfile = null;
       sessionStorage.removeItem('veilnet_pending_profile');
+      
+      // Clear any local cached profile/session variables
+      if (typeof window.clearCachedProfile === 'function') {
+        window.clearCachedProfile();
+      }
+      
       await client.auth.signOut();
+      
+      // Force immediate UI refresh
+      if (typeof window.refreshHeaderUI === 'function') {
+        window.refreshHeaderUI();
+      }
+      
+      // Close dropdown if open
+      const dropdown = document.querySelector('[data-veil-dropdown]');
+      if (dropdown && dropdown.style.display !== 'none') {
+        dropdown.style.display = 'none';
+      }
     },
 
     async signInWithGoogleIdToken(idToken) {
