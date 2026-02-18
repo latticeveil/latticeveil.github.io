@@ -84,12 +84,14 @@ window.VeilnetAuth = (function() {
         window.refreshHeaderUI();
       }
       
-      // Close dropdown if open
+      // Close dropdown if open (do not permanently hide it)
       const dropdown = document.querySelector('[data-veil-dropdown]');
-      if (dropdown && dropdown.style.display !== 'none') {
-        dropdown.style.display = 'none';
+      if (dropdown) {
+        dropdown.classList.remove('open');
+        // ensure we never leave it permanently hidden
+        if (dropdown.style && dropdown.style.display === 'none') dropdown.style.display = '';
       }
-    },
+},
 
     // Backwards compatibility alias
     async logout() {
