@@ -55,11 +55,14 @@ window.VeilnetAuth = (function() {
       
       const { data, error } = await supa
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select("email, username, picture, name, aboutme, statusmessage, themecolor, createdat")
+        .select("id, email, username, picture, name, aboutme, statusmessage, themecolor, createdat")
         .eq("email", user.email)
         .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error("getMyProfile error:", error);
+        throw error;
+      }
       return data;
     },
 
@@ -70,22 +73,28 @@ window.VeilnetAuth = (function() {
       let profile = await this.getMyProfile();
       
       if (!profile) {
+        const profileData = {
+          id: user.id, // Required non-null field
+          email: user.email,
+          name: user.user_metadata?.name ?? user.email,
+          picture: user.user_metadata?.picture ?? null,
+          createdat: new Date().toISOString(),
+          username: null,
+          aboutme: null,
+          statusmessage: null,
+          themecolor: null
+        };
+        
         const { data, error } = await supa
           .from(VEILNET_CONFIG.PROFILE_TABLE)
-          .insert({
-            email: user.email,
-            name: user.user_metadata?.name ?? user.email,
-            picture: user.user_metadata?.picture ?? null,
-            createdat: new Date().toISOString(),
-            username: null,
-            aboutme: null,
-            statusmessage: null,
-            themecolor: null
-          })
+          .insert(profileData)
           .select()
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error("ensureMyProfile insert error:", error);
+          throw new Error(`Failed to create profile: ${error.message}`);
+        }
         profile = data;
       }
       
@@ -105,17 +114,39 @@ window.VeilnetAuth = (function() {
       return { email, username, picture, displayName };
     },
 
-    async checkUsernameAvailable(username) {
+    async isUsernameAvailable(username) {
       if (!username) return false;
       
+      // Check case-insensitive availability
       const { data, error } = await supa
         .from(VEILNET_CONFIG.PROFILE_TABLE)
         .select("username")
-        .eq("username", username)
+        .ilike("username", username)
         .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error("isUsernameAvailable error:", error);
+        throw error;
+      }
       return !data; // available if no data found
+    },
+
+    async setUsername(username) {
+      const user = await this.getUser();
+      if (!user || !user.email) throw new Error('Not authenticated or missing email');
+      
+      // Validate username format
+      if (!/^[a-zA-Z_][a-zA-Z0-9_]{2,15}$/.test(username)) {
+        throw new Error('Username must be 3-16 characters, start with letter or underscore, and contain only letters, numbers, and underscores');
+      }
+      
+      // Check availability
+      const available = await this.isUsernameAvailable(username);
+      if (!available) {
+        throw new Error('Username is already taken');
+      }
+      
+      return await this.updateMyProfile({ username });
     },
 
     async updateMyProfile(patch) {
@@ -126,16 +157,19 @@ window.VeilnetAuth = (function() {
         .from(VEILNET_CONFIG.PROFILE_TABLE)
         .update(patch)
         .eq("email", user.email)
-        .select("email, username, picture, name, aboutme, statusmessage, themecolor, createdat")
+        .select("id, email, username, picture, name, aboutme, statusmessage, themecolor, createdat")
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("updateMyProfile error:", error);
+        throw error;
+      }
       return data;
     },
 
     async needsUsername() {
       const profile = await this.getMyProfile();
       return !profile || !profile.username;
-    },
+    }
   };
 })();
