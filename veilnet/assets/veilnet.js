@@ -421,20 +421,21 @@
   // Handle OAuth callback using Supabase
   async function handleOAuthCallback() {
     const urlParams = new URLSearchParams(window.location.search);
-    const loginStatus = urlParams.get('login');
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
     
-    if (loginStatus === 'success') {
-      // Supabase handles the callback automatically
+    if (code) {
+      // Supabase will handle the OAuth callback automatically
       window.history.replaceState({}, document.title, window.location.pathname);
       await ensureHeader();
-      console.log('User logged in via Supabase');
-    } else if (loginStatus === 'error') {
-      console.error('Login failed');
+      console.log('OAuth successful with code');
+    } else if (error) {
+      console.error('OAuth error:', error);
     }
   }
   
   // Check for OAuth callback on page load
-  if (window.location.search.includes('login=')) {
+  if (window.location.search.includes('code=') || window.location.search.includes('error=')) {
     handleOAuthCallback();
   }
 
@@ -493,11 +494,11 @@
 
     if(ddLogin){
       ddLogin.addEventListener("click",async ()=>{
-        // Use Supabase built-in Google OAuth
+        // Use Supabase built-in Google OAuth with correct callback
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: 'https://latticeveil.github.io/veilnet/index.html?login=success'
+            redirectTo: 'https://latticeveil.github.io/veilnet/auth/v1/callback'
           }
         });
         
