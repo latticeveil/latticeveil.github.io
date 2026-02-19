@@ -358,7 +358,7 @@
             <button id="editUsernameBtn" class="edit-btn" style="display: none;" title="Edit Profile (username/avatar/banner)">
               ✏️
             </button>
-            <button id="editProfileBtn" class="edit-btn" style="display: none;" title="About Me settings">
+            <button id="editProfileBtn" class="edit-btn" style="display: none;" title="Profile settings (About Me + Theme)">
               ⚙️
             </button>
             <button id="refreshProfileBtn" class="edit-btn" title="Refresh profile" style="opacity: 0.6;">
@@ -565,6 +565,17 @@
     function renderProfile(profile) {
       window.currentUserProfile = profile;
 
+      const knownThemes = window.VEILNET_THEMES || {};
+      const requestedTheme = String(profile?.theme || "default").trim().toLowerCase();
+      const activeTheme = Object.prototype.hasOwnProperty.call(knownThemes, requestedTheme) ? requestedTheme : "default";
+      window.currentUserProfile.theme = activeTheme;
+
+      if (typeof window.applyVeilnetTheme === "function") {
+        window.applyVeilnetTheme(activeTheme);
+      } else {
+        window.__veilnet_theme = activeTheme;
+      }
+
       // Update page title
       document.title = `Veilnet • ${profile.username}`;
       document.getElementById('profileTitle').textContent = `Veilnet • ${profile.username}`;
@@ -578,7 +589,7 @@
       // Other profile fields
       document.getElementById('profileAboutMeText').textContent = profile.aboutme || 'No about me yet.';
       document.getElementById('profileStatusMessage').textContent = profile.statusmessage || 'No status message';
-      document.getElementById('profileTheme').style.background = 'var(--accent)';
+      document.getElementById('profileTheme').style.background = 'linear-gradient(135deg, var(--accent), var(--accent2))';
       
       // Member since date
       let memberSinceText = 'Unknown';
@@ -609,28 +620,26 @@
     async function setupEditButtons(profile) {
       const editUsernameBtn = document.getElementById('editUsernameBtn');
       const editProfileBtn = document.getElementById('editProfileBtn');
-      
+
+      let isOwner = false;
       try {
         const currentUser = await VeilnetAuth.getUser();
-        
-        // Ownership check: compare user IDs, not usernames
-        const isOwner = currentUser && currentUser.id === profile.id;
-        
-        if (editProfileBtn) editProfileBtn.style.display = 'inline-block';
-        if (editUsernameBtn) editUsernameBtn.style.display = isOwner ? 'inline-block' : 'none';
-
-        if (isOwner && (profile.username === null || profile.username === '')) {
-          setupUsernameSelection();
-        }
-
-        if (isOwner && typeof setupUsernameEditing === 'function') setupUsernameEditing(profile);
-        if (typeof setupEditProfile === 'function') setupEditProfile(profile, !!isOwner);
+        isOwner = !!(currentUser?.id && profile?.id && currentUser.id === profile.id);
       } catch (e) {
-        // Fall back to local-only settings mode for theme changes
-        if (editUsernameBtn) editUsernameBtn.style.display = 'none';
-        if (editProfileBtn) editProfileBtn.style.display = 'inline-block';
-        if (typeof setupEditProfile === 'function') setupEditProfile(profile, false);
+        isOwner = false;
       }
+
+      window.__veilnet_profile_owner = isOwner;
+
+      if (editProfileBtn) editProfileBtn.style.display = isOwner ? 'inline-block' : 'none';
+      if (editUsernameBtn) editUsernameBtn.style.display = isOwner ? 'inline-block' : 'none';
+
+      if (isOwner && (profile.username === null || profile.username === '')) {
+        setupUsernameSelection();
+      }
+
+      if (isOwner && typeof setupUsernameEditing === 'function') setupUsernameEditing(profile);
+      if (typeof setupEditProfile === 'function') setupEditProfile(profile, isOwner);
     }
 
     // Load profile from Supabase
@@ -872,39 +881,46 @@
         return safeId;
       }
 
-      function saveLocalTheme(themeId) {
-        try {
-          localStorage.setItem("veilnet_theme", safeThemeId(themeId));
-        } catch {
-          // Ignore localStorage write errors
-        }
+      function setEditable(canEdit) {
+        const enabled = !!canEdit;
+        grid.querySelectorAll(".theme-option").forEach((btn) => {
+          btn.disabled = !enabled;
+          btn.classList.toggle("is-disabled", !enabled);
+        });
       }
 
-      function readLocalTheme() {
+      async function isOwnerEditingSession() {
+        const viewedProfile = window.currentUserProfile;
+        if (!viewedProfile?.id) return false;
+
         try {
-          return localStorage.getItem("veilnet_theme");
+          const user = await VeilnetAuth.getUser();
+          return !!(user?.id && user.id === viewedProfile.id);
         } catch {
-          return null;
+          return false;
         }
       }
 
       async function onThemePick(themeId) {
+        const owner = await isOwnerEditingSession();
+        if (!owner) {
+          setStatus("You can only edit your own profile.", "error");
+          return;
+        }
+
         const selected = applySelectedTheme(themeId);
         markActive(selected);
-        saveLocalTheme(selected);
 
         try {
-          const user = await VeilnetAuth.getUser();
-          if (!user) {
-            setStatus("Theme saved locally.", "ok");
-            return;
-          }
-
           const persisted = await VeilnetAuth.updateTheme(selected);
           const safePersisted = safeThemeId(persisted);
           applySelectedTheme(safePersisted);
           markActive(safePersisted);
-          saveLocalTheme(safePersisted);
+          try {
+            localStorage.setItem("veilnet_theme", safePersisted);
+          } catch {
+            // Ignore local storage failures
+          }
           if (window.currentUserProfile) {
             window.currentUserProfile.theme = safePersisted;
           }
@@ -944,18 +960,14 @@
         grid.appendChild(createThemeButton(themeId, def));
       });
 
-      window.__veilnet_prefill_theme = function(profile){
-        const selected = safeThemeId(
-          profile?.theme ||
-          window.__veilnet_theme ||
-          readLocalTheme() ||
-          "default"
-        );
+      window.__veilnet_prefill_theme = function(profile, isOwner = false){
+        const selected = safeThemeId(profile?.theme || "default");
         markActive(selected);
+        setEditable(isOwner);
         setStatus("");
       };
 
-      window.__veilnet_prefill_theme(window.currentUserProfile || null);
+      window.__veilnet_prefill_theme(window.currentUserProfile || null, false);
     })();
 
     // Setup username editing functionality
@@ -980,7 +992,7 @@
     }
 
     // Setup gear/settings editing functionality
-    function setupEditProfile(profile, canEditAboutMe = false) {
+    function setupEditProfile(profile, isOwner = false) {
       const editProfileBtn = document.getElementById('editProfileBtn');
       const aboutMeModal = document.getElementById('aboutMeModal');
 
@@ -989,25 +1001,16 @@
       const newEditProfileBtn = editProfileBtn.cloneNode(true);
       editProfileBtn.parentNode.replaceChild(newEditProfileBtn, editProfileBtn);
 
+      if (!isOwner) {
+        newEditProfileBtn.style.display = 'none';
+        return;
+      }
+
       newEditProfileBtn.addEventListener('click', () => {
-        const aboutInput = document.getElementById("aboutMeInput");
-        const aboutSaveBtn = document.getElementById("aboutMeSaveBtn");
-        const aboutClearBtn = document.getElementById("aboutMeClearBtn");
-        const aboutStatus = document.getElementById("aboutMeStatus");
-
         if (window.__veilnet_prefill_aboutme) {
-          window.__veilnet_prefill_aboutme(canEditAboutMe ? profile : null);
+          window.__veilnet_prefill_aboutme(profile);
         }
-        if (window.__veilnet_prefill_theme) window.__veilnet_prefill_theme(profile);
-
-        if (aboutInput) aboutInput.disabled = !canEditAboutMe;
-        if (aboutSaveBtn) aboutSaveBtn.disabled = !canEditAboutMe;
-        if (aboutClearBtn) aboutClearBtn.disabled = !canEditAboutMe;
-        if (aboutStatus && !canEditAboutMe) {
-          aboutStatus.textContent = "Login as the profile owner to edit About Me.";
-          aboutStatus.classList.remove("is-ok", "is-warn");
-          aboutStatus.classList.add("is-error");
-        }
+        if (window.__veilnet_prefill_theme) window.__veilnet_prefill_theme(profile, true);
 
         aboutMeModal.style.display = 'flex';
       });
