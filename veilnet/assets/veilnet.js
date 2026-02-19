@@ -42,6 +42,10 @@
     gold:    { name: "Gold",          accent: "#fbbf24", accent2: "#fb7185" }
   });
   const THEME_STORAGE_KEY = "veilnet_theme";
+  const VEILNET_FUNCTIONS_BASE = `${String(VEILNET_CONFIG?.SUPABASE_URL || "").replace(/\/+$/, "")}/functions/v1`;
+  const ADMIN_SET_BUILD_URL = `${VEILNET_FUNCTIONS_BASE}/admin-set-build`;
+  const ADMIN_HINT_TTL_MS = 60 * 1000;
+  let adminHintCache = { userId: "", isAdmin: false, expiresAt: 0 };
   window.VEILNET_THEMES = VEILNET_THEMES;
 
   function getValidThemeId(themeId) {
@@ -714,6 +718,110 @@
     el.style.display = visible ? "flex" : "none";
   }
 
+  function resolveVeilnetSectionPath(section) {
+    const inSubPage = location.pathname.includes("/veilnet/")
+      && !location.pathname.endsWith("/veilnet/")
+      && !location.pathname.endsWith("/veilnet/index.html");
+    return inSubPage ? `../${section}/` : `${section}/`;
+  }
+
+  function ensureAdminNavLink() {
+    const nav = document.querySelector("nav.nav") || document.querySelector(".topbar .nav");
+    if (!nav) return null;
+
+    let link = nav.querySelector("[data-veil-admin-nav]");
+    if (!link) {
+      link = document.createElement("a");
+      link.setAttribute("data-veil-admin-nav", "");
+      link.textContent = "Admin";
+      link.style.display = "none";
+      nav.appendChild(link);
+    }
+
+    link.setAttribute("href", resolveVeilnetSectionPath("admin"));
+    return link;
+  }
+
+  function setAdminNavVisible(link, visible) {
+    if (!link) return;
+    link.style.display = visible ? "" : "none";
+  }
+
+  async function isAdminUserHint(user) {
+    const userId = String(user?.id || "").trim();
+    if (!userId) return false;
+
+    const now = Date.now();
+    if (adminHintCache.userId === userId && now < adminHintCache.expiresAt) {
+      return adminHintCache.isAdmin;
+    }
+
+    let isAdmin = false;
+    try {
+      const token = await VeilnetAuth.getToken();
+      if (token) {
+        const res = await fetch(ADMIN_SET_BUILD_URL, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            apikey: VEILNET_CONFIG.SUPABASE_ANON_KEY,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ action: "check" })
+        });
+
+        if (res.ok) {
+          const payload = await res.json().catch(() => null);
+          isAdmin = !!payload?.is_admin;
+        } else if (res.status === 403) {
+          isAdmin = false;
+        } else {
+          isAdmin = false;
+        }
+      }
+    } catch (e) {
+      console.warn("Admin hint check failed:", e);
+      isAdmin = false;
+    }
+
+    adminHintCache = {
+      userId,
+      isAdmin,
+      expiresAt: Date.now() + ADMIN_HINT_TTL_MS
+    };
+    return isAdmin;
+  }
+
+  function ensureLauncherMenuItem() {
+    const dropdown = document.querySelector("[data-veil-dropdown]");
+    if (!dropdown) return null;
+
+    const existing = dropdown.querySelector("[data-veil-launcher]");
+    if (existing) return existing;
+
+    const item = document.createElement("div");
+    item.className = "dd-item";
+    item.setAttribute("data-veil-launcher", "");
+    item.style.display = "none";
+
+    const title = document.createElement("span");
+    title.textContent = "Launcher Link";
+    const sub = document.createElement("small");
+    sub.textContent = "Connect launcher";
+
+    item.appendChild(title);
+    item.appendChild(sub);
+
+    const divider = dropdown.querySelector(".dd-divider");
+    if (divider && divider.parentElement === dropdown) {
+      dropdown.insertBefore(item, divider);
+    } else {
+      dropdown.appendChild(item);
+    }
+
+    return item;
+  }
+
   function appendAvatarVersion(url, versionToken) {
     if (!url) return url;
     const separator = url.includes("?") ? "&" : "?";
@@ -782,6 +890,14 @@ async function refreshHeaderUI() {
     ]);
     const profileItems = uniqueElements([document.querySelector("[data-veil-myprofile]")]);
     const settingsItems = uniqueElements([document.querySelector("[data-veil-settings]")]);
+    const launcherItems = uniqueElements([
+      ensureLauncherMenuItem(),
+      document.querySelector("[data-veil-launcher]")
+    ]);
+    const adminNavLinks = uniqueElements([
+      ensureAdminNavLink(),
+      document.querySelector("[data-veil-admin-nav]")
+    ]);
     const ring = document.querySelector("[data-veil-ring]");
     const defaultAvatar = ASSET("default_pfp.png");
 
@@ -790,6 +906,7 @@ async function refreshHeaderUI() {
 
       if (!user) {
         window.__veilAvatarVersion = null;
+        adminHintCache = { userId: "", isAdmin: false, expiresAt: 0 };
         cacheClear();
         setHeaderAvatarSource(defaultAvatar);
 
@@ -802,6 +919,8 @@ async function refreshHeaderUI() {
         logoutItems.forEach((el) => setMenuItemVisible(el, false));
         profileItems.forEach((el) => setMenuItemVisible(el, false));
         settingsItems.forEach((el) => setMenuItemVisible(el, false));
+        launcherItems.forEach((el) => setMenuItemVisible(el, false));
+        adminNavLinks.forEach((el) => setAdminNavVisible(el, false));
 
         if (ring) {
           ring.style.setProperty("--ring", "rgba(255,255,255,.25)");
@@ -851,6 +970,9 @@ async function refreshHeaderUI() {
       const hasUsername = Boolean(profile?.username);
       profileItems.forEach((el) => setMenuItemVisible(el, hasUsername));
       settingsItems.forEach((el) => setMenuItemVisible(el, hasUsername));
+      launcherItems.forEach((el) => setMenuItemVisible(el, true));
+      const isAdmin = await isAdminUserHint(user);
+      adminNavLinks.forEach((el) => setAdminNavVisible(el, isAdmin));
 
       if (ring) {
         const accentRing = getComputedStyle(document.documentElement).getPropertyValue("--border-accent").trim() || "rgba(124,92,255,.45)";
@@ -901,6 +1023,8 @@ async function refreshHeaderUI() {
   // Expose for debugging and cross-file callbacks
   window.refreshHeaderUI = refreshHeaderUI;
   window.wireProfileMenuToggle = wireProfileMenuToggle;
+  window.__openVeilnetLoginModal = openVeilnetLoginModal;
+  window.__openVeilnetUsernameModal = openUsernameModal;
 
   // Keep UI and toggle behavior healthy after BFCache/page lifecycle transitions
   window.addEventListener("pageshow", (e) => {
@@ -950,6 +1074,7 @@ async function refreshHeaderUI() {
     const ddLogout = document.querySelector("[data-veil-logout]");
     const ddMyProfile = document.querySelector("[data-veil-myprofile]");
     const ddSettings = document.querySelector("[data-veil-settings]");
+    const ddLauncher = ensureLauncherMenuItem();
 
     if(ddLogin){
       ddLogin.addEventListener("click", async ()=>{
@@ -982,6 +1107,14 @@ async function refreshHeaderUI() {
         const dest = (location.pathname.includes("/veilnet/") && !location.pathname.endsWith("/veilnet/") && !location.pathname.endsWith("/veilnet/index.html"))
           ? "../settings/"
           : "settings/";
+        location.href = dest;
+      });
+    }
+    if(ddLauncher){
+      ddLauncher.addEventListener("click", ()=>{
+        const dest = (location.pathname.includes("/veilnet/") && !location.pathname.endsWith("/veilnet/") && !location.pathname.endsWith("/veilnet/index.html"))
+          ? "../launcher/"
+          : "launcher/";
         location.href = dest;
       });
     }

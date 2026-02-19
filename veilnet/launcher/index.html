@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Veilnet • Launcher Link</title>
+  <link rel="icon" href="../assets/Veilnet.png">
+  <link rel="stylesheet" href="../assets/veilnet.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <a href="../" style="display:flex; align-items:center; gap:12px">
+          <span style="font-weight:1000">LatticeVeil</span>
+          <span class="brand-badge">Veilnet</span>
+        </a>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="../">Home</a>
+        <a href="../community/">Community</a>
+        <a href="../profile/">Profile</a>
+      </nav>
+
+      <div class="right">
+        <div class="pfp-wrap">
+          <div class="avatar" data-veil-avatar title="Profile">
+            <img data-veil-avatar-img src="../assets/default_pfp.png" alt="profile">
+            <span id="vnUnreadBadgeProfile" class="vn-badge vn-badge--hidden"></span>
+          </div>
+          <div class="status-ring" data-veil-ring style="--ring: rgba(255,255,255,.25); opacity:.55"></div>
+
+          <div class="dropdown" data-veil-dropdown>
+            <div class="dd-head">
+              <img data-veil-dd-img src="../assets/default_pfp.png" alt="">
+              <div>
+                <div class="dd-title" data-veil-dd-title>Not signed in</div>
+                <div class="dd-sub" data-veil-dd-sub>Login to access Veilnet features</div>
+              </div>
+            </div>
+
+            <div class="dd-item" onclick="location.href='../'">
+              <span>Go to Veilnet</span><small>Home</small>
+            </div>
+
+            <div class="dd-item" data-veil-myprofile style="display:none">
+              <span>My Profile</span><small>/profile</small>
+            </div>
+
+            <div class="dd-item" data-veil-settings style="display:none">
+              <span>Settings</span><small>About me + theme</small>
+            </div>
+
+            <div class="dd-divider"></div>
+
+            <div class="dd-item" data-veil-login>
+              <span>Login with Google</span><small>Veilnet</small>
+            </div>
+
+            <div class="dd-item" data-veil-logout style="display:none">
+              <span>Log Out</span><small>Veilnet</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding: 20px 0 40px">
+    <div class="breadcrumbs"><a href="../index.html">Veilnet</a> / Launcher Link</div>
+
+    <section class="panel" style="margin-top: 14px; max-width: 760px; margin-inline: auto;">
+      <h3>Link Launcher</h3>
+      <div class="inner" style="display:flex; flex-direction:column; gap:14px">
+        <div class="small">
+          Sign in with Veilnet, generate a one-time code, then paste it in the launcher.
+        </div>
+
+        <div id="launcherLinkSignedOut" style="display:none; gap:10px; flex-direction:column;">
+          <div>You are not signed in.</div>
+          <div>
+            <button id="launcherLinkSignInBtn" class="btn" type="button">Login with Google</button>
+          </div>
+        </div>
+
+        <div id="launcherLinkUsernameRequired" style="display:none; gap:10px; flex-direction:column;">
+          <div>You need a Veilnet username before linking your launcher.</div>
+          <div>
+            <button id="launcherLinkPickUsernameBtn" class="btn" type="button">Set Username</button>
+          </div>
+        </div>
+
+        <div id="launcherLinkReady" style="display:none; gap:12px; flex-direction:column;">
+          <div class="small">Signed in as <b id="launcherLinkUsernameText"></b></div>
+          <div>
+            <button id="launcherIssueCodeBtn" class="btn" type="button">Generate Link Code</button>
+          </div>
+          <div id="launcherCodeBlock" style="display:none; gap:10px; flex-direction:column;">
+            <div class="small">Paste this code in the launcher:</div>
+            <div id="launcherCodeText" style="font-size:30px; font-weight:1000; letter-spacing:0.08em; user-select:all;"></div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+              <button id="launcherCopyCodeBtn" class="btn ghost" type="button">Copy Code</button>
+              <span id="launcherCodeTimer" class="small"></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="launcherLinkStatus" class="small" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      Veilnet launcher linking page
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../assets/config.js"></script>
+  <script src="../assets/auth.js"></script>
+  <script src="../assets/veilnet.js"></script>
+  <script src="../assets/launcher-link.js"></script>
+</body>
+</html>
