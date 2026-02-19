@@ -42,6 +42,16 @@ window.VeilnetAuth = (function() {
     // Safe wrapper for exports - ensures method always exists
     const safe = (fnName, fn) => (typeof fn === 'function' ? fn : async () => { throw new Error(fnName + " not implemented"); });
     const ABOUT_ME_MAX = 280;
+    const THEME_IDS = Object.freeze([
+      "default",
+      "ember",
+      "neon",
+      "ocean",
+      "rose",
+      "mint",
+      "slate",
+      "gold"
+    ]);
 
     function sanitizeAboutMe(input) {
       let s = (input ?? "").toString();
@@ -54,6 +64,11 @@ window.VeilnetAuth = (function() {
       return s;
     }
 
+    function sanitizeThemeId(themeId) {
+      const normalized = String(themeId || "").trim().toLowerCase();
+      return THEME_IDS.includes(normalized) ? normalized : "default";
+    }
+
     function normalizeAboutMeWriteError(error) {
       const code = String(error?.code || "");
       const message = String(error?.message || "");
@@ -64,6 +79,21 @@ window.VeilnetAuth = (function() {
 
       if (code === "42501" || /row-level security|permission denied/i.test(message)) {
         return new Error('Update blocked by RLS policy. Ensure owner update policy exists on public.profiles (auth.uid() = id).');
+      }
+
+      return error;
+    }
+
+    function normalizeThemeWriteError(error) {
+      const code = String(error?.code || "");
+      const message = String(error?.message || "");
+
+      if (code === "42703" || /column\s+["']?theme["']?\s+does not exist/i.test(message)) {
+        return new Error('Database schema missing "public.profiles.theme". Run the Supabase SQL migration, then retry.');
+      }
+
+      if (code === "42501" || /row-level security|permission denied/i.test(message)) {
+        return new Error('Theme update blocked by RLS policy. Ensure owner update policy exists on public.profiles (auth.uid() = id).');
       }
 
       return error;
@@ -204,6 +234,51 @@ window.VeilnetAuth = (function() {
 
       if (error) throw normalizeAboutMeWriteError(error);
       return data?.aboutme ?? null;
+    }
+
+    async function updateTheme(themeId) {
+      const safeId = sanitizeThemeId(themeId);
+      const client = init();
+      const { data: userData, error: userErr } = await client.auth.getUser();
+      if (userErr) throw userErr;
+
+      const user = userData?.user;
+      if (!user) throw new Error("Not logged in");
+
+      const { data, error } = await client
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .update({ theme: safeId })
+        .eq("id", user.id)
+        .select("theme")
+        .maybeSingle();
+
+      if (error) throw normalizeThemeWriteError(error);
+      return data?.theme || safeId;
+    }
+
+    async function getMyTheme() {
+      const client = init();
+      const { data: { user }, error: userErr } = await client.auth.getUser();
+      if (userErr) throw userErr;
+      if (!user) return null;
+
+      const { data, error } = await client
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .select("theme")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        const code = String(error?.code || "");
+        const message = String(error?.message || "");
+        if (code === "42703" || /column\s+["']?theme["']?\s+does not exist/i.test(message)) {
+          return null;
+        }
+        throw error;
+      }
+
+      if (!data?.theme) return null;
+      return sanitizeThemeId(data.theme);
     }
 
     async function signOut() {
@@ -454,11 +529,13 @@ window.VeilnetAuth = (function() {
       updateProfilePicture: safe("updateProfilePicture", updateProfilePicture),
       updateProfileBanner: safe("updateProfileBanner", updateProfileBanner),
       updateAboutMe: safe("updateAboutMe", updateAboutMe),
+      updateTheme: safe("updateTheme", updateTheme),
       isUsernameAvailable: safe("isUsernameAvailable", isUsernameAvailable),
       getPendingProfile: safe("getPendingProfile", getPendingProfile),
       getProfileByUsername: safe("getProfileByUsername", getProfileByUsername),
       getDisplayIdentity: safe("getDisplayIdentity", getDisplayIdentity),
-      getMyProfile: safe("getMyProfile", getMyProfile)
+      getMyProfile: safe("getMyProfile", getMyProfile),
+      getMyTheme: safe("getMyTheme", getMyTheme)
     };
 
     console.log("[auth.js] VeilnetAuth ready:", Object.keys(VeilnetAuth));
@@ -475,7 +552,9 @@ window.VeilnetAuth = (function() {
       signOut: async function(){},
       logout: async function(){},
       setUsername: async function(){ throw e; },
-      updateAboutMe: async function(){ throw e; }
+      updateAboutMe: async function(){ throw e; },
+      updateTheme: async function(){ throw e; },
+      getMyTheme: async function(){ return null; }
     };
   }
 })();

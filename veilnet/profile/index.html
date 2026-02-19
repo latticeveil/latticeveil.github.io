@@ -17,7 +17,7 @@
       transition: background-color 0.2s;
     }
     .edit-btn:hover {
-      background-color: rgba(56, 225, 255, 0.1);
+      background-color: var(--accent-soft);
     }
     .username-input {
       background: var(--bg);
@@ -31,7 +31,7 @@
     }
     .username-input:focus {
       outline: none;
-      border-color: var(--cyan);
+      border-color: var(--accent);
     }
     
     /* Profile layout styles */
@@ -76,8 +76,8 @@
       background: rgba(0,0,0,0.35);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.12);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35), 0 0 0 1px var(--border-accent), 0 0 26px var(--accent-soft);
       z-index: 6;
     }
     
@@ -132,7 +132,7 @@
       color: white;
       font-size: 0.9rem;
       font-weight: 500;
-      background: var(--cyan);
+      background: var(--accent);
     }
     
     .theme-preview span {
@@ -221,15 +221,20 @@
       color: var(--green);
     }
 
+    .settings-status.is-warn {
+      opacity: 1;
+      color: var(--yellow);
+    }
+
     .btn.btn-secondary {
       background: var(--bg);
       border: 1px solid var(--border);
     }
 
     .btn.btn-primary {
-      background: var(--cyan);
-      color: var(--bg);
-      border: none;
+      background: var(--accent);
+      color: var(--accent-contrast);
+      border: 1px solid var(--border-accent);
     }
 
     .profile-aboutme-text {
@@ -237,6 +242,49 @@
       color: var(--muted);
       line-height: 1.5;
       margin: 0;
+    }
+
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+    }
+
+    .theme-option {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.22);
+      color: var(--text);
+      cursor: pointer;
+      padding: 10px;
+      text-align: left;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    }
+
+    .theme-option:hover {
+      transform: translateY(-1px);
+      border-color: var(--border-accent);
+    }
+
+    .theme-option.is-active {
+      border-color: var(--border-accent);
+      box-shadow: 0 0 0 1px var(--border-accent), 0 0 0 4px var(--accent-soft);
+    }
+
+    .theme-swatch {
+      width: 100%;
+      height: 18px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: linear-gradient(135deg, var(--swatch-a), var(--swatch-b));
+    }
+
+    .theme-name {
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.2;
     }
   </style>
 </head>
@@ -341,7 +389,7 @@
 
         <div class="profile-section">
           <h2>Theme</h2>
-          <div class="theme-preview" id="profileTheme" style="background: #38e1ff;">
+          <div class="theme-preview" id="profileTheme" style="background: var(--accent);">
             <span>Current Theme</span>
           </div>
         </div>
@@ -370,7 +418,7 @@
       
       <div style="display: flex; gap: 1rem; justify-content: flex-end;">
         <button id="cancelChooseUsernameBtn" style="padding: 0.75rem 1.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">Cancel</button>
-        <button id="saveUsernameBtn" style="padding: 0.75rem 1.5rem; background: var(--cyan); color: var(--bg); border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Continue</button>
+        <button id="saveUsernameBtn" style="padding: 0.75rem 1.5rem; background: var(--accent); color: var(--accent-contrast); border: 1px solid var(--border-accent); border-radius: 6px; cursor: pointer; font-weight: 600;">Continue</button>
       </div>
     </div>
   </div>
@@ -412,15 +460,15 @@
       
       <div style="display: flex; gap: 1rem; justify-content: flex-end;">
         <button id="cancelEditBtn" style="padding: 0.75rem 1.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">Cancel</button>
-        <button id="saveProfileBtn" style="padding: 0.75rem 1.5rem; background: var(--cyan); color: var(--bg); border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Save Profile</button>
+        <button id="saveProfileBtn" style="padding: 0.75rem 1.5rem; background: var(--accent); color: var(--accent-contrast); border: 1px solid var(--border-accent); border-radius: 6px; cursor: pointer; font-weight: 600;">Save Profile</button>
       </div>
     </div>
   </div>
 
-  <!-- Gear Settings Modal (About Me only) -->
+  <!-- Gear Settings Modal -->
   <div id="aboutMeModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
     <div style="background: var(--panel); border-radius: 12px; padding: 2rem; max-width: 560px; width: 90%; max-height: 80vh; overflow-y: auto;">
-      <h2 style="margin-top: 0; color: var(--text);">About Me</h2>
+      <h2 style="margin-top: 0; color: var(--text);">Settings</h2>
 
       <section class="settings-section" id="settings-aboutme">
         <div class="settings-row settings-row-head">
@@ -443,6 +491,15 @@
         </div>
 
         <div id="aboutMeStatus" class="settings-status" aria-live="polite"></div>
+      </section>
+
+      <section class="settings-section" id="settings-theme">
+        <div class="settings-row settings-row-head">
+          <div class="settings-title">Color Theme</div>
+          <div class="settings-subtitle">Apply live accent colors across Veilnet</div>
+        </div>
+        <div id="themePresetGrid" class="theme-grid" role="radiogroup" aria-label="Color Theme Presets"></div>
+        <div id="themeStatus" class="settings-status" aria-live="polite"></div>
       </section>
     </div>
   </div>
@@ -475,7 +532,7 @@
       } else {
         // Remove banner and restore default gradient
         profileBanner.style.backgroundImage = '';
-        profileBanner.style.background = 'linear-gradient(135deg, var(--cyan), var(--purple))';
+        profileBanner.style.background = 'linear-gradient(135deg, var(--accent), var(--accent2))';
       }
     }
 
@@ -506,6 +563,8 @@
 
     // Render profile data
     function renderProfile(profile) {
+      window.currentUserProfile = profile;
+
       // Update page title
       document.title = `Veilnet • ${profile.username}`;
       document.getElementById('profileTitle').textContent = `Veilnet • ${profile.username}`;
@@ -519,7 +578,7 @@
       // Other profile fields
       document.getElementById('profileAboutMeText').textContent = profile.aboutme || 'No about me yet.';
       document.getElementById('profileStatusMessage').textContent = profile.statusmessage || 'No status message';
-      document.getElementById('profileTheme').style.background = profile.themecolor || '#38e1ff';
+      document.getElementById('profileTheme').style.background = 'var(--accent)';
       
       // Member since date
       let memberSinceText = 'Unknown';
@@ -557,24 +616,20 @@
         // Ownership check: compare user IDs, not usernames
         const isOwner = currentUser && currentUser.id === profile.id;
         
-        if (isOwner) {
-          if (editUsernameBtn) editUsernameBtn.style.display = 'inline-block';
-          if (editProfileBtn) editProfileBtn.style.display = 'inline-block';
-          // Setup edit functionality if needed
-          if (profile.username === null || profile.username === '') {
-            setupUsernameSelection();
-          } else {
-            if (typeof setupUsernameEditing === 'function') setupUsernameEditing(profile);
-            if (typeof setupEditProfile === 'function') setupEditProfile(profile);
-          }
-        } else {
-          if (editUsernameBtn) editUsernameBtn.style.display = 'none';
-          if (editProfileBtn) editProfileBtn.style.display = 'none';
+        if (editProfileBtn) editProfileBtn.style.display = 'inline-block';
+        if (editUsernameBtn) editUsernameBtn.style.display = isOwner ? 'inline-block' : 'none';
+
+        if (isOwner && (profile.username === null || profile.username === '')) {
+          setupUsernameSelection();
         }
+
+        if (isOwner && typeof setupUsernameEditing === 'function') setupUsernameEditing(profile);
+        if (typeof setupEditProfile === 'function') setupEditProfile(profile, !!isOwner);
       } catch (e) {
-        // Hide edit buttons on error
+        // Fall back to local-only settings mode for theme changes
         if (editUsernameBtn) editUsernameBtn.style.display = 'none';
-        if (editProfileBtn) editProfileBtn.style.display = 'none';
+        if (editProfileBtn) editProfileBtn.style.display = 'inline-block';
+        if (typeof setupEditProfile === 'function') setupEditProfile(profile, false);
       }
     }
 
@@ -769,6 +824,140 @@
       updateCounter();
     })();
 
+    (function wireThemeEditor(){
+      const grid = document.getElementById("themePresetGrid");
+      const status = document.getElementById("themeStatus");
+      const themes = window.VEILNET_THEMES || {
+        default: { name: "Default Violet", accent: "#7c5cff", accent2: "#38bdf8" },
+        ember:   { name: "Ember",         accent: "#ff4d4d", accent2: "#ffb020" },
+        neon:    { name: "Neon Lime",     accent: "#8bff00", accent2: "#00f0ff" },
+        ocean:   { name: "Ocean",         accent: "#00b3ff", accent2: "#0057ff" },
+        rose:    { name: "Rose",          accent: "#ff4fd8", accent2: "#a855f7" },
+        mint:    { name: "Mint",          accent: "#22c55e", accent2: "#14b8a6" },
+        slate:   { name: "Slate",         accent: "#94a3b8", accent2: "#64748b" },
+        gold:    { name: "Gold",          accent: "#fbbf24", accent2: "#fb7185" }
+      };
+      const themeIds = Object.keys(themes);
+
+      if (!grid || !status || !themeIds.length) return;
+
+      function safeThemeId(themeId) {
+        const normalized = String(themeId || "").trim().toLowerCase();
+        return Object.prototype.hasOwnProperty.call(themes, normalized) ? normalized : "default";
+      }
+
+      function setStatus(msg, tone = "") {
+        status.textContent = msg || "";
+        status.classList.remove("is-error", "is-ok", "is-warn");
+        if (!msg) return;
+        if (tone === "error") status.classList.add("is-error");
+        else if (tone === "warn") status.classList.add("is-warn");
+        else if (tone === "ok") status.classList.add("is-ok");
+      }
+
+      function markActive(themeId) {
+        const safeId = safeThemeId(themeId);
+        grid.querySelectorAll(".theme-option").forEach((btn) => {
+          btn.classList.toggle("is-active", btn.dataset.themeId === safeId);
+          btn.setAttribute("aria-checked", btn.dataset.themeId === safeId ? "true" : "false");
+        });
+      }
+
+      function applySelectedTheme(themeId) {
+        const safeId = safeThemeId(themeId);
+        if (typeof window.applyVeilnetTheme === "function") {
+          return window.applyVeilnetTheme(safeId);
+        }
+        window.__veilnet_theme = safeId;
+        return safeId;
+      }
+
+      function saveLocalTheme(themeId) {
+        try {
+          localStorage.setItem("veilnet_theme", safeThemeId(themeId));
+        } catch {
+          // Ignore localStorage write errors
+        }
+      }
+
+      function readLocalTheme() {
+        try {
+          return localStorage.getItem("veilnet_theme");
+        } catch {
+          return null;
+        }
+      }
+
+      async function onThemePick(themeId) {
+        const selected = applySelectedTheme(themeId);
+        markActive(selected);
+        saveLocalTheme(selected);
+
+        try {
+          const user = await VeilnetAuth.getUser();
+          if (!user) {
+            setStatus("Theme saved locally.", "ok");
+            return;
+          }
+
+          const persisted = await VeilnetAuth.updateTheme(selected);
+          const safePersisted = safeThemeId(persisted);
+          applySelectedTheme(safePersisted);
+          markActive(safePersisted);
+          saveLocalTheme(safePersisted);
+          if (window.currentUserProfile) {
+            window.currentUserProfile.theme = safePersisted;
+          }
+          setStatus("Theme saved.", "ok");
+        } catch (e) {
+          console.error("[theme] save failed", e);
+          setStatus("Couldn't save theme to account. Applied locally.", "warn");
+        }
+      }
+
+      function createThemeButton(themeId, themeDef) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "theme-option";
+        btn.dataset.themeId = themeId;
+        btn.setAttribute("role", "radio");
+        btn.setAttribute("aria-checked", "false");
+
+        const swatch = document.createElement("span");
+        swatch.className = "theme-swatch";
+        swatch.style.setProperty("--swatch-a", themeDef.accent);
+        swatch.style.setProperty("--swatch-b", themeDef.accent2 || themeDef.accent);
+
+        const name = document.createElement("span");
+        name.className = "theme-name";
+        name.textContent = themeDef.name;
+
+        btn.appendChild(swatch);
+        btn.appendChild(name);
+        btn.addEventListener("click", () => onThemePick(themeId));
+
+        return btn;
+      }
+
+      themeIds.forEach((themeId) => {
+        const def = themes[themeId];
+        grid.appendChild(createThemeButton(themeId, def));
+      });
+
+      window.__veilnet_prefill_theme = function(profile){
+        const selected = safeThemeId(
+          profile?.theme ||
+          window.__veilnet_theme ||
+          readLocalTheme() ||
+          "default"
+        );
+        markActive(selected);
+        setStatus("");
+      };
+
+      window.__veilnet_prefill_theme(window.currentUserProfile || null);
+    })();
+
     // Setup username editing functionality
     function setupUsernameEditing(profile) {
       const editUsernameBtn = document.getElementById('editUsernameBtn');
@@ -791,7 +980,7 @@
     }
 
     // Setup gear/settings editing functionality
-    function setupEditProfile(profile) {
+    function setupEditProfile(profile, canEditAboutMe = false) {
       const editProfileBtn = document.getElementById('editProfileBtn');
       const aboutMeModal = document.getElementById('aboutMeModal');
 
@@ -801,7 +990,25 @@
       editProfileBtn.parentNode.replaceChild(newEditProfileBtn, editProfileBtn);
 
       newEditProfileBtn.addEventListener('click', () => {
-        if (window.__veilnet_prefill_aboutme) window.__veilnet_prefill_aboutme(profile);
+        const aboutInput = document.getElementById("aboutMeInput");
+        const aboutSaveBtn = document.getElementById("aboutMeSaveBtn");
+        const aboutClearBtn = document.getElementById("aboutMeClearBtn");
+        const aboutStatus = document.getElementById("aboutMeStatus");
+
+        if (window.__veilnet_prefill_aboutme) {
+          window.__veilnet_prefill_aboutme(canEditAboutMe ? profile : null);
+        }
+        if (window.__veilnet_prefill_theme) window.__veilnet_prefill_theme(profile);
+
+        if (aboutInput) aboutInput.disabled = !canEditAboutMe;
+        if (aboutSaveBtn) aboutSaveBtn.disabled = !canEditAboutMe;
+        if (aboutClearBtn) aboutClearBtn.disabled = !canEditAboutMe;
+        if (aboutStatus && !canEditAboutMe) {
+          aboutStatus.textContent = "Login as the profile owner to edit About Me.";
+          aboutStatus.classList.remove("is-ok", "is-warn");
+          aboutStatus.classList.add("is-error");
+        }
+
         aboutMeModal.style.display = 'flex';
       });
     }
