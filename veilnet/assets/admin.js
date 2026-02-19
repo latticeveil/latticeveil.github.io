@@ -144,6 +144,15 @@
     document.querySelector("[data-veil-login]")?.dispatchEvent(new MouseEvent("click"));
   }
 
+  function resolveHomeHref() {
+    const cfgBase = String(window.VEILNET_CONFIG?.BASE_PATH || "").trim();
+    if (cfgBase) {
+      const normalized = cfgBase.startsWith("/") ? cfgBase : `/${cfgBase}`;
+      return normalized.endsWith("/") ? normalized : `${normalized}/`;
+    }
+    return window.location.pathname.includes("/veilnet/") ? "/veilnet/" : "/";
+  }
+
   function renderUnauthorizedOnlyPage() {
     hardBlocked = true;
     document.body.style.margin = "0";
@@ -162,8 +171,18 @@
         <div style="font-size:clamp(26px,4vw,52px); font-weight:900; letter-spacing:0.02em;">
           YOU ARE NOT AUTHORIZED TO VIEW THIS PAGE
         </div>
+        <div style="margin-top:24px;">
+          <button id="adminUnauthorizedBackBtn" class="btn" type="button">Back to Veilnet</button>
+        </div>
       </main>
     `;
+
+    const backBtn = document.getElementById("adminUnauthorizedBackBtn");
+    if (backBtn) {
+      backBtn.addEventListener("click", () => {
+        window.location.href = resolveHomeHref();
+      });
+    }
   }
 
   async function fetchHashes(token) {
