@@ -219,507 +219,168 @@
     </div>
   </div>
 
->>>>>>> clean-master
   <script src="https://accounts.google.com/gsi/client"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../assets/config.js"></script>
   <script src="../assets/auth.js"></script>
   <script src="../assets/veilnet.js"></script>
   <script>
-    // Get username from URL parameters
-    let username;
-    
-    // Try URL parameters first (?u=USERNAME)
-    const urlParams = new URLSearchParams(window.location.search);
-    username = urlParams.get('u');
-    
-    // Try hash next (#USERNAME)
-    if (!username && window.location.hash) {
-      username = decodeURIComponent(window.location.hash.substring(1));
+    // Cache busting helper
+    function setImg(imgEl, url) {
+      const u = url || "../assets/default_pfp.png";
+      const bust = (u.includes("?") ? "&" : "?") + "v=" + Date.now();
+      imgEl.src = u + bust;
     }
-    
-    // Try path last (/profile/USERNAME)
-    if (!username) {
-      const pathParts = window.location.pathname.split('/');
-      username = pathParts[pathParts.length - 1];
-      // If it's "index.html", try previous part
-      if (username === 'index.html' && pathParts.length > 2) {
-        username = pathParts[pathParts.length - 2];
-      }
-    }
-    
-    if (!username) {
-      // No username specified, show current user's profile
-      const currentUser = JSON.parse(localStorage.getItem('veilnet.user') || '{}');
-      username = currentUser.username;
+
+    // User not found screen
+    function renderUserNotFound() {
+      document.querySelector('.profile-container').innerHTML = `
+        <div style="text-align: center; padding: 3rem;">
+          <h2 style="color: var(--text); margin-bottom: 1rem;">USER NOT FOUND</h2>
+          <p style="color: var(--muted); margin-bottom: 2rem;">This profile doesn't exist or isn't active.</p>
+          <a href="../index.html" class="btn">Back to Veilnet</a>
+          <div id="notSignedInLogin" style="margin-top: 1rem;"></div>
+        </div>
+      `;
       
-      if (!username) {
-        document.querySelector('.profile-container').innerHTML = `
-          <div style="text-align: center; padding: 3rem;">
-            <h2>No Profile Found</h2>
-            <p>Please log in to view your profile or specify a username in URL.</p>
-            <a href="../index.html" class="btn">Go to Veilnet</a>
-          </div>
-        `;
-        return;
-      }
+      // Add login button if not signed in
+      VeilnetAuth.getUser().then(user => {
+        if (!user) {
+          document.getElementById('notSignedInLogin').innerHTML = `
+            <button onclick="openVeilnetLoginModal()" class="btn gold" style="margin-left: 0.5rem;">Login</button>
+          `;
+        }
+      });
     }
 
-    // Set page title
-    document.getElementById('profileTitle').textContent = `Veilnet • ${username}`;
-    
-    // Load user profile data
+    // Load profile from Supabase
     async function loadProfile() {
-      try {
-        if (!username) {
-          // No username specified, show current user's profile
-          const user = await VeilnetAuth.getUser();
-          if (!user) {
-            document.querySelector('.profile-container').innerHTML = `
-              <div style="text-align: center; padding: 3rem;">
-                <h2>Please Log In</h2>
-                <p>Please log in to view your profile or specify a username in URL.</p>
-                <a href="../index.html" class="btn">Go to Veilnet</a>
-              </div>
-            `;
+      const usernameParam = new URLSearchParams(location.search).get("u");
+      
+      if (!usernameParam) {
+        // No username param - try to redirect to own profile
+        try {
+          const me = await VeilnetAuth.getUser();
+          if (!me) {
+            renderUserNotFound();
             return;
           }
           
-          try {
-            const profile = await VeilnetAuth.getMyProfile();
-            username = profile?.username;
-            if (!username) {
-              document.querySelector('.profile-container').innerHTML = `
-                <div style="text-align: center; padding: 3rem;">
-                  <h2>No Profile Found</h2>
-                  <p>Please create a username to view your profile.</p>
-                  <a href="../index.html" class="btn">Go to Veilnet</a>
-                </div>
-              `;
-              return;
-            }
-          } catch (e) {
-            document.querySelector('.profile-container').innerHTML = `
-              <div style="text-align: center; padding: 3rem;">
-                <h2>No Profile Found</h2>
-                <p>Please create a username to view your profile.</p>
-                <a href="../index.html" class="btn">Go to Veilnet</a>
-              </div>
-            `;
+          const myProfile = await VeilnetAuth.getMyProfile();
+          if (myProfile?.username) {
+            location.replace(`./?u=${encodeURIComponent(myProfile.username)}`);
+            return;
+          } else {
+            renderUserNotFound();
             return;
           }
+        } catch (e) {
+          console.error('Failed to get own profile:', e);
+          renderUserNotFound();
+          return;
         }
+      }
 
-        // Set page title
-        document.getElementById('profileTitle').textContent = `Veilnet • ${username}`;
+      // Load profile by username
+      try {
+        let profile;
         
-        // Query Supabase for user by username
-        const client = VeilnetAuth.init();
-        const { data: user, error } = await client
-          .from('users')
-          .select("id, email, username, picture, name, aboutme, statusmessage, themecolor, createdat")
-          .eq("username", username)
-          .maybeSingle();
-          
-        if (error) {
-          console.error("Profile query error:", error);
-          throw error;
+        // Try to use getProfileByUsername if available, otherwise query directly
+        if (typeof VeilnetAuth.getProfileByUsername === 'function') {
+          profile = await VeilnetAuth.getProfileByUsername(usernameParam);
+        } else {
+          // Direct Supabase query
+          const client = VeilnetAuth.init();
+          const { data, error } = await client
+            .from("users")
+            .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat")
+            .eq("username", usernameParam)
+            .maybeSingle();
+            
+          if (error) throw error;
+          profile = data;
         }
         
-        if (!user) {
-          // User not found
-          document.querySelector('.profile-container').innerHTML = `
-            <div style="text-align: center; padding: 3rem;">
-              <h2 style="color: var(--text); margin-bottom: 1rem;">User Not Found</h2>
-              <p style="color: var(--muted); margin-bottom: 2rem;">The user "${username}" does not exist on Veilnet.</p>
-              <a href="../index.html" class="btn">Go to Veilnet</a>
-            </div>
-          `;
+        if (!profile || !profile.username) {
+          renderUserNotFound();
           return;
         }
         
-        // Safe avatar resolver
-        function getAvatarUrl(picture) {
-          if (!picture || typeof picture !== 'string') {
-            return '../assets/default_pfp.png';
-          }
-          // Allow HTTP/HTTPS URLs and relative paths
-          if (picture.startsWith('http://') || picture.startsWith('https://') || picture.startsWith('/')) {
-            return picture;
-          }
-          // Treat anything else as invalid, use default
-          return '../assets/default_pfp.png';
-        }
+        // Update page title
+        document.title = `Veilnet • ${profile.username}`;
+        document.getElementById('profileTitle').textContent = `Veilnet • ${profile.username}`;
         
-        // Update profile display
-        document.getElementById('profileUsername').textContent = user.username || 'Unknown User';
-        document.getElementById('profileStatus').textContent = `Online via Google`;
-        document.getElementById('profileAbout').textContent = user.aboutme || 'No information provided';
-        document.getElementById('profileStatusMessage').textContent = user.statusmessage || 'No status message';
-        document.getElementById('profileTheme').style.background = user.themecolor || '#38e1ff';
+        // Display username in H1, proper name in status
+        document.getElementById('profileUsername').textContent = profile.username;
+        document.getElementById('profileStatus').textContent = profile.name || "No name set yet";
         
-        // Safe date formatting
+        // Other profile fields
+        document.getElementById('profileAbout').textContent = profile.aboutme || 'No information provided';
+        document.getElementById('profileStatusMessage').textContent = profile.statusmessage || 'No status message';
+        document.getElementById('profileTheme').style.background = profile.themecolor || '#38e1ff';
+        
+        // Member since date
         let memberSinceText = 'Unknown';
-        if (user.createdat) {
+        if (profile.createdat) {
           try {
-            memberSinceText = new Date(user.createdat).toLocaleDateString();
+            memberSinceText = new Date(profile.createdat).toLocaleDateString();
           } catch (e) {
             memberSinceText = 'Unknown';
           }
         }
         document.getElementById('profileMemberSince').textContent = memberSinceText;
         
-        // Update avatar with fallback and cache busting
-        const avatar = getAvatarUrl(user.picture);
-        const avatarWithVersion = avatar.includes('?') ? 
-          `${avatar}&v=${Date.now()}` : 
-          `${avatar}?v=${Date.now()}`;
-        document.getElementById('profileAvatar').src = avatarWithVersion;
+        // Avatar with cache busting
+        const avatarUrl = profile.picture || "../assets/default_pfp.png";
+        setImg(document.getElementById('profileAvatar'), avatarUrl);
         
-        // Update header
-        const avatarImg = document.querySelector('[data-veil-avatar-img]');
-        const ddImg = document.querySelector('[data-veil-dd-img]');
-        if (avatarImg) avatarImg.src = avatarWithVersion;
-        if (ddImg) ddImg.src = avatarWithVersion;
+        // Update header avatars too
+        const headerAvatar = document.querySelector('[data-veil-avatar-img]');
+        const ddAvatar = document.querySelector('[data-veil-dd-img]');
+        if (headerAvatar) setImg(headerAvatar, avatarUrl);
+        if (ddAvatar) setImg(ddAvatar, avatarUrl);
         
-        // Check if viewing own profile and show appropriate buttons
+        // Check if viewing own profile for edit buttons
         const currentUser = await VeilnetAuth.getUser();
         const currentProfile = currentUser ? await VeilnetAuth.getMyProfile().catch(() => null) : null;
         const editUsernameBtn = document.getElementById('editUsernameBtn');
         const editProfileBtn = document.getElementById('editProfileBtn');
         
-        if (currentProfile && (currentProfile.username === user.username || currentUser.id === user.id)) {
+        if (currentProfile && (currentProfile.username === profile.username || currentUser.id === profile.id)) {
           if (editUsernameBtn) editUsernameBtn.style.display = 'inline-block';
           if (editProfileBtn) editProfileBtn.style.display = 'inline-block';
-          setupUsernameEditing(currentProfile);
-          setupEditProfile();
+          // Setup edit functionality if needed
+          if (typeof setupUsernameEditing === 'function') setupUsernameEditing(currentProfile);
+          if (typeof setupEditProfile === 'function') setupEditProfile();
         } else {
           if (editUsernameBtn) editUsernameBtn.style.display = 'none';
           if (editProfileBtn) editProfileBtn.style.display = 'none';
         }
         
       } catch (error) {
-        console.error('Profile fetch error:', error);
-        document.querySelector('.profile-container').innerHTML = `
-          <div style="text-align: center; padding: 3rem;">
-            <h2>Error Loading Profile</h2>
-            <p>Unable to load profile data. Please try again.</p>
-            <button onclick="location.reload()" class="btn">Retry</button>
-            <a href="../index.html" class="btn" style="margin-left: 0.5rem;">Go to Veilnet</a>
-          </div>
-        `;
+        console.error('Profile load error:', error);
+        renderUserNotFound();
       }
     }
-    
-    // Setup refresh functionality
-    function setupRefreshButton() {
-      const refreshBtn = document.getElementById('refreshProfileBtn');
-      if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => {
-          // Reset loading states
-          document.getElementById('profileUsername').textContent = 'Loading...';
-          document.getElementById('profileStatus').textContent = 'Loading profile...';
-          document.getElementById('profileAbout').textContent = 'No information provided';
-          document.getElementById('profileStatusMessage').textContent = 'No status message';
-          document.getElementById('profileMemberSince').textContent = 'Loading...';
-          
-          // Reload profile
-          loadProfile();
-        });
+
+    // BFCache / navigation reliability
+    let profileLoadGuard = false;
+    window.addEventListener("pageshow", (e) => {
+      if (e.persisted && !profileLoadGuard) {
+        profileLoadGuard = true;
+        setTimeout(() => {
+          if (typeof ensureHeader === 'function') ensureHeader();
+          if (typeof loadProfile === 'function') loadProfile();
+          profileLoadGuard = false;
+        }, 0);
       }
-    }
-    
-// Setup edit profile functionality
-    function setupEditProfile() {
-      const editBtn = document.getElementById('editProfileBtn');
-      const modal = document.getElementById('editProfileModal');
-      const cancelBtn = document.getElementById('cancelEditBtn');
-      const saveBtn = document.getElementById('saveProfileBtn');
-      const resetBtn = document.getElementById('resetPictureBtn');
-      const errorDiv = document.getElementById('editProfileError');
-      
-      if (!editBtn || !modal) return;
-      
-      // Get current user data
-      async function getCurrentUser() {
-        try {
-          const response = await fetch('https://veilnet.onrender.com/api/me');
-          if (response.ok) {
-            return await response.json();
-          }
-        } catch (error) {
-          console.error('Failed to get current user:', error);
-        }
-        return null;
-      }
-      
-      // Show modal
-      editBtn.addEventListener('click', async () => {
-        const currentUser = await getCurrentUser();
-        if (!currentUser) {
-          showNotification('Failed to load profile data', 'error');
-          return;
-        }
-        
-        // Populate form
-        document.getElementById('editUsernameInput').value = currentUser.username || '';
-        document.getElementById('editPictureInput').value = currentUser.picture || '';
-        
-        // Update preview
-        updatePicturePreview(currentUser.picture);
-        
-        // Show modal
-        modal.style.display = 'flex';
-        errorDiv.style.display = 'none';
-      });
-      
-      // Hide modal
-      cancelBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-      });
-      
-      // Reset picture
-      resetBtn.addEventListener('click', () => {
-        document.getElementById('editPictureInput').value = '';
-        updatePicturePreview('');
-      });
-      
-      // Update picture preview
-      function updatePicturePreview(pictureUrl) {
-        const preview = document.getElementById('picturePreview');
-        if (pictureUrl && pictureUrl.startsWith('http')) {
-          preview.src = pictureUrl;
-        } else {
-          preview.src = '../assets/default_pfp.png';
-        }
-      }
-      
-      // Picture input change
-      document.getElementById('editPictureInput').addEventListener('input', (e) => {
-        updatePicturePreview(e.target.value);
-      });
-      
-      // Save profile
-      saveBtn.addEventListener('click', async () => {
-        const username = document.getElementById('editUsernameInput').value.trim();
-        const picture = document.getElementById('editPictureInput').value.trim();
-        
-        // Clear previous errors
-        errorDiv.style.display = 'none';
-        errorDiv.textContent = '';
-        
-        // Show saving state
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'Saving...';
-        
-        try {
-          const response = await fetch('https://veilnet.onrender.com/api/me/profile', {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ username, picture }),
-          });
-          
-          if (response.ok) {
-            const updatedUser = await response.json();
-            
-            // Update page instantly (optimistic update)
-            document.getElementById('profileUsername').textContent = updatedUser.username;
-            const newAvatar = getAvatarUrl(updatedUser.picture);
-            document.getElementById('profileAvatar').src = newAvatar;
-            
-            // Update header avatars
-            const avatarImg = document.querySelector('[data-veil-avatar-img]');
-            const ddImg = document.querySelector('[data-veil-dd-img]');
-            if (avatarImg) avatarImg.src = newAvatar;
-            if (ddImg) ddImg.src = newAvatar;
-            
-            // Update local storage
-            const storedUser = JSON.parse(localStorage.getItem('veilnet.user') || '{}');
-            storedUser.username = updatedUser.username;
-            storedUser.picture = updatedUser.picture;
-            localStorage.setItem('veilnet.user', JSON.stringify(storedUser));
-            
-            // Hide modal
-            modal.style.display = 'none';
-            showNotification('Profile updated successfully!', 'success');
-            
-          } else {
-            const error = await response.json();
-            errorDiv.textContent = error.error || 'Failed to update profile';
-            errorDiv.style.display = 'block';
-          }
-        } catch (error) {
-          errorDiv.textContent = 'Network error. Please try again.';
-          errorDiv.style.display = 'block';
-        } finally {
-          // Reset save button
-          saveBtn.disabled = false;
-          saveBtn.textContent = 'Save Profile';
-        }
-      });
-      
-      // Close modal on background click
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          modal.style.display = 'none';
-        }
-      });
-    }
-    
-    // Setup username editing functionality
-    function setupUsernameEditing(currentUser) {
-      const usernameElement = document.getElementById('profileUsername');
-      const editBtn = document.getElementById('editUsernameBtn');
-      let isEditing = false;
-      
-      editBtn.addEventListener('click', async () => {
-        if (!isEditing) {
-          // Start editing
-          isEditing = true;
-          const currentUsername = usernameElement.textContent;
-          
-          // Create input field
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.value = currentUsername;
-          input.className = 'username-input';
-          input.style.width = Math.max(200, currentUsername.length * 12) + 'px';
-          
-          // Replace h1 with input
-          usernameElement.parentNode.replaceChild(input, usernameElement);
-          input.focus();
-          input.select();
-          
-          editBtn.textContent = '💾';
-          editBtn.title = 'Save username';
-          
-          // Handle save
-          const saveUsername = async () => {
-            const newUsername = input.value.trim();
-            
-            if (newUsername === currentUsername || newUsername.length < 3) {
-              // Cancel edit
-              usernameElement.parentNode.replaceChild(usernameElement, input);
-              editBtn.textContent = '✏️';
-              editBtn.title = 'Edit username';
-              isEditing = false;
-              return;
-            }
-            
-            try {
-              const response = await fetch('https://veilnet.onrender.com/api/update-username', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  userId: currentUser.id,
-                  newUsername: newUsername
-                })
-              });
-              
-              const data = await response.json();
-              
-              if (data.success) {
-                // Update local storage
-                currentUser.username = newUsername;
-                localStorage.setItem('veilnet.user', JSON.stringify(currentUser));
-                localStorage.setItem('veilnet.username', newUsername);
-                
-                // Update display
-                usernameElement.textContent = newUsername;
-                usernameElement.parentNode.replaceChild(usernameElement, input);
-                editBtn.textContent = '✏️';
-                editBtn.title = 'Edit username';
-                isEditing = false;
-                
-                // Update page title
-                document.getElementById('profileTitle').textContent = `Veilnet • ${newUsername}`;
-                
-                // Show success message
-                showNotification('Username updated successfully!', 'success');
-              } else {
-                showNotification(data.error || 'Failed to update username', 'error');
-                // Cancel edit
-                usernameElement.parentNode.replaceChild(usernameElement, input);
-                editBtn.textContent = '✏️';
-                editBtn.title = 'Edit username';
-                isEditing = false;
-              }
-            } catch (error) {
-              console.error('Update username error:', error);
-              showNotification('Network error. Please try again.', 'error');
-              // Cancel edit
-              usernameElement.parentNode.replaceChild(usernameElement, input);
-              editBtn.textContent = '✏️';
-              editBtn.title = 'Edit username';
-              isEditing = false;
-            }
-          };
-          
-          // Save on Enter, cancel on Escape
-          input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              saveUsername();
-            } else if (e.key === 'Escape') {
-              usernameElement.parentNode.replaceChild(usernameElement, input);
-              editBtn.textContent = '✏️';
-              editBtn.title = 'Edit username';
-              isEditing = false;
-            }
-          });
-          
-          // Save on blur
-          input.addEventListener('blur', saveUsername);
-          
-        } else {
-          // Cancel edit (when clicking save button during edit)
-          const input = usernameElement.parentNode.querySelector('.username-input');
-          if (input) {
-            usernameElement.parentNode.replaceChild(usernameElement, input);
-            editBtn.textContent = '✏️';
-            editBtn.title = 'Edit username';
-            isEditing = false;
-          }
-        }
-      });
-    }
-    
-    // Simple notification system
-    function showNotification(message, type = 'info') {
-      const notification = document.createElement('div');
-      notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        border-radius: 6px;
-        color: white;
-        font-weight: 600;
-        z-index: 10000;
-        animation: slideIn 0.3s ease;
-        ${type === 'success' ? 'background: #4CAF50;' : type === 'error' ? 'background: #f44336;' : 'background: #2196F3;'}
-      `;
-      notification.textContent = message;
-      document.body.appendChild(notification);
-      
-      setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-      }, 3000);
-    }
-    
-    // Load profile on page load
-    loadProfile();
-    
-    // Setup refresh button
-    setupRefreshButton();
-    
-    // Initialize header functionality
-    ensureHeader();
+    });
+
+    // Initialize on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      if (typeof ensureHeader === 'function') ensureHeader();
+      loadProfile();
+    });
   </script>
 </body>
 </html>

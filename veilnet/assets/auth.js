@@ -237,6 +237,23 @@ window.VeilnetAuth = (function() {
       }
     },
 
+    async getProfileByUsername(username) {
+      if (!username) return null;
+      
+      const client = init();
+      const { data, error } = await client
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat")
+        .eq("username", username)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("getProfileByUsername error:", error);
+        throw error;
+      }
+      return data;
+    },
+
     async getDisplayIdentity() {
       const user = await this.getUser();
       if (!user) return null;
