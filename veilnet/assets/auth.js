@@ -39,6 +39,9 @@ window.VeilnetAuth = (function() {
       return async function () { throw new Error(name + " not ready"); };
     }
 
+    // Safe wrapper for exports - ensures method always exists
+    const safe = (fnName, fn) => (typeof fn === 'function' ? fn : async () => { throw new Error(fnName + " not implemented"); });
+
     // Function declarations - defined BEFORE export
     async function uploadAvatar(file) {
       const client = init();
@@ -390,24 +393,24 @@ window.VeilnetAuth = (function() {
 
     // Set global object - build using ONLY valid identifiers with safe stubs
     const VeilnetAuth = {
-      init,
-      getSession,
-      getUser,
-      signInWithGoogle,
-      signInWithGoogleIdToken,
-      signOut,
-      logout,
-      setUsername,
-      getToken,
-      uploadAvatar: typeof uploadAvatar !== "undefined" ? uploadAvatar : _notReady("uploadAvatar"),
-      uploadBanner: typeof uploadBanner !== "undefined" ? uploadBanner : _notReady("uploadBanner"),
-      updateProfilePicture: typeof updateProfilePicture !== "undefined" ? updateProfilePicture : _notReady("updateProfilePicture"),
-      updateProfileBanner: typeof updateProfileBanner !== "undefined" ? updateProfileBanner : _notReady("updateProfileBanner"),
-      isUsernameAvailable,
-      getPendingProfile,
-      getProfileByUsername,
-      getDisplayIdentity,
-      getMyProfile
+      init: safe("init", init),
+      getSession: safe("getSession", getSession),
+      getUser: safe("getUser", getUser),
+      signInWithGoogle: safe("signInWithGoogle", signInWithGoogle),
+      signInWithGoogleIdToken: safe("signInWithGoogleIdToken", signInWithGoogleIdToken),
+      signOut: safe("signOut", signOut),
+      logout: safe("logout", logout),
+      setUsername: safe("setUsername", setUsername),
+      getToken: safe("getToken", getToken),
+      uploadAvatar: safe("uploadAvatar", uploadAvatar),
+      uploadBanner: safe("uploadBanner", uploadBanner),
+      updateProfilePicture: safe("updateProfilePicture", updateProfilePicture),
+      updateProfileBanner: safe("updateProfileBanner", updateProfileBanner),
+      isUsernameAvailable: safe("isUsernameAvailable", isUsernameAvailable),
+      getPendingProfile: safe("getPendingProfile", getPendingProfile),
+      getProfileByUsername: safe("getProfileByUsername", getProfileByUsername),
+      getDisplayIdentity: safe("getDisplayIdentity", getDisplayIdentity),
+      getMyProfile: safe("getMyProfile", getMyProfile)
     };
 
     console.log("[auth.js] VeilnetAuth ready:", Object.keys(VeilnetAuth));
