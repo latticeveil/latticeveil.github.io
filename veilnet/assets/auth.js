@@ -314,13 +314,16 @@ window.VeilnetAuth = (function() {
       const user = await this.getUser();
       if (!user || !user.id) throw new Error('Not logged in');
       
+      // Normalize: allow null/undefined to clear avatar
+      const nextUrl = pictureUrl && pictureUrl.trim() ? pictureUrl.trim() : null;
+      
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .update({ picture: pictureUrl })
+        .update({ picture: nextUrl })
         .eq("id", user.id)
         .select("id, username, picture, aboutme, statusmessage, themecolor, createdat, updatedat")
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
@@ -330,10 +333,13 @@ window.VeilnetAuth = (function() {
       const user = await this.getUser();
       if (!user || !user.id) throw new Error('Not logged in');
       
+      // Normalize: allow null/undefined to clear banner
+      const nextUrl = bannerUrl && bannerUrl.trim() ? bannerUrl.trim() : null;
+      
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .update({ banner: bannerUrl })
+        .update({ banner: nextUrl })
         .eq("id", user.id)
         .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat, updatedat")
         .maybeSingle();
