@@ -183,6 +183,22 @@ window.VeilnetAuth = (function() {
       return { ok: true, data: profileData };
     },
 
+    async updateProfilePicture(pictureUrl) {
+      const user = await this.getUser();
+      if (!user || !user.id) throw new Error('Not logged in');
+      
+      const client = init();
+      const { data, error } = await client
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .update({ picture: pictureUrl })
+        .eq("id", user.id)
+        .select("id, username, picture, aboutme, statusmessage, themecolor, createdat, updatedat")
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+
     async isUsernameAvailable(username) {
       if (!username) return false;
       
