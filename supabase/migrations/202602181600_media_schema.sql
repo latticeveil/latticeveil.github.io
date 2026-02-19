@@ -10,7 +10,6 @@ create table if not exists public.media (
   file_id text not null, -- ImageKit file ID
   owner_id uuid not null references auth.users(id) on delete cascade,
   media_type media_type not null,
-  post_id uuid references public.posts(id) on delete cascade, -- Only for post media
   file_url text not null,
   file_name text not null,
   file_size integer not null,
@@ -26,7 +25,6 @@ create table if not exists public.media (
 
 -- Indexes for performance
 create index if not exists idx_media_owner_id on public.media(owner_id);
-create index if not exists idx_media_post_id on public.media(post_id);
 create index if not exists idx_media_expires_at on public.media(expires_at);
 create index if not exists idx_media_hard_delete_at on public.media(hard_delete_at);
 
