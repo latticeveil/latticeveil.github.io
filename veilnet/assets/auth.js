@@ -176,16 +176,9 @@ window.VeilnetAuth = (function() {
         throw profileError;
       }
       
-      // Also update legacy users table if needed (safe due to email-based RLS)
-      try {
-        await client
-          .from("users")
-          .update({ username: normalizedUsername })
-          .eq("email", user.email);
-      } catch (e) {
-        // Ignore if users table doesn't exist or fails
-        console.warn("Failed to update legacy users table:", e);
-      }
+      // Clear pending profile cache
+      pendingProfile = null;
+      sessionStorage.removeItem('veilnet_pending_profile');
       
       return { ok: true, data: profileData };
     },

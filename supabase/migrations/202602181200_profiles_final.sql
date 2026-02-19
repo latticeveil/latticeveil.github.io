@@ -4,7 +4,7 @@
 -- Create public.profiles table
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  username text unique not null,
+  username text,
   picture text,
   aboutme text,
   statusmessage text,
@@ -27,8 +27,8 @@ create trigger handle_profiles_updated_at
   for each row
   execute function public.handle_updated_at();
 
--- Add case-insensitive unique index on username
-create unique index if not exists profiles_username_ci_unique 
+-- Create unique index on username (case-insensitive, null values allowed)
+create unique index if not exists profiles_username_unique_idx 
   on public.profiles (lower(username)) 
   where username is not null;
 
@@ -61,26 +61,6 @@ create policy "profiles_update_own"
 -- Grants for public access
 grant usage on schema public to anon;
 grant select on public.profiles to anon;
-
--- Migrate existing data from users table (safe UUID source)
-insert into public.profiles (id, username, picture, aboutme, statusmessage, themecolor, createdat)
-select 
-  au.id,
-  lower(u.username) as username,
-  u.picture,
-  u.aboutme,
-  u.statusmessage,
-  u.themecolor,
-  coalesce(u.createdat, now())
-from public.users u
-join auth.users au on au.email = u.email
-where u.username is not null and trim(u.username) <> ''
-on conflict (id) do update set
-  username      = excluded.username,
-  picture       = excluded.picture,
-  aboutme       = excluded.aboutme,
-  statusmessage = excluded.statusmessage,
-  themecolor    = excluded.themecolor;
 
 -- Function to auto-create profile on user signup
 create or replace function public.handle_new_user_profile()
