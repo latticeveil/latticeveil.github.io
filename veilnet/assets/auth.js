@@ -247,7 +247,7 @@ window.VeilnetAuth = (function() {
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat")
+        .select("id, username, picture, aboutme, statusmessage, themecolor, createdat")
         .eq("id", user.id)
         .maybeSingle();
       
@@ -314,16 +314,13 @@ window.VeilnetAuth = (function() {
       const user = await this.getUser();
       if (!user || !user.id) throw new Error('Not logged in');
       
-      // Normalize: allow null/undefined to clear avatar
-      const nextUrl = pictureUrl && pictureUrl.trim() ? pictureUrl.trim() : null;
-      
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .update({ picture: nextUrl })
+        .update({ picture: pictureUrl })
         .eq("id", user.id)
         .select("id, username, picture, aboutme, statusmessage, themecolor, createdat, updatedat")
-        .maybeSingle();
+        .single();
       
       if (error) throw error;
       return data;
@@ -333,16 +330,10 @@ window.VeilnetAuth = (function() {
       const user = await this.getUser();
       if (!user || !user.id) throw new Error('Not logged in');
       
-      // Normalize: allow null/undefined to clear banner
-      const nextUrl = bannerUrl && bannerUrl.trim() ? bannerUrl.trim() : null;
-      
-      // Debug logging
-      console.log('[updateProfileBanner] setting banner to:', nextUrl);
-      
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .update({ banner: nextUrl })
+        .update({ banner: bannerUrl })
         .eq("id", user.id)
         .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat, updatedat")
         .maybeSingle();
@@ -351,84 +342,66 @@ window.VeilnetAuth = (function() {
       return data;
     },
 
-    async getToken() {
-      const session = await this.getSession();
-      return session?.access_token || null;
-    },
-
     async uploadAvatar(file) {
-      // Validate file
-      if (!file) throw new Error('No file selected');
-      if (!file.type.startsWith('image/')) throw new Error('File must be an image');
-      if (file.size > 5 * 1024 * 1024) throw new Error('File too large (max 5MB)');
-
       const user = await this.getUser();
       if (!user || !user.id) throw new Error('Not logged in');
 
-      // Determine extension
-      const ext = file.type === 'image/png' ? 'png' : 
-                  file.type === 'image/jpeg' ? 'jpg' : 
-                  file.type === 'image/webp' ? 'webp' : 'png';
-
-      // Build deterministic path
-      const path = `${user.id}/avatar.${ext}`;
-
       try {
+        // Process image
+        const processed = await ImageProcessor.processAvatar(file);
+        
+        // Upload to Supabase Storage
         const client = init();
-        const { error } = await client.storage
+        const avatarPath = `${user.id}/avatar.${processed.ext}`;
+        
+        const { error: uploadError } = await client.storage
           .from('avatars')
-          .upload(path, file, { 
+          .upload(avatarPath, processed.blob, { 
             upsert: true, 
-            contentType: file.type,
-            cacheControl: '3600'
+            contentType: processed.mime 
           });
 
-        if (error) throw error;
+        if (uploadError) throw uploadError;
 
-        const { data } = client.storage.from('avatars').getPublicUrl(path);
-        return `${data.publicUrl}?v=${Date.now()}`;
+        // Get public URL with cache-busting
+        const { data: { publicUrl } } = client.storage
+          .from('avatars')
+          .getPublicUrl(avatarPath);
+
+        return `${publicUrl}?v=${Date.now()}`;
       } catch (error) {
-        console.error('[uploadAvatar] error:', error);
         throw new Error(`Avatar upload failed: ${error.message}`);
       }
     },
 
     async uploadBanner(file) {
-      // Validate file
-      if (!file) throw new Error('No file selected');
-      if (!file.type.startsWith('image/')) throw new Error('File must be an image');
-      if (file.size > 5 * 1024 * 1024) throw new Error('File too large (max 5MB)');
-
       const user = await this.getUser();
       if (!user || !user.id) throw new Error('Not logged in');
 
-      // Determine extension
-      const ext = file.type === 'image/png' ? 'png' : 
-                  file.type === 'image/jpeg' ? 'jpg' : 
-                  file.type === 'image/webp' ? 'webp' : 'png';
-
-      // Build deterministic path
-      const path = `${user.id}/banner.${ext}`;
-      
-      // Debug logging
-      console.log('[uploadBanner] uploading to:', path, 'bucket:', 'banners', 'type:', file.type, 'size:', file.size);
-
       try {
+        // Process image
+        const processed = await ImageProcessor.processBanner(file);
+        
+        // Upload to Supabase Storage
         const client = init();
-        const { error } = await client.storage
+        const bannerPath = `${user.id}/banner.${processed.ext}`;
+        
+        const { error: uploadError } = await client.storage
           .from('banners')
-          .upload(path, file, { 
+          .upload(bannerPath, processed.blob, { 
             upsert: true, 
-            contentType: file.type,
-            cacheControl: '3600'
+            contentType: processed.mime 
           });
 
-        if (error) throw error;
+        if (uploadError) throw uploadError;
 
-        const { data } = client.storage.from('banners').getPublicUrl(path);
-        return `${data.publicUrl}?v=${Date.now()}`;
+        // Get public URL with cache-busting
+        const { data: { publicUrl } } = client.storage
+          .from('banners')
+          .getPublicUrl(bannerPath);
+
+        return `${publicUrl}?v=${Date.now()}`;
       } catch (error) {
-        console.error('[uploadBanner] error:', error);
         throw new Error(`Banner upload failed: ${error.message}`);
       }
     },
@@ -505,12 +478,6 @@ window.VeilnetAuth = (function() {
       const displayName = username || email;
       
       return { email, username, picture, displayName };
-    },
-
-    // Upload functions
-    uploadAvatar,
-    uploadBanner,
-    updateProfilePicture,
-    updateProfileBanner
+    }
   };
 })();
