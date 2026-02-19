@@ -40,6 +40,59 @@
       margin: 0 auto;
     }
     
+    .profile-hero {
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .profile-banner {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      z-index: 1;
+    }
+    
+    .profile-nameplate {
+      position: absolute;
+      left: 180px;
+      top: 18px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.12);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      z-index: 6;
+    }
+    
+    .profile-nameplate .profile-name {
+      font-size: 42px;
+      font-weight: 800;
+      line-height: 1;
+      text-shadow: 0 6px 18px rgba(0,0,0,0.55);
+    }
+    
+    .profile-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .profile-header {
+      position: relative;
+      z-index: 3;
+    }
+    
+    .profile-header-content {
+      position: relative;
+      z-index: 3;
+    }
+    
     .profile-content {
       padding: 2rem;
     }
@@ -140,6 +193,20 @@
     <div class="profile-container">
       <div class="profile-hero">
         <div id="profileBanner" class="profile-banner"></div>
+        <div class="profile-nameplate">
+          <div class="profile-name" id="profileNameplateUsername">&nbsp;</div>
+          <div class="profile-actions">
+            <button id="editUsernameBtn" class="edit-btn" style="display: none;" title="Edit username">
+              ✏️
+            </button>
+            <button id="editProfileBtn" class="edit-btn" style="display: none;" title="Edit profile">
+              ⚙️
+            </button>
+            <button id="refreshProfileBtn" class="edit-btn" title="Refresh profile" style="opacity: 0.6;">
+              🔄
+            </button>
+          </div>
+        </div>
         <div class="profile-header">
           <div class="profile-avatar">
             <img id="profileAvatar" src="../assets/default_pfp.png" alt="Profile">
@@ -147,15 +214,6 @@
           <div class="profile-info">
             <div class="profile-name">
               <h1 id="profileUsername">&nbsp;</h1>
-              <button id="editUsernameBtn" class="edit-btn" style="display: none;" title="Edit username">
-                ✏️
-              </button>
-              <button id="editProfileBtn" class="edit-btn" style="display: none;" title="Edit profile">
-                ⚙️
-              </button>
-              <button id="refreshProfileBtn" class="edit-btn" title="Refresh profile" style="opacity: 0.6;">
-                🔄
-              </button>
             </div>
             <p id="profileStatus">&nbsp;</p>
           </div>
@@ -314,8 +372,9 @@
       document.title = `Veilnet • ${profile.username}`;
       document.getElementById('profileTitle').textContent = `Veilnet • ${profile.username}`;
       
-      // Display username in H1
+      // Display username in both locations
       document.getElementById('profileUsername').textContent = profile.username;
+      document.getElementById('profileNameplateUsername').textContent = profile.username;
       
       // Apply banner with cache-busting
       applyBanner(profile.banner);
@@ -631,8 +690,14 @@
             clearBanner = true;
           }
           
-          let avatarUrl = clearAvatar ? null : profile.picture;
-          let bannerUrl = clearBanner ? null : profile.banner;
+          // Start with current values, only clear if explicitly requested
+          let avatarUrl = profile.picture;
+          let bannerUrl = profile.banner;
+          
+          if (clearAvatar) avatarUrl = null;
+          if (clearBanner) bannerUrl = null;
+          
+          console.log("[save] clearAvatar=", clearAvatar, "clearBanner=", clearBanner, "bannerFile=", !!editBannerInput.files[0], "bannerUrl=", bannerUrl, "profile.banner=", profile.banner);
           
           // Handle avatar upload if file selected
           if (editPictureInput.files[0]) {
