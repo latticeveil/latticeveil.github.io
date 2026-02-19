@@ -154,12 +154,6 @@ window.VeilnetAuth = (function() {
         throw new Error('Username must be 3-16 characters, start with letter or underscore, and contain only letters, numbers, and underscores');
       }
       
-      // Check availability (case-insensitive)
-      const available = await this.isUsernameAvailable(username);
-      if (!available) {
-        throw new Error('Username is already taken');
-      }
-
       const client = init();
       
       // Get user ID in priority order
@@ -177,6 +171,20 @@ window.VeilnetAuth = (function() {
         userId = user.id; // fallback to Supabase auth UUID
       }
       
+      // Check if username taken by another user (case-insensitive)
+      const { data: existing, error: exErr } = await client
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .select("id, username")
+        .ilike("username", username)
+        .limit(1);
+      
+      if (exErr) throw exErr;
+      
+      if (existing && existing.length > 0 && existing[0].id !== userId) {
+        throw new Error("Username is already taken");
+      }
+      
+      // Upsert by primary key id (prevents null id insert bug)
       const profileData = {
         id: userId,
         email: user.email,
@@ -185,39 +193,20 @@ window.VeilnetAuth = (function() {
         username: username,
         createdat: new Date().toISOString()
       };
-
-      // Check if row exists
-      const existing = await this.getMyProfile();
-      let result;
       
-      if (existing) {
-        // Update existing row
-        const { data, error } = await client
-          .from(VEILNET_CONFIG.PROFILE_TABLE)
-          .update({ username })
-          .eq("email", user.email)
-          .select()
-          .single();
-        
-        if (error) throw error;
-        result = data;
-      } else {
-        // Insert new row
-        const { data, error } = await client
-          .from(VEILNET_CONFIG.PROFILE_TABLE)
-          .insert(profileData)
-          .select()
-          .single();
-        
-        if (error) throw error;
-        result = data;
-      }
-
+      const { data, error } = await client
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .upsert(profileData, { onConflict: "id" })
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
       // Clear pending profile
       pendingProfile = null;
       sessionStorage.removeItem('veilnet_pending_profile');
       
-      return result;
+      return data;
     },
 
     async isUsernameAvailable(username) {
@@ -226,15 +215,15 @@ window.VeilnetAuth = (function() {
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select("username")
-        .eq("lower(username)", username.toLowerCase())
-        .maybeSingle();
+        .select("id")
+        .ilike("username", username)
+        .limit(1);
       
       if (error) {
         console.error("isUsernameAvailable error:", error);
         throw error;
       }
-      return !data; // available if no data found
+      return !data || data.length === 0; // available if no data found
     },
 
     getPendingProfile() {
