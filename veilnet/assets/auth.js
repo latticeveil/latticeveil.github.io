@@ -146,56 +146,46 @@ window.VeilnetAuth = (function() {
       return pendingProfile;
     },
 
-    async setUsername(username) {
+    async setUsername(newUsername) {
       const user = await this.getUser();
       if (!user || !user.id) throw new Error('Not authenticated or missing user id');
       
       // Validate username format
-      if (!/^[a-zA-Z_][a-zA-Z0-9_]{2,15}$/.test(username)) {
-        throw new Error('Username must be 3-16 characters, start with letter or underscore, and contain only letters, numbers, and underscores');
+      if (!/^[a-z0-9_]{3,20}$/.test(newUsername.trim().toLowerCase())) {
+        throw new Error('Username must be 3-20 characters, only lowercase letters, numbers, and underscores');
       }
       
-      const normalizedUsername = username.toLowerCase();
+      const normalizedUsername = newUsername.trim().toLowerCase();
       const client = init();
       
-      // Check if username taken by another user (case-insensitive)
-      const { data: existing, error: exErr } = await client
+      // Update profiles table
+      const { data: profileData, error: profileError } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select("id, username")
-        .eq("username", normalizedUsername)
-        .limit(1);
-      
-      if (exErr) throw exErr;
-      
-      if (existing && existing.length > 0 && existing[0].id !== user.id) {
-        throw new Error("Username is already taken");
-      }
-      
-      // Upsert by primary key id
-      const profileData = {
-        id: user.id,
-        username: normalizedUsername,
-        name: pendingProfile?.name || user.user_metadata?.name || user.email || 'Anonymous',
-        picture: pendingProfile?.picture || user.user_metadata?.picture || null,
-        aboutme: null,
-        statusmessage: null,
-        themecolor: '#38e1ff',
-        updatedat: new Date().toISOString()
-      };
-      
-      const { data, error } = await client
-        .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .upsert(profileData, { onConflict: "id" })
-        .select()
+        .update({ username: normalizedUsername })
+        .eq("id", user.id)
+        .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat, updatedat")
         .single();
       
-      if (error) throw error;
+      if (profileError) {
+        // Handle unique violation
+        if (profileError.code === '23505' || profileError.message.includes('unique constraint')) {
+          return { ok: false, reason: "taken" };
+        }
+        throw profileError;
+      }
       
-      // Clear pending profile
-      pendingProfile = null;
-      sessionStorage.removeItem('veilnet_pending_profile');
+      // Also update legacy users table if needed (safe due to email-based RLS)
+      try {
+        await client
+          .from("users")
+          .update({ username: normalizedUsername })
+          .eq("email", user.email);
+      } catch (e) {
+        // Ignore if users table doesn't exist or fails
+        console.warn("Failed to update legacy users table:", e);
+      }
       
-      return data;
+      return { ok: true, data: profileData };
     },
 
     async isUsernameAvailable(username) {
