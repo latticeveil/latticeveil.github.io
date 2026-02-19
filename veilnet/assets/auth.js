@@ -161,10 +161,12 @@ window.VeilnetAuth = (function() {
       // Update profiles table
       const { data: profileData, error: profileError } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .update({ username: normalizedUsername })
-        .eq("id", user.id)
+        .upsert(
+          { id: user.id, username: normalizedUsername },
+          { onConflict: "id" }
+        )
         .select("id, username, picture, aboutme, statusmessage, themecolor, createdat, updatedat")
-        .single();
+        .maybeSingle();
       
       if (profileError) {
         // Handle unique violation
