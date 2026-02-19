@@ -304,13 +304,15 @@
       
       try {
         const currentUser = await VeilnetAuth.getUser();
-        const currentProfile = currentUser ? await VeilnetAuth.getMyProfile().catch(() => null) : null;
         
-        if (currentProfile && (currentProfile.username === profile.username || currentUser.id === profile.id)) {
+        // Ownership check: compare user IDs, not usernames
+        const isOwner = currentUser && currentUser.id === profile.id;
+        
+        if (isOwner) {
           if (editUsernameBtn) editUsernameBtn.style.display = 'inline-block';
           if (editProfileBtn) editProfileBtn.style.display = 'inline-block';
           // Setup edit functionality if needed
-          if (typeof setupUsernameEditing === 'function') setupUsernameEditing(currentProfile);
+          if (typeof setupUsernameEditing === 'function') setupUsernameEditing(profile);
           if (typeof setupEditProfile === 'function') setupEditProfile();
         } else {
           if (editUsernameBtn) editUsernameBtn.style.display = 'none';
