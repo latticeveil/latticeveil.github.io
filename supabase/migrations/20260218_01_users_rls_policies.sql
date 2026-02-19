@@ -5,9 +5,16 @@
 alter table public.users enable row level security;
 
 -- Drop existing policies if they exist
+drop policy if exists "users_select_public" on public.users;
 drop policy if exists "users_select_own" on public.users;
 drop policy if exists "users_insert_own" on public.users;
 drop policy if exists "users_update_own" on public.users;
+
+-- Create public read policy - anyone can view profiles
+create policy "users_select_public"
+  on public.users for select
+  to anon, authenticated
+  using (true);
 
 -- Create policies for authenticated users to manage their own rows by email
 create policy "users_select_own"
