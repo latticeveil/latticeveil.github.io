@@ -342,72 +342,81 @@ window.VeilnetAuth = (function() {
       return data;
     },
 
+    async getToken() {
+      const session = await this.getSession();
+      return session?.access_token || null;
+    },
+
     async uploadAvatar(file) {
+      // Validate file
+      if (!file) throw new Error('No file selected');
+      if (!file.type.startsWith('image/')) throw new Error('File must be an image');
+      if (file.size > 5 * 1024 * 1024) throw new Error('File too large (max 5MB)');
+
       const user = await this.getUser();
       if (!user || !user.id) throw new Error('Not logged in');
 
+      // Determine extension
+      const ext = file.type === 'image/png' ? 'png' : 
+                  file.type === 'image/jpeg' ? 'jpg' : 
+                  file.type === 'image/webp' ? 'webp' : 'png';
+
+      // Build deterministic path
+      const path = `${user.id}/avatar.${ext}`;
+
       try {
-        // Process image
-        const processed = await ImageProcessor.processAvatar(file);
-        
-        // Upload to Supabase Storage
         const client = init();
-        const avatarPath = `${user.id}/avatar.${processed.ext}`;
-        
-        // Debug logging
-        console.log('[uploadAvatar] uid:', user.id, 'path:', avatarPath, 'type:', file.type, 'size:', file.size);
-        
-        const { error: uploadError } = await client.storage
+        const { error } = await client.storage
           .from('avatars')
-          .upload(avatarPath, processed.blob, { 
+          .upload(path, file, { 
             upsert: true, 
-            contentType: processed.mime 
+            contentType: file.type,
+            cacheControl: '3600'
           });
 
-        if (uploadError) throw uploadError;
+        if (error) throw error;
 
-        // Get public URL with cache-busting
-        const { data: { publicUrl } } = client.storage
-          .from('avatars')
-          .getPublicUrl(avatarPath);
-
-        return `${publicUrl}?v=${Date.now()}`;
+        const { data } = client.storage.from('avatars').getPublicUrl(path);
+        return `${data.publicUrl}?v=${Date.now()}`;
       } catch (error) {
+        console.error('[uploadAvatar] error:', error);
         throw new Error(`Avatar upload failed: ${error.message}`);
       }
     },
 
     async uploadBanner(file) {
+      // Validate file
+      if (!file) throw new Error('No file selected');
+      if (!file.type.startsWith('image/')) throw new Error('File must be an image');
+      if (file.size > 5 * 1024 * 1024) throw new Error('File too large (max 5MB)');
+
       const user = await this.getUser();
       if (!user || !user.id) throw new Error('Not logged in');
 
+      // Determine extension
+      const ext = file.type === 'image/png' ? 'png' : 
+                  file.type === 'image/jpeg' ? 'jpg' : 
+                  file.type === 'image/webp' ? 'webp' : 'png';
+
+      // Build deterministic path
+      const path = `${user.id}/banner.${ext}`;
+
       try {
-        // Process image
-        const processed = await ImageProcessor.processBanner(file);
-        
-        // Upload to Supabase Storage
         const client = init();
-        const bannerPath = `${user.id}/banner.${processed.ext}`;
-        
-        // Debug logging
-        console.log('[uploadBanner] uid:', user.id, 'path:', bannerPath, 'type:', file.type, 'size:', file.size);
-        
-        const { error: uploadError } = await client.storage
+        const { error } = await client.storage
           .from('banners')
-          .upload(bannerPath, processed.blob, { 
+          .upload(path, file, { 
             upsert: true, 
-            contentType: processed.mime 
+            contentType: file.type,
+            cacheControl: '3600'
           });
 
-        if (uploadError) throw uploadError;
+        if (error) throw error;
 
-        // Get public URL with cache-busting
-        const { data: { publicUrl } } = client.storage
-          .from('banners')
-          .getPublicUrl(bannerPath);
-
-        return `${publicUrl}?v=${Date.now()}`;
+        const { data } = client.storage.from('banners').getPublicUrl(path);
+        return `${data.publicUrl}?v=${Date.now()}`;
       } catch (error) {
+        console.error('[uploadBanner] error:', error);
         throw new Error(`Banner upload failed: ${error.message}`);
       }
     },
