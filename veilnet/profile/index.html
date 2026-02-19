@@ -138,6 +138,106 @@
     .theme-preview span {
       opacity: 0.9;
     }
+
+    .settings-section {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.15);
+    }
+
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .settings-row-head {
+      align-items: flex-start;
+      flex-direction: column;
+      margin-bottom: 0.75rem;
+      gap: 4px;
+    }
+
+    .settings-title {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .settings-subtitle {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .settings-textarea {
+      width: 100%;
+      resize: vertical;
+      min-height: 110px;
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(0,0,0,0.25);
+      color: #fff;
+      outline: none;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .settings-row-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .settings-counter {
+      opacity: 0.8;
+      font-size: 12px;
+    }
+
+    .settings-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .settings-status {
+      margin-top: 10px;
+      font-size: 13px;
+      opacity: 0.9;
+      min-height: 1em;
+    }
+
+    .settings-status.is-error {
+      opacity: 1;
+      color: var(--red);
+    }
+
+    .settings-status.is-ok {
+      opacity: 1;
+      color: var(--green);
+    }
+
+    .btn.btn-secondary {
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+
+    .btn.btn-primary {
+      background: var(--cyan);
+      color: var(--bg);
+      border: none;
+    }
+
+    .profile-aboutme-text {
+      white-space: pre-wrap;
+      color: var(--muted);
+      line-height: 1.5;
+      margin: 0;
+    }
   </style>
 </head>
 <body class="profile-page">
@@ -231,7 +331,7 @@
       <div class="profile-content">
         <div class="profile-section">
           <h2>About Me</h2>
-          <p id="profileAbout">No information provided</p>
+          <div id="profileAboutMeText" class="profile-aboutme-text" data-profile-aboutme>No about me yet.</div>
         </div>
 
         <div class="profile-section">
@@ -307,6 +407,29 @@
         <img id="bannerPreview" src="" alt="Banner Preview" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 6px; border: 2px solid var(--border); display: none;">
         <button id="resetBannerBtn" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">Remove Banner</button>
       </div>
+
+      <section class="settings-section" id="settings-aboutme">
+        <div class="settings-row settings-row-head">
+          <div class="settings-title">About Me</div>
+          <div class="settings-subtitle">280 chars max • emojis supported • line breaks preserved</div>
+        </div>
+
+        <textarea id="aboutMeInput"
+          class="settings-textarea"
+          rows="5"
+          maxlength="280"
+          placeholder="Write something about you…"></textarea>
+
+        <div class="settings-row settings-row-foot">
+          <div id="aboutMeCounter" class="settings-counter">0/280</div>
+          <div class="settings-actions">
+            <button id="aboutMeClearBtn" class="btn btn-secondary" type="button">Clear</button>
+            <button id="aboutMeSaveBtn" class="btn btn-primary" type="button">Save</button>
+          </div>
+        </div>
+
+        <div id="aboutMeStatus" class="settings-status" aria-live="polite"></div>
+      </section>
       
       <div id="editProfileError" style="color: var(--red); margin-bottom: 1rem; display: none;"></div>
       
@@ -387,7 +510,7 @@
       applyBanner(profile.banner);
       
       // Other profile fields
-      document.getElementById('profileAbout').textContent = profile.aboutme || 'No information provided';
+      document.getElementById('profileAboutMeText').textContent = profile.aboutme || 'No about me yet.';
       document.getElementById('profileStatusMessage').textContent = profile.statusmessage || 'No status message';
       document.getElementById('profileTheme').style.background = profile.themecolor || '#38e1ff';
       
@@ -435,7 +558,7 @@
             setupUsernameSelection();
           } else {
             if (typeof setupUsernameEditing === 'function') setupUsernameEditing(profile);
-            if (typeof setupEditProfile === 'function') setupEditProfile();
+            if (typeof setupEditProfile === 'function') setupEditProfile(profile);
           }
         } else {
           if (editUsernameBtn) editUsernameBtn.style.display = 'none';
@@ -550,6 +673,86 @@
       });
     }
 
+    (function wireAboutMeEditor(){
+      const input = document.getElementById("aboutMeInput");
+      const counter = document.getElementById("aboutMeCounter");
+      const saveBtn = document.getElementById("aboutMeSaveBtn");
+      const clearBtn = document.getElementById("aboutMeClearBtn");
+      const status = document.getElementById("aboutMeStatus");
+      const MAX = 280;
+      const SOFT_LINE_MAX = 8;
+      const lineWarn = `Tip: keep it around ${SOFT_LINE_MAX} lines or fewer for readability.`;
+
+      if (!input || !counter || !saveBtn || !clearBtn || !status) return;
+
+      function setStatus(msg, isError = false){
+        status.textContent = msg || "";
+        status.classList.toggle("is-error", !!isError);
+        status.classList.toggle("is-ok", !isError && !!msg);
+      }
+
+      function updateCounter(){
+        const value = input.value || "";
+        const len = value.length;
+        const lineCount = value ? value.split("\n").length : 1;
+        counter.textContent = `${len}/${MAX}`;
+
+        if (lineCount > SOFT_LINE_MAX && !status.classList.contains("is-error") && !status.classList.contains("is-ok")) {
+          status.textContent = lineWarn;
+        } else if (status.textContent === lineWarn) {
+          status.textContent = "";
+        }
+      }
+
+      input.addEventListener("input", updateCounter);
+
+      window.__veilnet_prefill_aboutme = function(profile){
+        const v = (profile && profile.aboutme) ? profile.aboutme : "";
+        input.value = v;
+        updateCounter();
+        setStatus("");
+      };
+
+      clearBtn.addEventListener("click", async () => {
+        input.value = "";
+        updateCounter();
+        setStatus("Cleared (not saved yet).");
+      });
+
+      saveBtn.addEventListener("click", async () => {
+        try {
+          setStatus("Saving…");
+          saveBtn.disabled = true;
+          const updated = await VeilnetAuth.updateAboutMe(input.value);
+
+          const aboutDisplay =
+            document.getElementById("profileAboutMeText") ||
+            document.querySelector(".profile-aboutme-text") ||
+            document.querySelector("[data-profile-aboutme]");
+
+          if (aboutDisplay) {
+            // Safe render only - never use innerHTML for profile text
+            aboutDisplay.textContent = updated || "No about me yet.";
+          }
+
+          if (window.currentUserProfile) {
+            window.currentUserProfile.aboutme = updated;
+          }
+
+          setStatus("Saved!");
+          input.value = updated || "";
+          updateCounter();
+        } catch (e) {
+          console.error("[aboutme] save failed", e);
+          setStatus(e?.message || "Failed to save.", true);
+        } finally {
+          saveBtn.disabled = false;
+        }
+      });
+
+      updateCounter();
+    })();
+
     // Setup username editing functionality
     function setupUsernameEditing(profile) {
       const editUsernameBtn = document.getElementById('editUsernameBtn');
@@ -557,15 +760,37 @@
       const editUsernameInput = document.getElementById('editUsernameInput');
       
       if (!editUsernameBtn || !editUsernameInput) return;
+
+      const newEditUsernameBtn = editUsernameBtn.cloneNode(true);
+      editUsernameBtn.parentNode.replaceChild(newEditUsernameBtn, editUsernameBtn);
       
-      editUsernameBtn.addEventListener('click', () => {
+      newEditUsernameBtn.addEventListener('click', () => {
         // Pre-fill the edit modal with current username
         editUsernameInput.value = profile.username || '';
+        if (window.__veilnet_prefill_aboutme) window.__veilnet_prefill_aboutme(profile);
         editProfileModal.style.display = 'flex';
       });
       
       // Setup save functionality for the edit modal
       setupEditProfileModal(profile);
+    }
+
+    // Setup gear/settings editing functionality
+    function setupEditProfile(profile) {
+      const editProfileBtn = document.getElementById('editProfileBtn');
+      const editProfileModal = document.getElementById('editProfileModal');
+      const editUsernameInput = document.getElementById('editUsernameInput');
+
+      if (!editProfileBtn || !editProfileModal) return;
+
+      const newEditProfileBtn = editProfileBtn.cloneNode(true);
+      editProfileBtn.parentNode.replaceChild(newEditProfileBtn, editProfileBtn);
+
+      newEditProfileBtn.addEventListener('click', () => {
+        if (editUsernameInput) editUsernameInput.value = profile.username || '';
+        if (window.__veilnet_prefill_aboutme) window.__veilnet_prefill_aboutme(profile);
+        editProfileModal.style.display = 'flex';
+      });
     }
     
     // Setup edit profile modal functionality
@@ -583,6 +808,7 @@
       const editProfileError = document.getElementById('editProfileError');
       
       if (!saveProfileBtn || !cancelEditBtn) return;
+      if (window.__veilnet_prefill_aboutme) window.__veilnet_prefill_aboutme(profile);
       
       // Setup file input previews
       if (editPictureInput && picturePreview) {
