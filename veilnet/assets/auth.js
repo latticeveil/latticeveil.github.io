@@ -208,6 +208,11 @@ window.VeilnetAuth = (function() {
       return { error };
     },
 
+    // Backward compatibility alias
+    async logout() {
+      return await this.signOut();
+    },
+
     async signInWithGoogle() {
       const client = init();
       
@@ -478,6 +483,23 @@ window.VeilnetAuth = (function() {
       const displayName = username || email;
       
       return { email, username, picture, displayName };
-    }
+    },
+
+    // Upload functions
+    uploadAvatar,
+    uploadBanner,
+    updateProfilePicture,
+    updateProfileBanner,
+    signOut,
+    logout,    // Backward compatibility alias
+    setUsername,
+    getToken,
+    isUsernameAvailable,
+    getPendingProfile,
+    getProfileByUsername,
+    getDisplayIdentity
   };
 })();
+
+// Guard log
+console.log("[auth.js] VeilnetAuth ready:", Object.keys(window.VeilnetAuth || {}));
