@@ -3,21 +3,21 @@ window.VeilnetAuth = (function() {
     let supa = null;
     let pendingProfile = null;
 
-    // Initialize Supabase client
+    // Initialize Supabase client - hardened with proper error checking
     function init() {
-      if (supa) return supa;
-      
-      // Defensive check: ensure Supabase JS is loaded
-      if (typeof window.supabase === "undefined") {
-        throw new Error("Supabase JS not loaded. Ensure <script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'></script> is included BEFORE auth.js");
+      if (!window.supabase || !window.supabase.createClient) {
+        throw new Error("Supabase JS not loaded. Check script order and CDN URL.");
       }
-      
-      const { createClient } = window.supabase;
-      supa = createClient(
-        VEILNET_CONFIG.SUPABASE_URL,
-        VEILNET_CONFIG.SUPABASE_ANON_KEY
-      );
-      return supa;
+      if (!window.VEILNET_CONFIG?.SUPABASE_URL || !window.VEILNET_CONFIG?.SUPABASE_ANON_KEY) {
+        throw new Error("Missing VEILNET_CONFIG Supabase URL/anon key.");
+      }
+      if (!window.__veilnet_supabase) {
+        window.__veilnet_supabase = window.supabase.createClient(
+          window.VEILNET_CONFIG.SUPABASE_URL,
+          window.VEILNET_CONFIG.SUPABASE_ANON_KEY
+        );
+      }
+      return window.__veilnet_supabase;
     }
 
     // Decode Google ID token (simple base64 decode)
@@ -32,6 +32,11 @@ window.VeilnetAuth = (function() {
         console.error('Failed to decode Google token:', e);
         return null;
       }
+    }
+
+    // Safe stub helper for functions that might not be ready
+    function _notReady(name) {
+      return async function () { throw new Error(name + " not ready"); };
     }
 
     // Function declarations - defined BEFORE export
@@ -176,226 +181,240 @@ window.VeilnetAuth = (function() {
       return session?.access_token || null;
     }
 
-    // Return API object - ALL FUNCTIONS DEFINED ABOVE
-    const VeilnetAuth = {
-      init() {
-        return init();
-      },
+    // Wrapper for compatibility - uses correct Supabase v2 API internally
+    async function signInWithGoogleIdToken(idToken) {
+      const client = init();
+      if (!idToken) throw new Error("Missing Google ID token");
+      
+      console.log("[google login] supabase loaded:", !!window.supabase, "client auth:", !!client.auth);
+      
+      const { data, error } = await client.auth.signInWithIdToken({
+        provider: "google",
+        token: idToken
+      });
+      if (error) throw error;
+      return data;
+    }
 
-      async getSession() {
-        const client = init();
-        const { data: { session } } = await client.auth.getSession();
-        return session;
-      },
+    async function getSession() {
+      const client = init();
+      const { data: { session } } = await client.auth.getSession();
+      return session;
+    }
 
-      async getUser() {
-        const client = init();
-        const { data: { user } } = await client.auth.getUser();
-        return user;
-      },
+    async function getUser() {
+      const client = init();
+      const { data: { user } } = await client.auth.getUser();
+      return user;
+    }
 
-      async signInWithGoogle() {
-        const client = init();
-        
-        // Use Google's popup sign-in
-        return new Promise((resolve, reject) => {
-          google.accounts.id.initialize({
-            client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
-            callback: async (response) => {
-              try {
-                const { data, error } = await client.auth.signInWithIdToken({
-                  provider: "google",
-                  token: response.credential
-                });
-                resolve({ data, error });
-              } catch (err) {
-                reject(err);
-              }
+    async function signInWithGoogle() {
+      const client = init();
+      
+      // Use Google's popup sign-in
+      return new Promise((resolve, reject) => {
+        google.accounts.id.initialize({
+          client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
+          callback: async (response) => {
+            try {
+              const { data, error } = await client.auth.signInWithIdToken({
+                provider: "google",
+                token: response.credential
+              });
+              resolve({ data, error });
+            } catch (err) {
+              reject(err);
             }
-          });
-          
-          google.accounts.id.prompt((notification) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              // Fallback to popup if prompt is not displayed
-              google.accounts.id.renderButton(
-                document.createElement('div'),
-                { theme: 'outline', size: 'large' }
-              );
-            }
-          });
-        });
-      },
-
-      async getMyProfile() {
-        const client = init();
-        const { data: { user }, error: ue } = await client.auth.getUser();
-        if (!user) return null;
-        if (ue) return null;
-        
-        const { data, error } = await client
-          .from(VEILNET_CONFIG.PROFILE_TABLE)
-          .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat")
-          .eq("id", user.id)
-          .maybeSingle();
-        
-        if (error) {
-          console.error("getMyProfile error:", error);
-          // Don't throw - profile might be auto-creating
-          return null;
-        }
-        return data;
-      },
-
-      async ensureUserRowFromGoogleToken(idToken) {
-        // Decode token to get user info
-        const tokenData = decodeGoogleToken(idToken);
-        if (!tokenData) throw new Error('Invalid Google ID token');
-
-        const { sub, email, name, picture } = tokenData;
-        
-        // Store pending profile info in memory and sessionStorage
-        pendingProfile = { id: sub, email, name, picture };
-        sessionStorage.setItem('veilnet_pending_profile', JSON.stringify(pendingProfile));
-        
-        return pendingProfile;
-      },
-
-      async setUsername(newUsername) {
-        const client = init();
-        const { data: { user }, error: ue } = await client.auth.getUser();
-        if (!user || !user.id) throw new Error('Not authenticated or missing user id');
-        if (ue) throw ue;
-        
-        // Validate username format
-        if (!/^[a-z0-9_]{3,20}$/.test(newUsername.trim().toLowerCase())) {
-          throw new Error('Username must be 3-20 characters, only lowercase letters, numbers, and underscores');
-        }
-        
-        const normalizedUsername = newUsername.trim().toLowerCase();
-        
-        // Update profiles table
-        const { data: profileData, error: profileError } = await client
-          .from(VEILNET_CONFIG.PROFILE_TABLE)
-          .upsert(
-            { id: user.id, username: normalizedUsername },
-            { onConflict: "id" }
-          )
-          .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat, updatedat")
-          .maybeSingle();
-        
-        if (profileError) {
-          // Handle unique violation
-          if (profileError.code === '23505' || profileError.message.includes('unique constraint')) {
-            return { ok: false, reason: "taken" };
           }
-          throw profileError;
-        }
+        });
         
-        // Clear pending profile cache
-        pendingProfile = null;
-        sessionStorage.removeItem('veilnet_pending_profile');
-        
-        return { ok: true, data: profileData };
-      },
+        google.accounts.id.prompt((notification) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+            // Fallback to popup if prompt is not displayed
+            google.accounts.id.renderButton(
+              document.createElement('div'),
+              { theme: 'outline', size: 'large' }
+            );
+          }
+        });
+      });
+    }
 
-      async isUsernameAvailable(username) {
-        if (!username) return false;
-        
-        const client = init();
-        const { data, error } = await client
-          .from(VEILNET_CONFIG.PROFILE_TABLE)
-          .select("id")
-          .ilike("username", username)
-          .limit(1);
-        
-        if (error) {
-          console.error("isUsernameAvailable error:", error);
-          throw error;
-        }
-        return !data || data.length === 0; // available if no data found
-      },
+    async function getMyProfile() {
+      const client = init();
+      const { data: { user }, error: ue } = await client.auth.getUser();
+      if (!user) return null;
+      if (ue) return null;
+      
+      const { data, error } = await client
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat")
+        .eq("id", user.id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("getMyProfile error:", error);
+        // Don't throw - profile might be auto-creating
+        return null;
+      }
+      return data;
+    }
 
-      getPendingProfile() {
-        if (pendingProfile) return pendingProfile;
-        
-        try {
-          const stored = sessionStorage.getItem('veilnet_pending_profile');
-          return stored ? JSON.parse(stored) : null;
-        } catch (e) {
-          return null;
-        }
-      },
+    async function ensureUserRowFromGoogleToken(idToken) {
+      // Decode token to get user info
+      const tokenData = decodeGoogleToken(idToken);
+      if (!tokenData) throw new Error('Invalid Google ID token');
 
-      async getProfileByUsername(username) {
-        if (!username) return null;
-        
-        const trimmedUsername = username.trim();
-        if (!trimmedUsername) return null;
-        
-        const normalizedUsername = trimmedUsername.toLowerCase();
-        
-        const client = init();
-        const { data, error } = await client
-          .from(VEILNET_CONFIG.PROFILE_TABLE)
-          .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat")
-          .eq("username", normalizedUsername)
-          .maybeSingle();
-        
-        if (error) {
-          console.error("getProfileByUsername error:", error);
-          throw error;
-        }
-        return data;
-      },
+      const { sub, email, name, picture } = tokenData;
+      
+      // Store pending profile info in memory and sessionStorage
+      pendingProfile = { id: sub, email, name, picture };
+      sessionStorage.setItem('veilnet_pending_profile', JSON.stringify(pendingProfile));
+      
+      return pendingProfile;
+    }
 
-      async getDisplayIdentity() {
-        const client = init();
-        const { data: { user }, error: ue } = await client.auth.getUser();
-        if (!user) return null;
-        if (ue) return null;
-        
-        // Check for pending profile first
-        const pending = this.getPendingProfile();
-        if (pending) {
-          return {
-            email: pending.email,
-            username: null,
-            picture: pending.picture,
-            displayName: pending.name || pending.email
-          };
+    async function setUsername(newUsername) {
+      const client = init();
+      const { data: { user }, error: ue } = await client.auth.getUser();
+      if (!user || !user.id) throw new Error('Not authenticated or missing user id');
+      if (ue) throw ue;
+      
+      // Validate username format
+      if (!/^[a-z0-9_]{3,20}$/.test(newUsername.trim().toLowerCase())) {
+        throw new Error('Username must be 3-20 characters, only lowercase letters, numbers, and underscores');
+      }
+      
+      const normalizedUsername = newUsername.trim().toLowerCase();
+      
+      // Update profiles table
+      const { data: profileData, error: profileError } = await client
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .upsert(
+          { id: user.id, username: normalizedUsername },
+          { onConflict: "id" }
+        )
+        .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat, updatedat")
+        .maybeSingle();
+      
+      if (profileError) {
+        // Handle unique violation
+        if (profileError.code === '23505' || profileError.message.includes('unique constraint')) {
+          return { ok: false, reason: "taken" };
         }
-        
-        const profile = await this.getMyProfile();
-        const email = user.email;
-        const username = profile?.username;
-        const picture = profile?.picture || user.user_metadata?.picture;
-        const displayName = username || email;
-        
-        return { email, username, picture, displayName };
-      },
+        throw profileError;
+      }
+      
+      // Clear pending profile cache
+      pendingProfile = null;
+      sessionStorage.removeItem('veilnet_pending_profile');
+      
+      return { ok: true, data: profileData };
+    }
 
-      // Upload functions - all defined above
-      uploadAvatar,
-      uploadBanner,
-      updateProfilePicture,
-      updateProfileBanner,
+    async function isUsernameAvailable(username) {
+      if (!username) return false;
+      
+      const client = init();
+      const { data, error } = await client
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .select("id")
+        .ilike("username", username)
+        .limit(1);
+      
+      if (error) {
+        console.error("isUsernameAvailable error:", error);
+        throw error;
+      }
+      return !data || data.length === 0; // available if no data found
+    }
+
+    function getPendingProfile() {
+      if (pendingProfile) return pendingProfile;
+      
+      try {
+        const stored = sessionStorage.getItem('veilnet_pending_profile');
+        return stored ? JSON.parse(stored) : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function getProfileByUsername(username) {
+      if (!username) return null;
+      
+      const trimmedUsername = username.trim();
+      if (!trimmedUsername) return null;
+      
+      const normalizedUsername = trimmedUsername.toLowerCase();
+      
+      const client = init();
+      const { data, error } = await client
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat")
+        .eq("username", normalizedUsername)
+        .maybeSingle();
+      
+      if (error) {
+        console.error("getProfileByUsername error:", error);
+        throw error;
+      }
+      return data;
+    }
+
+    async function getDisplayIdentity() {
+      const client = init();
+      const { data: { user }, error: ue } = await client.auth.getUser();
+      if (!user) return null;
+      if (ue) return null;
+      
+      // Check for pending profile first
+      const pending = getPendingProfile();
+      if (pending) {
+        return {
+          email: pending.email,
+          username: null,
+          picture: pending.picture,
+          displayName: pending.name || pending.email
+        };
+      }
+      
+      const profile = await getMyProfile();
+      const email = user.email;
+      const username = profile?.username;
+      const picture = profile?.picture || user.user_metadata?.picture;
+      const displayName = username || email;
+      
+      return { email, username, picture, displayName };
+    }
+
+    // Set global object - build using ONLY valid identifiers with safe stubs
+    const VeilnetAuth = {
+      init,
+      getSession,
+      getUser,
+      signInWithGoogle,
+      signInWithGoogleIdToken,
       signOut,
-      logout,    // Backward compatibility alias
+      logout,
       setUsername,
       getToken,
+      uploadAvatar: typeof uploadAvatar !== "undefined" ? uploadAvatar : _notReady("uploadAvatar"),
+      uploadBanner: typeof uploadBanner !== "undefined" ? uploadBanner : _notReady("uploadBanner"),
+      updateProfilePicture: typeof updateProfilePicture !== "undefined" ? updateProfilePicture : _notReady("updateProfilePicture"),
+      updateProfileBanner: typeof updateProfileBanner !== "undefined" ? updateProfileBanner : _notReady("updateProfileBanner"),
       isUsernameAvailable,
       getPendingProfile,
       getProfileByUsername,
-      getDisplayIdentity
+      getDisplayIdentity,
+      getMyProfile
     };
 
-    // Set global object
-    window.VeilnetAuth = VeilnetAuth;
-    console.log("[auth.js] VeilnetAuth ready:", Object.keys(window.VeilnetAuth || {}));
+    console.log("[auth.js] VeilnetAuth ready:", Object.keys(VeilnetAuth));
+    return VeilnetAuth;   // <<< CRITICAL
 
   } catch (e) {
     console.error("[auth.js] Fatal load error:", e);
-    // Fallback: ensure VeilnetAuth exists even if helpers fail
-    window.VeilnetAuth = window.VeilnetAuth || {};
+    return {};            // <<< CRITICAL: always return an object
   }
 })();
