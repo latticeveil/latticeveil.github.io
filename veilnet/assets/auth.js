@@ -415,6 +415,15 @@ window.VeilnetAuth = (function() {
 
   } catch (e) {
     console.error("[auth.js] Fatal load error:", e);
-    return {};            // <<< CRITICAL: always return an object
+    // return a minimal safe API so site doesn't implode
+    return {
+      init: function(){ throw e; },
+      getSession: async function(){ return null; },
+      getUser: async function(){ return null; },
+      signInWithGoogleIdToken: async function(){ throw e; },
+      signOut: async function(){},
+      logout: async function(){},
+      setUsername: async function(){ throw e; }
+    };
   }
 })();
