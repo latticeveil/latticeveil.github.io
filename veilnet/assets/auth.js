@@ -115,13 +115,13 @@ window.VeilnetAuth = (function() {
 
     async getMyProfile() {
       const user = await this.getUser();
-      if (!user || !user.email) return null;
+      if (!user || !user.id) return null;
       
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select("id, email, username, picture, name, aboutme, statusmessage, themecolor, createdat")
-        .eq("email", user.email)
+        .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat")
+        .eq("id", user.id)
         .maybeSingle();
       
       if (error) {
@@ -147,51 +147,39 @@ window.VeilnetAuth = (function() {
 
     async setUsername(username) {
       const user = await this.getUser();
-      if (!user || !user.email) throw new Error('Not authenticated or missing email');
+      if (!user || !user.id) throw new Error('Not authenticated or missing user id');
       
       // Validate username format
       if (!/^[a-zA-Z_][a-zA-Z0-9_]{2,15}$/.test(username)) {
         throw new Error('Username must be 3-16 characters, start with letter or underscore, and contain only letters, numbers, and underscores');
       }
       
+      const normalizedUsername = username.toLowerCase();
       const client = init();
-      
-      // Get user ID in priority order
-      let userId;
-      if (user.identities && user.identities.length > 0) {
-        const googleIdentity = user.identities.find(id => id.provider === 'google');
-        if (googleIdentity) {
-          userId = googleIdentity.id;
-        }
-      }
-      if (!userId && user.user_metadata && user.user_metadata.sub) {
-        userId = user.user_metadata.sub;
-      }
-      if (!userId) {
-        userId = user.id; // fallback to Supabase auth UUID
-      }
       
       // Check if username taken by another user (case-insensitive)
       const { data: existing, error: exErr } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
         .select("id, username")
-        .ilike("username", username)
+        .eq("username", normalizedUsername)
         .limit(1);
       
       if (exErr) throw exErr;
       
-      if (existing && existing.length > 0 && existing[0].id !== userId) {
+      if (existing && existing.length > 0 && existing[0].id !== user.id) {
         throw new Error("Username is already taken");
       }
       
-      // Upsert by primary key id (prevents null id insert bug)
+      // Upsert by primary key id
       const profileData = {
-        id: userId,
-        email: user.email,
-        name: pendingProfile?.name || user.user_metadata?.name || user.email,
+        id: user.id,
+        username: normalizedUsername,
+        name: pendingProfile?.name || user.user_metadata?.name || user.email || 'Anonymous',
         picture: pendingProfile?.picture || user.user_metadata?.picture || null,
-        username: username,
-        createdat: new Date().toISOString()
+        aboutme: null,
+        statusmessage: null,
+        themecolor: '#38e1ff',
+        updatedat: new Date().toISOString()
       };
       
       const { data, error } = await client
@@ -243,11 +231,13 @@ window.VeilnetAuth = (function() {
       const trimmedUsername = username.trim();
       if (!trimmedUsername) return null;
       
+      const normalizedUsername = trimmedUsername.toLowerCase();
+      
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
         .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat")
-        .ilike("username", trimmedUsername)
+        .eq("username", normalizedUsername)
         .maybeSingle();
       
       if (error) {
