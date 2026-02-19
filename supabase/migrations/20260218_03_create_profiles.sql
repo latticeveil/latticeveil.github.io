@@ -28,6 +28,11 @@ create trigger handle_profiles_updated_at
   for each row
   execute function public.handle_updated_at();
 
+-- Add case-insensitive unique index on username
+create unique index if not exists profiles_username_ci_unique 
+  on public.profiles (lower(username)) 
+  where username is not null;
+
 -- Enable RLS on profiles table
 alter table public.profiles enable row level security;
 
@@ -58,26 +63,27 @@ create policy "profiles_update_own"
 grant usage on schema public to anon;
 grant select on public.profiles to anon;
 
--- Migrate existing data from users table
+-- Migrate existing data from users table (safe UUID source)
 insert into public.profiles (id, username, name, picture, aboutme, statusmessage, themecolor, createdat)
 select 
-  id,
-  lower(username) as username,
-  name,
-  picture,
-  aboutme,
-  statusmessage,
-  themecolor,
-  createdat
-from public.users 
-where username is not null and username != ''
+  au.id,
+  lower(u.username) as username,
+  u.name,
+  u.picture,
+  u.aboutme,
+  u.statusmessage,
+  u.themecolor,
+  coalesce(u.createdat, now())
+from public.users u
+join auth.users au on au.email = u.email
+where u.username is not null and trim(u.username) <> ''
 on conflict (id) do update set
-  username = excluded.username,
-  name = excluded.name,
-  picture = excluded.picture,
-  aboutme = excluded.aboutme,
+  username      = excluded.username,
+  name          = excluded.name,
+  picture       = excluded.picture,
+  aboutme       = excluded.aboutme,
   statusmessage = excluded.statusmessage,
-  themecolor = excluded.themecolor;
+  themecolor    = excluded.themecolor;
 
 -- Lock down public.users table (remove public access)
 drop policy if exists "users_select_public" on public.users;
