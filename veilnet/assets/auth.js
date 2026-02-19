@@ -41,6 +41,18 @@ window.VeilnetAuth = (function() {
 
     // Safe wrapper for exports - ensures method always exists
     const safe = (fnName, fn) => (typeof fn === 'function' ? fn : async () => { throw new Error(fnName + " not implemented"); });
+    const ABOUT_ME_MAX = 280;
+
+    function sanitizeAboutMe(input) {
+      let s = (input ?? "").toString();
+      s = s.replace(/\r\n/g, "\n");
+      // Remove control chars except newlines and tabs
+      s = s.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+      s = s.trim();
+      if (!s) return null;
+      if (s.length > ABOUT_ME_MAX) s = s.slice(0, ABOUT_ME_MAX);
+      return s;
+    }
 
     // Function declarations - defined BEFORE export
     async function uploadAvatar(file) {
@@ -157,6 +169,26 @@ window.VeilnetAuth = (function() {
       
       if (error) throw error;
       return data;
+    }
+
+    async function updateAboutMe(aboutMeText) {
+      const client = init();
+      const { data: userData, error: userErr } = await client.auth.getUser();
+      if (userErr) throw userErr;
+
+      const user = userData?.user;
+      if (!user) throw new Error("Not logged in");
+
+      const value = sanitizeAboutMe(aboutMeText);
+      const { data, error } = await client
+        .from(VEILNET_CONFIG.PROFILE_TABLE)
+        .update({ aboutme: value })
+        .eq("id", user.id)
+        .select("aboutme")
+        .maybeSingle();
+
+      if (error) throw error;
+      return data?.aboutme ?? null;
     }
 
     async function signOut() {
@@ -406,6 +438,7 @@ window.VeilnetAuth = (function() {
       uploadBanner: safe("uploadBanner", uploadBanner),
       updateProfilePicture: safe("updateProfilePicture", updateProfilePicture),
       updateProfileBanner: safe("updateProfileBanner", updateProfileBanner),
+      updateAboutMe: safe("updateAboutMe", updateAboutMe),
       isUsernameAvailable: safe("isUsernameAvailable", isUsernameAvailable),
       getPendingProfile: safe("getPendingProfile", getPendingProfile),
       getProfileByUsername: safe("getProfileByUsername", getProfileByUsername),
@@ -426,7 +459,8 @@ window.VeilnetAuth = (function() {
       signInWithGoogleIdToken: async function(){ throw e; },
       signOut: async function(){},
       logout: async function(){},
-      setUsername: async function(){ throw e; }
+      setUsername: async function(){ throw e; },
+      updateAboutMe: async function(){ throw e; }
     };
   }
 })();
