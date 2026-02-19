@@ -31,6 +31,78 @@
     del(k){ localStorage.removeItem(k); }
   };
 
+  const VEILNET_THEMES = Object.freeze({
+    default: { name: "Default Violet", accent: "#7c5cff", accent2: "#38bdf8" },
+    ember:   { name: "Ember",         accent: "#ff4d4d", accent2: "#ffb020" },
+    neon:    { name: "Neon Lime",     accent: "#8bff00", accent2: "#00f0ff" },
+    ocean:   { name: "Ocean",         accent: "#00b3ff", accent2: "#0057ff" },
+    rose:    { name: "Rose",          accent: "#ff4fd8", accent2: "#a855f7" },
+    mint:    { name: "Mint",          accent: "#22c55e", accent2: "#14b8a6" },
+    slate:   { name: "Slate",         accent: "#94a3b8", accent2: "#64748b" },
+    gold:    { name: "Gold",          accent: "#fbbf24", accent2: "#fb7185" }
+  });
+  const THEME_STORAGE_KEY = "veilnet_theme";
+  window.VEILNET_THEMES = VEILNET_THEMES;
+
+  function getValidThemeId(themeId) {
+    const normalized = String(themeId || "").trim().toLowerCase();
+    return Object.prototype.hasOwnProperty.call(VEILNET_THEMES, normalized) ? normalized : "default";
+  }
+
+  function hexToRgba(hex, a) {
+    const raw = String(hex || "").trim();
+    const m = raw.match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (!m) return `rgba(124,92,255,${a})`;
+    let h = m[1];
+    if (h.length === 3) h = h.split("").map((x) => x + x).join("");
+    const n = parseInt(h, 16);
+    const r = (n >> 16) & 255;
+    const g = (n >> 8) & 255;
+    const b = n & 255;
+    return `rgba(${r},${g},${b},${a})`;
+  }
+
+  function readStoredThemeId() {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  function writeStoredThemeId(themeId) {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, getValidThemeId(themeId));
+    } catch {
+      // Ignore localStorage failures (private mode, quota, etc.)
+    }
+  }
+
+  function applyTheme(themeId) {
+    const safeId = getValidThemeId(themeId);
+    const t = VEILNET_THEMES[safeId] || VEILNET_THEMES.default;
+    const r = document.documentElement;
+
+    r.style.setProperty("--accent", t.accent);
+    r.style.setProperty("--accent2", t.accent2 || t.accent);
+    r.style.setProperty("--accent-contrast", "#ffffff");
+    r.style.setProperty("--accent-soft", hexToRgba(t.accent, 0.18));
+    r.style.setProperty("--border-accent", hexToRgba(t.accent, 0.45));
+
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", t.accent);
+
+    window.__veilnet_theme = safeId;
+    return safeId;
+  }
+
+  window.hexToRgba = hexToRgba;
+  window.applyVeilnetTheme = applyTheme;
+  window.getValidVeilnetThemeId = getValidThemeId;
+
+  // Fast initial theme hydrate (logged-in profile preference is resolved in bootstrapAuth).
+  applyTheme(readStoredThemeId() || "default");
+
   // Unified identity helper using VeilnetAuth
   async function getCurrentUser() {
     try {
@@ -510,9 +582,44 @@
     wireProfileMenuToggle();
   }
 
+  async function initializeThemePreference() {
+    const localTheme = getValidThemeId(readStoredThemeId() || "default");
+
+    try {
+      const user = await VeilnetAuth.getUser();
+      if (!user) {
+        const selected = applyTheme(localTheme);
+        writeStoredThemeId(selected);
+        return selected;
+      }
+
+      let profileTheme = null;
+      try {
+        if (typeof VeilnetAuth.getMyTheme === "function") {
+          profileTheme = await VeilnetAuth.getMyTheme();
+        } else {
+          const profile = await VeilnetAuth.getMyProfile();
+          profileTheme = profile?.theme || null;
+        }
+      } catch (e) {
+        console.warn("Theme bootstrap fallback to local preference:", e);
+      }
+
+      const selected = applyTheme(profileTheme || localTheme || "default");
+      writeStoredThemeId(selected);
+      return selected;
+    } catch (e) {
+      console.warn("Theme initialization failed, using local/default theme:", e);
+      const selected = applyTheme(localTheme || "default");
+      writeStoredThemeId(selected);
+      return selected;
+    }
+  }
+
   // Bootstrap auth on page load
   async function bootstrapAuth() {
     await VeilnetAuth.init();
+    await initializeThemePreference();
     wireProfileMenuToggle();
     await refreshHeaderUI();
   }
@@ -746,7 +853,8 @@ async function refreshHeaderUI() {
       settingsItems.forEach((el) => setMenuItemVisible(el, hasUsername));
 
       if (ring) {
-        ring.style.setProperty("--ring", "rgba(56,225,255,.25)");
+        const accentRing = getComputedStyle(document.documentElement).getPropertyValue("--border-accent").trim() || "rgba(124,92,255,.45)";
+        ring.style.setProperty("--ring", accentRing);
         ring.style.opacity = ".55";
       }
 
@@ -927,7 +1035,7 @@ async function refreshHeaderUI() {
           <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap">
             <div>
               <div style="font-weight:1000; font-size:18px">${escapeHtml(p.title)}</div>
-              <div class="small">by <a href="${authorHref}" style="color:var(--cyan); font-weight:900">${escapeHtml(p.author)}</a> • ${escapeHtml(p.ts)}</div>
+              <div class="small">by <a href="${authorHref}" style="color:var(--accent); font-weight:900">${escapeHtml(p.author)}</a> • ${escapeHtml(p.ts)}</div>
             </div>
             <div style="display:flex; gap:10px; align-items:center">
               <span class="pill">👍 ${p.likes}</span>
@@ -953,7 +1061,7 @@ async function refreshHeaderUI() {
         <div style="padding:18px">
           <div class="breadcrumbs"><a href="./../index.html">Veilnet</a> / <a href="./../community/index.html">Community</a> / Post #${p.id}</div>
           <h1 style="margin:10px 0 8px">${escapeHtml(p.title)}</h1>
-          <div class="small">by <a href="${authorHref}" style="color:var(--cyan); font-weight:900">${escapeHtml(p.author)}</a> • ${escapeHtml(p.ts)}</div>
+          <div class="small">by <a href="${authorHref}" style="color:var(--accent); font-weight:900">${escapeHtml(p.author)}</a> • ${escapeHtml(p.ts)}</div>
           <div class="kpis" style="margin-top:12px">
             <span class="kpi">👍 <b>${p.likes}</b></span>
             <span class="kpi">👎 <b>${p.dislikes}</b></span>
