@@ -56,7 +56,7 @@
     };
   }
 
-  async function parseResponse(res, context) {
+  async function parseResponse(res, context, requestMeta) {
     const raw = await res.text();
     let payload = null;
     try {
@@ -64,8 +64,19 @@
     } catch {
       payload = null;
     }
+
+    if (requestMeta) {
+      console.debug(`[admin] response ${context}`, {
+        url: requestMeta.url,
+        method: requestMeta.method,
+        status: res.status
+      });
+    }
+
     if (!res.ok) {
       console.error(`[admin] ${context} failed`, {
+        url: requestMeta?.url,
+        method: requestMeta?.method,
         status: res.status,
         body: raw
       });
@@ -156,11 +167,12 @@
   }
 
   async function fetchHashes(token) {
+    console.debug("[admin] request fetch hashes", { url: getUrl, method: "GET" });
     const res = await fetch(getUrl, {
       method: "GET",
       headers: authHeaders(token)
     });
-    const { payload } = await parseResponse(res, "fetch hashes");
+    const { payload } = await parseResponse(res, "fetch hashes", { url: getUrl, method: "GET" });
     if (!res.ok || !payload) {
       throw new Error(payload?.error || "Failed to load hashes.");
     }
@@ -168,14 +180,15 @@
     const dev = payload.dev || {};
     const release = payload.release || {};
 
-    devCurrentHash.textContent = dev.sha256 || "-";
+    devCurrentHash.textContent = dev.hash || dev.sha256 || "-";
     devCurrentUpdated.textContent = formatDate(dev.updated_at);
 
-    releaseCurrentHash.textContent = release.sha256 || "-";
+    releaseCurrentHash.textContent = release.hash || release.sha256 || "-";
     releaseCurrentUpdated.textContent = formatDate(release.updated_at);
   }
 
   async function checkAdmin(token) {
+    console.debug("[admin] request admin check", { url: setUrl, method: "POST" });
     const res = await fetch(setUrl, {
       method: "POST",
       headers: {
@@ -185,7 +198,7 @@
       body: JSON.stringify({ action: "check" })
     });
 
-    const { payload } = await parseResponse(res, "admin check");
+    const { payload } = await parseResponse(res, "admin check", { url: setUrl, method: "POST" });
     if (res.status === 401) {
       throw new Error("Session expired. Log in again.");
     }
@@ -218,6 +231,11 @@
       const token = await VeilnetAuth.getToken();
       if (!token) throw new Error("Session expired. Log in again.");
 
+      console.debug("[admin] request update hash", {
+        url: setUrl,
+        method: "POST",
+        channel
+      });
       const res = await fetch(setUrl, {
         method: "POST",
         headers: {
@@ -226,11 +244,11 @@
         },
         body: JSON.stringify({
           channel,
-          hash_sha256: hash
+          hash
         })
       });
 
-      const { payload } = await parseResponse(res, `update ${channel}`);
+      const { payload } = await parseResponse(res, `update ${channel}`, { url: setUrl, method: "POST" });
       if (!res.ok) {
         if (res.status === 403) {
           renderUnauthorizedOnlyPage();
