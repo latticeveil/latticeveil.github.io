@@ -367,6 +367,55 @@
       }
     }
 
+    // Setup username editing functionality
+    function setupUsernameEditing(profile) {
+      const editUsernameBtn = document.getElementById('editUsernameBtn');
+      const editUsernameInput = document.getElementById('editUsernameInput');
+      
+      if (!editUsernameBtn || !editUsernameInput) return;
+      
+      editUsernameBtn.addEventListener('click', () => {
+        const newUsername = prompt('Enter new username:', profile.username);
+        if (!newUsername || newUsername.trim() === '') return;
+        
+        const trimmedUsername = newUsername.trim();
+        
+        // Client-side validation
+        if (!/^[a-z0-9_]{3,20}$/.test(trimmedUsername.toLowerCase())) {
+          alert('Username must be 3-20 characters, only lowercase letters, numbers, and underscores');
+          return;
+        }
+        
+        // Update username
+        VeilnetAuth.setUsername(trimmedUsername)
+          .then(result => {
+            if (result.ok) {
+              // Update UI
+              document.getElementById('profileUsername').textContent = result.data.username;
+              document.title = `Veilnet • ${result.data.username}`;
+              document.getElementById('profileTitle').textContent = `Veilnet • ${result.data.username}`;
+              
+              // Update URL
+              const newUrl = `./?u=${encodeURIComponent(result.data.username)}`;
+              history.replaceState(null, "", newUrl);
+              
+              // Update header if available
+              if (typeof updateHeaderProfile === 'function') {
+                updateHeaderProfile(result.data);
+              }
+              
+              alert('Username updated successfully!');
+            } else if (result.reason === 'taken') {
+              alert('Username already taken. Please choose another.');
+            }
+          })
+          .catch(error => {
+            console.error('Username update error:', error);
+            alert('Failed to update username. Please try again.');
+          });
+      });
+    }
+
     // BFCache / navigation reliability
     let profileLoadGuard = false;
     window.addEventListener("pageshow", (e) => {
