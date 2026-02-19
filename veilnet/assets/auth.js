@@ -54,6 +54,21 @@ window.VeilnetAuth = (function() {
       return s;
     }
 
+    function normalizeAboutMeWriteError(error) {
+      const code = String(error?.code || "");
+      const message = String(error?.message || "");
+
+      if (code === "42703" || /column\s+["']?aboutme["']?\s+does not exist/i.test(message)) {
+        return new Error('Database schema missing "public.profiles.aboutme". Run the Supabase SQL migration, then retry.');
+      }
+
+      if (code === "42501" || /row-level security|permission denied/i.test(message)) {
+        return new Error('Update blocked by RLS policy. Ensure owner update policy exists on public.profiles (auth.uid() = id).');
+      }
+
+      return error;
+    }
+
     // Function declarations - defined BEFORE export
     async function uploadAvatar(file) {
       const client = init();
@@ -187,7 +202,7 @@ window.VeilnetAuth = (function() {
         .select("aboutme")
         .maybeSingle();
 
-      if (error) throw error;
+      if (error) throw normalizeAboutMeWriteError(error);
       return data?.aboutme ?? null;
     }
 
