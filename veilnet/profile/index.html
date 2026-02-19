@@ -537,17 +537,52 @@
       
       // Setup reset buttons
       if (resetPictureBtn && picturePreview) {
-        resetPictureBtn.addEventListener('click', () => {
+        resetPictureBtn.addEventListener('click', async () => {
+          // Clear UI
           picturePreview.src = '../assets/default_pfp.png';
           if (editPictureInput) editPictureInput.value = '';
+          
+          // Clear database immediately
+          try {
+            await VeilnetAuth.updateProfilePicture(null);
+            // Update current profile object
+            if (window.currentUserProfile) {
+              window.currentUserProfile.picture = null;
+            }
+            // Update live UI
+            const profileAvatar = document.getElementById('profileAvatar');
+            if (profileAvatar) {
+              profileAvatar.src = '../assets/default_pfp.png';
+            }
+          } catch (error) {
+            console.error('Failed to clear avatar:', error);
+          }
         });
       }
       
       if (resetBannerBtn && bannerPreview) {
-        resetBannerBtn.addEventListener('click', () => {
+        resetBannerBtn.addEventListener('click', async () => {
+          // Clear UI
           bannerPreview.src = '';
           bannerPreview.style.display = 'none';
           if (editBannerInput) editBannerInput.value = '';
+          
+          // Clear database immediately
+          try {
+            await VeilnetAuth.updateProfileBanner(null);
+            // Update current profile object
+            if (window.currentUserProfile) {
+              window.currentUserProfile.banner = null;
+            }
+            // Update live UI - remove banner background
+            const profileBanner = document.getElementById('profileBanner');
+            if (profileBanner) {
+              profileBanner.style.backgroundImage = '';
+              profileBanner.style.background = 'linear-gradient(135deg, var(--cyan), var(--purple))';
+            }
+          } catch (error) {
+            console.error('Failed to clear banner:', error);
+          }
         });
       }
       
@@ -577,8 +612,20 @@
           newSaveBtn.disabled = true;
           newSaveBtn.textContent = 'Saving...';
           
-          let avatarUrl = profile.picture;
-          let bannerUrl = profile.banner;
+          // Track clear operations
+          let clearAvatar = false;
+          let clearBanner = false;
+          
+          // Check if reset was clicked (no file selected but preview shows default)
+          if (!editPictureInput.files[0] && picturePreview.src.includes('default_pfp.png')) {
+            clearAvatar = true;
+          }
+          if (!editBannerInput.files[0] && (!bannerPreview.src || bannerPreview.style.display === 'none')) {
+            clearBanner = true;
+          }
+          
+          let avatarUrl = clearAvatar ? null : profile.picture;
+          let bannerUrl = clearBanner ? null : profile.banner;
           
           // Handle avatar upload if file selected
           if (editPictureInput.files[0]) {
@@ -616,12 +663,12 @@
             return;
           }
           
-          // Update avatar if changed
+          // Update avatar if changed or cleared
           if (avatarUrl !== profile.picture) {
             await VeilnetAuth.updateProfilePicture(avatarUrl);
           }
           
-          // Update banner if changed
+          // Update banner if changed or cleared
           if (bannerUrl !== profile.banner) {
             await VeilnetAuth.updateProfileBanner(bannerUrl);
           }
