@@ -233,12 +233,16 @@
     }
 
     // User not found screen
-    function renderUserNotFound() {
+    function renderUserNotFound(message = null) {
+      const title = message ? 'Error Loading Profile' : 'USER NOT FOUND';
+      const text = message || 'This profile doesn\'t exist or isn\'t active.';
+      
       document.querySelector('.profile-container').innerHTML = `
         <div style="text-align: center; padding: 3rem;">
-          <h2 style="color: var(--text); margin-bottom: 1rem;">USER NOT FOUND</h2>
-          <p style="color: var(--muted); margin-bottom: 2rem;">This profile doesn't exist or isn't active.</p>
+          <h2 style="color: var(--text); margin-bottom: 1rem;">${title}</h2>
+          <p style="color: var(--muted); margin-bottom: 2rem;">${text}</p>
           <a href="../index.html" class="btn">Back to Veilnet</a>
+          ${message ? '<button onclick="location.reload()" class="btn" style="margin-left: 0.5rem;">Retry</button>' : ''}
           <div id="notSignedInLogin" style="margin-top: 1rem;"></div>
         </div>
       `;
@@ -253,98 +257,54 @@
       });
     }
 
-    // Load profile from Supabase
-    async function loadProfile() {
-      const usernameParam = new URLSearchParams(location.search).get("u");
+    // Render profile data
+    function renderProfile(profile) {
+      // Update page title
+      document.title = `Veilnet • ${profile.username}`;
+      document.getElementById('profileTitle').textContent = `Veilnet • ${profile.username}`;
       
-      if (!usernameParam) {
-        // No username param - try to redirect to own profile
+      // Display username in H1, proper name in status
+      document.getElementById('profileUsername').textContent = profile.username;
+      document.getElementById('profileStatus').textContent = profile.name || "No name set yet";
+      
+      // Other profile fields
+      document.getElementById('profileAbout').textContent = profile.aboutme || 'No information provided';
+      document.getElementById('profileStatusMessage').textContent = profile.statusmessage || 'No status message';
+      document.getElementById('profileTheme').style.background = profile.themecolor || '#38e1ff';
+      
+      // Member since date
+      let memberSinceText = 'Unknown';
+      if (profile.createdat) {
         try {
-          const me = await VeilnetAuth.getUser();
-          if (!me) {
-            renderUserNotFound();
-            return;
-          }
-          
-          const myProfile = await VeilnetAuth.getMyProfile();
-          if (myProfile?.username) {
-            location.replace(`./?u=${encodeURIComponent(myProfile.username)}`);
-            return;
-          } else {
-            renderUserNotFound();
-            return;
-          }
+          memberSinceText = new Date(profile.createdat).toLocaleDateString();
         } catch (e) {
-          console.error('Failed to get own profile:', e);
-          renderUserNotFound();
-          return;
+          memberSinceText = 'Unknown';
         }
       }
+      document.getElementById('profileMemberSince').textContent = memberSinceText;
+      
+      // Avatar with cache busting
+      const avatarUrl = profile.picture || "../assets/default_pfp.png";
+      setImg(document.getElementById('profileAvatar'), avatarUrl);
+      
+      // Update header avatars too
+      const headerAvatar = document.querySelector('[data-veil-avatar-img]');
+      const ddAvatar = document.querySelector('[data-veil-dd-img]');
+      if (headerAvatar) setImg(headerAvatar, avatarUrl);
+      if (ddAvatar) setImg(ddAvatar, avatarUrl);
+      
+      // Check if viewing own profile for edit buttons
+      setupEditButtons(profile);
+    }
 
-      // Load profile by username
+    // Setup edit buttons based on ownership
+    async function setupEditButtons(profile) {
+      const editUsernameBtn = document.getElementById('editUsernameBtn');
+      const editProfileBtn = document.getElementById('editProfileBtn');
+      
       try {
-        let profile;
-        
-        // Try to use getProfileByUsername if available, otherwise query directly
-        if (typeof VeilnetAuth.getProfileByUsername === 'function') {
-          profile = await VeilnetAuth.getProfileByUsername(usernameParam);
-        } else {
-          // Direct Supabase query
-          const client = VeilnetAuth.init();
-          const { data, error } = await client
-            .from("users")
-            .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat")
-            .eq("username", usernameParam)
-            .maybeSingle();
-            
-          if (error) throw error;
-          profile = data;
-        }
-        
-        if (!profile || !profile.username) {
-          renderUserNotFound();
-          return;
-        }
-        
-        // Update page title
-        document.title = `Veilnet • ${profile.username}`;
-        document.getElementById('profileTitle').textContent = `Veilnet • ${profile.username}`;
-        
-        // Display username in H1, proper name in status
-        document.getElementById('profileUsername').textContent = profile.username;
-        document.getElementById('profileStatus').textContent = profile.name || "No name set yet";
-        
-        // Other profile fields
-        document.getElementById('profileAbout').textContent = profile.aboutme || 'No information provided';
-        document.getElementById('profileStatusMessage').textContent = profile.statusmessage || 'No status message';
-        document.getElementById('profileTheme').style.background = profile.themecolor || '#38e1ff';
-        
-        // Member since date
-        let memberSinceText = 'Unknown';
-        if (profile.createdat) {
-          try {
-            memberSinceText = new Date(profile.createdat).toLocaleDateString();
-          } catch (e) {
-            memberSinceText = 'Unknown';
-          }
-        }
-        document.getElementById('profileMemberSince').textContent = memberSinceText;
-        
-        // Avatar with cache busting
-        const avatarUrl = profile.picture || "../assets/default_pfp.png";
-        setImg(document.getElementById('profileAvatar'), avatarUrl);
-        
-        // Update header avatars too
-        const headerAvatar = document.querySelector('[data-veil-avatar-img]');
-        const ddAvatar = document.querySelector('[data-veil-dd-img]');
-        if (headerAvatar) setImg(headerAvatar, avatarUrl);
-        if (ddAvatar) setImg(ddAvatar, avatarUrl);
-        
-        // Check if viewing own profile for edit buttons
         const currentUser = await VeilnetAuth.getUser();
         const currentProfile = currentUser ? await VeilnetAuth.getMyProfile().catch(() => null) : null;
-        const editUsernameBtn = document.getElementById('editUsernameBtn');
-        const editProfileBtn = document.getElementById('editProfileBtn');
         
         if (currentProfile && (currentProfile.username === profile.username || currentUser.id === profile.id)) {
           if (editUsernameBtn) editUsernameBtn.style.display = 'inline-block';
@@ -356,10 +316,48 @@
           if (editUsernameBtn) editUsernameBtn.style.display = 'none';
           if (editProfileBtn) editProfileBtn.style.display = 'none';
         }
+      } catch (e) {
+        // Hide edit buttons on error
+        if (editUsernameBtn) editUsernameBtn.style.display = 'none';
+        if (editProfileBtn) editProfileBtn.style.display = 'none';
+      }
+    }
+
+    // Load profile from Supabase
+    async function loadProfile() {
+      const usernameParam = new URLSearchParams(location.search).get("u");
+      
+      if (!usernameParam || usernameParam.trim() === '') {
+        renderUserNotFound('Missing username parameter');
+        return;
+      }
+
+      // Load profile by username (case-insensitive)
+      try {
+        const client = VeilnetAuth.init();
+        const { data, error } = await client
+          .from("users")
+          .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat")
+          .ilike("username", usernameParam.trim())
+          .maybeSingle();
+          
+        if (error) {
+          console.error('Supabase profile query error:', error);
+          renderUserNotFound('Could not load profile');
+          return;
+        }
+        
+        if (!data || !data.username) {
+          renderUserNotFound();
+          return;
+        }
+        
+        // Success - render the profile
+        renderProfile(data);
         
       } catch (error) {
         console.error('Profile load error:', error);
-        renderUserNotFound();
+        renderUserNotFound('Could not load profile');
       }
     }
 
