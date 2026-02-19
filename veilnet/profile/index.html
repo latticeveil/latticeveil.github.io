@@ -264,6 +264,25 @@
       imgEl.src = u + bust;
     }
 
+    // Apply banner with cache-busting and proper styling
+    function applyBanner(urlOrNull) {
+      const profileBanner = document.getElementById('profileBanner');
+      if (!profileBanner) return;
+      
+      if (urlOrNull && urlOrNull.trim()) {
+        // Apply banner with cache-busting
+        const bust = (urlOrNull.includes("?") ? "&" : "?") + "v=" + Date.now();
+        profileBanner.style.backgroundImage = `url(${urlOrNull}${bust})`;
+        profileBanner.style.backgroundSize = 'cover';
+        profileBanner.style.backgroundPosition = 'center';
+        profileBanner.style.backgroundRepeat = 'no-repeat';
+      } else {
+        // Remove banner and restore default gradient
+        profileBanner.style.backgroundImage = '';
+        profileBanner.style.background = 'linear-gradient(135deg, var(--cyan), var(--purple))';
+      }
+    }
+
     // User not found screen
     function renderUserNotFound(message = null) {
       const title = message ? 'Error Loading Profile' : 'USER NOT FOUND';
@@ -298,16 +317,8 @@
       // Display username in H1
       document.getElementById('profileUsername').textContent = profile.username;
       
-      // Display banner if available
-      const profileBanner = document.getElementById('profileBanner');
-      if (profile.banner) {
-        profileBanner.style.backgroundImage = `url(${profile.banner})`;
-        profileBanner.style.backgroundSize = 'cover';
-        profileBanner.style.backgroundPosition = 'center';
-      } else {
-        profileBanner.style.backgroundImage = '';
-        profileBanner.style.background = 'linear-gradient(135deg, var(--cyan), var(--purple))';
-      }
+      // Apply banner with cache-busting
+      applyBanner(profile.banner);
       
       // Other profile fields
       document.getElementById('profileAbout').textContent = profile.aboutme || 'No information provided';
@@ -574,12 +585,8 @@
             if (window.currentUserProfile) {
               window.currentUserProfile.banner = null;
             }
-            // Update live UI - remove banner background
-            const profileBanner = document.getElementById('profileBanner');
-            if (profileBanner) {
-              profileBanner.style.backgroundImage = '';
-              profileBanner.style.background = 'linear-gradient(135deg, var(--cyan), var(--purple))';
-            }
+            // Update live UI using applyBanner function
+            applyBanner(null);
           } catch (error) {
             console.error('Failed to clear banner:', error);
           }
@@ -644,6 +651,8 @@
           if (editBannerInput.files[0]) {
             try {
               bannerUrl = await VeilnetAuth.uploadBanner(editBannerInput.files[0]);
+              // Apply banner immediately after successful upload
+              applyBanner(bannerUrl);
             } catch (error) {
               editProfileError.textContent = `Banner upload failed: ${error.message}`;
               editProfileError.style.display = 'block';
