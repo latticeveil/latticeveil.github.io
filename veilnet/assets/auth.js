@@ -126,7 +126,8 @@ window.VeilnetAuth = (function() {
       
       if (error) {
         console.error("getMyProfile error:", error);
-        throw error;
+        // Don't throw - profile might be auto-creating
+        return null;
       }
       return data;
     },
