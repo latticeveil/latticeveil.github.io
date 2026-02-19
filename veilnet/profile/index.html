@@ -139,7 +139,7 @@
   <main class="container">
     <div class="profile-container">
       <div class="profile-hero">
-        <div class="profile-banner"></div>
+        <div id="profileBanner" class="profile-banner"></div>
         <div class="profile-header">
           <div class="profile-avatar">
             <img id="profileAvatar" src="../assets/default_pfp.png" alt="Profile">
@@ -230,6 +230,17 @@
         <img id="picturePreview" src="../assets/default_pfp.png" alt="Preview" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border);">
         <button id="resetPictureBtn" style="margin-left: 1rem; padding: 0.5rem 1rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">Reset to Default</button>
       </div>
+
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 600;">Profile Banner</label>
+        <input type="file" id="editBannerInput" accept="image/*" style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-size: 1rem;">
+        <small style="color: var(--muted); font-size: 0.85rem;">Upload banner image (1600x400 recommended)</small>
+      </div>
+      
+      <div style="margin-bottom: 1.5rem;">
+        <img id="bannerPreview" src="" alt="Banner Preview" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 6px; border: 2px solid var(--border); display: none;">
+        <button id="resetBannerBtn" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">Remove Banner</button>
+      </div>
       
       <div id="editProfileError" style="color: var(--red); margin-bottom: 1rem; display: none;"></div>
       
@@ -286,6 +297,17 @@
       
       // Display username in H1
       document.getElementById('profileUsername').textContent = profile.username;
+      
+      // Display banner if available
+      const profileBanner = document.getElementById('profileBanner');
+      if (profile.banner) {
+        profileBanner.style.backgroundImage = `url(${profile.banner})`;
+        profileBanner.style.backgroundSize = 'cover';
+        profileBanner.style.backgroundPosition = 'center';
+      } else {
+        profileBanner.style.backgroundImage = '';
+        profileBanner.style.background = 'linear-gradient(135deg, var(--cyan), var(--purple))';
+      }
       
       // Other profile fields
       document.getElementById('profileAbout').textContent = profile.aboutme || 'No information provided';
@@ -474,15 +496,18 @@
       const editProfileModal = document.getElementById('editProfileModal');
       const editUsernameInput = document.getElementById('editUsernameInput');
       const editPictureInput = document.getElementById('editPictureInput');
+      const editBannerInput = document.getElementById('editBannerInput');
       const picturePreview = document.getElementById('picturePreview');
+      const bannerPreview = document.getElementById('bannerPreview');
       const saveProfileBtn = document.getElementById('saveProfileBtn');
       const cancelEditBtn = document.getElementById('cancelEditBtn');
       const resetPictureBtn = document.getElementById('resetPictureBtn');
+      const resetBannerBtn = document.getElementById('resetBannerBtn');
       const editProfileError = document.getElementById('editProfileError');
       
       if (!saveProfileBtn || !cancelEditBtn) return;
       
-      // Setup file input preview
+      // Setup file input previews
       if (editPictureInput && picturePreview) {
         editPictureInput.addEventListener('change', (e) => {
           const file = e.target.files[0];
@@ -496,11 +521,33 @@
         });
       }
       
-      // Setup reset button
+      if (editBannerInput && bannerPreview) {
+        editBannerInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              bannerPreview.src = e.target.result;
+              bannerPreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+      
+      // Setup reset buttons
       if (resetPictureBtn && picturePreview) {
         resetPictureBtn.addEventListener('click', () => {
           picturePreview.src = '../assets/default_pfp.png';
           if (editPictureInput) editPictureInput.value = '';
+        });
+      }
+      
+      if (resetBannerBtn && bannerPreview) {
+        resetBannerBtn.addEventListener('click', () => {
+          bannerPreview.src = '';
+          bannerPreview.style.display = 'none';
+          if (editBannerInput) editBannerInput.value = '';
         });
       }
       
@@ -526,47 +573,74 @@
         }
         
         try {
-          // Handle avatar upload if file selected
+          // Disable save button during upload
+          newSaveBtn.disabled = true;
+          newSaveBtn.textContent = 'Saving...';
+          
           let avatarUrl = profile.picture;
+          let bannerUrl = profile.banner;
+          
+          // Handle avatar upload if file selected
           if (editPictureInput.files[0]) {
-            const file = editPictureInput.files[0];
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('mediaType', 'avatar');
-            
-            const response = await fetch('/functions/v1/upload-media', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${await VeilnetAuth.getToken()}`
-              },
-              body: formData
-            });
-            
-            if (response.ok) {
-              const result = await response.json();
-              if (result.success) {
-                avatarUrl = result.fileUrl;
-              }
+            try {
+              avatarUrl = await VeilnetAuth.uploadAvatar(editPictureInput.files[0]);
+            } catch (error) {
+              editProfileError.textContent = `Avatar upload failed: ${error.message}`;
+              editProfileError.style.display = 'block';
+              newSaveBtn.disabled = false;
+              newSaveBtn.textContent = 'Save Profile';
+              return;
             }
           }
           
-          const result = await VeilnetAuth.setUsername(username);
-          if (result.ok) {
-            // Update avatar if changed
-            if (avatarUrl !== profile.picture) {
-              await VeilnetAuth.updateProfilePicture(avatarUrl);
+          // Handle banner upload if file selected
+          if (editBannerInput.files[0]) {
+            try {
+              bannerUrl = await VeilnetAuth.uploadBanner(editBannerInput.files[0]);
+            } catch (error) {
+              editProfileError.textContent = `Banner upload failed: ${error.message}`;
+              editProfileError.style.display = 'block';
+              newSaveBtn.disabled = false;
+              newSaveBtn.textContent = 'Save Profile';
+              return;
             }
-            
-            editProfileModal.style.display = 'none';
-            window.currentUserProfile = result.data;
-            renderProfile(result.data);
-          } else if (result.reason === 'taken') {
-            editProfileError.textContent = 'Username already taken. Please choose another.';
-            editProfileError.style.display = 'block';
           }
+          
+          // Update username
+          const result = await VeilnetAuth.setUsername(username);
+          if (!result.ok) {
+            editProfileError.textContent = result.reason === 'taken' ? 'Username already taken. Please choose another.' : 'Failed to save username.';
+            editProfileError.style.display = 'block';
+            newSaveBtn.disabled = false;
+            newSaveBtn.textContent = 'Save Profile';
+            return;
+          }
+          
+          // Update avatar if changed
+          if (avatarUrl !== profile.picture) {
+            await VeilnetAuth.updateProfilePicture(avatarUrl);
+          }
+          
+          // Update banner if changed
+          if (bannerUrl !== profile.banner) {
+            await VeilnetAuth.updateProfileBanner(bannerUrl);
+          }
+          
+          // Refresh profile data
+          const updatedProfile = await VeilnetAuth.getMyProfile();
+          if (updatedProfile) {
+            editProfileModal.style.display = 'none';
+            window.currentUserProfile = updatedProfile;
+            renderProfile(updatedProfile);
+          }
+          
         } catch (error) {
-          editProfileError.textContent = 'Failed to save profile. Please try again.';
+          console.error('Profile save error:', error);
+          editProfileError.textContent = `Failed to save profile: ${error.message}`;
           editProfileError.style.display = 'block';
+        } finally {
+          newSaveBtn.disabled = false;
+          newSaveBtn.textContent = 'Save Profile';
         }
       });
       
