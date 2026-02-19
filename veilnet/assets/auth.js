@@ -247,7 +247,7 @@ window.VeilnetAuth = (function() {
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select("id, username, picture, aboutme, statusmessage, themecolor, createdat")
+        .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat")
         .eq("id", user.id)
         .maybeSingle();
       
@@ -336,6 +336,9 @@ window.VeilnetAuth = (function() {
       // Normalize: allow null/undefined to clear banner
       const nextUrl = bannerUrl && bannerUrl.trim() ? bannerUrl.trim() : null;
       
+      // Debug logging
+      console.log('[updateProfileBanner] setting banner to:', nextUrl);
+      
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
@@ -406,6 +409,9 @@ window.VeilnetAuth = (function() {
 
       // Build deterministic path
       const path = `${user.id}/banner.${ext}`;
+      
+      // Debug logging
+      console.log('[uploadBanner] uploading to:', path, 'bucket:', 'banners', 'type:', file.type, 'size:', file.size);
 
       try {
         const client = init();
@@ -499,6 +505,12 @@ window.VeilnetAuth = (function() {
       const displayName = username || email;
       
       return { email, username, picture, displayName };
-    }
+    },
+
+    // Upload functions
+    uploadAvatar,
+    uploadBanner,
+    updateProfilePicture,
+    updateProfileBanner
   };
 })();
