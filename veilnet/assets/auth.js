@@ -354,6 +354,9 @@ window.VeilnetAuth = (function() {
         const client = init();
         const avatarPath = `${user.id}/avatar.${processed.ext}`;
         
+        // Debug logging
+        console.log('[uploadAvatar] uid:', user.id, 'path:', avatarPath, 'type:', file.type, 'size:', file.size);
+        
         const { error: uploadError } = await client.storage
           .from('avatars')
           .upload(avatarPath, processed.blob, { 
@@ -385,6 +388,9 @@ window.VeilnetAuth = (function() {
         // Upload to Supabase Storage
         const client = init();
         const bannerPath = `${user.id}/banner.${processed.ext}`;
+        
+        // Debug logging
+        console.log('[uploadBanner] uid:', user.id, 'path:', bannerPath, 'type:', file.type, 'size:', file.size);
         
         const { error: uploadError } = await client.storage
           .from('banners')
