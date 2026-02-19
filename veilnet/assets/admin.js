@@ -16,12 +16,14 @@
   const devCopyBtn = document.getElementById("devCopyBtn");
   const devHashInput = document.getElementById("devHashInput");
   const devUpdateBtn = document.getElementById("devUpdateBtn");
+  const devDropZone = document.getElementById("devDropZone");
 
   const releaseCurrentHash = document.getElementById("releaseCurrentHash");
   const releaseCurrentUpdated = document.getElementById("releaseCurrentUpdated");
   const releaseCopyBtn = document.getElementById("releaseCopyBtn");
   const releaseHashInput = document.getElementById("releaseHashInput");
   const releaseUpdateBtn = document.getElementById("releaseUpdateBtn");
+  const releaseDropZone = document.getElementById("releaseDropZone");
   const hashAutoSubmitToggle = document.getElementById("hashAutoSubmitToggle");
   const devExeInput = document.getElementById("devExeInput");
   const releaseExeInput = document.getElementById("releaseExeInput");
@@ -166,6 +168,38 @@
     }
   }
 
+  function setDropZoneActive(zone, active) {
+    if (!zone) return;
+    zone.style.borderColor = active ? "var(--border-accent)" : "rgba(255,255,255,.22)";
+    zone.style.background = active ? "rgba(124,92,255,.12)" : "rgba(255,255,255,.02)";
+  }
+
+  function wireGlobalNoDropNavigation() {
+    const preventOutsideDrop = (e) => {
+      const target = e.target;
+      const inDropZone = !!target?.closest?.("[data-hash-dropzone]");
+      if (!inDropZone) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener("dragover", preventOutsideDrop);
+    document.addEventListener("drop", preventOutsideDrop);
+  }
+
+  function wireFormSafety() {
+    document.querySelectorAll("form").forEach((form) => {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      });
+    });
+    [loginBtn, devUpdateBtn, releaseUpdateBtn].forEach((btn) => {
+      if (btn) btn.setAttribute("type", "button");
+    });
+  }
+
   async function sha256HexFromFile(file) {
     if (!window.crypto?.subtle) {
       throw new Error("Web Crypto API unavailable in this browser.");
@@ -178,20 +212,22 @@
 
   async function handleHashFileSelect(options) {
     const {
+      file,
       fileInput,
       hashInput,
       updateBtn,
       statusEl,
-      channel
+      channel,
+      notePrefix
     } = options;
 
-    const file = fileInput?.files?.[0];
-    if (!file || !hashInput || !updateBtn) return;
+    const selectedFile = file || fileInput?.files?.[0];
+    if (!selectedFile || !hashInput || !updateBtn) return;
 
-    if (file.size > MAX_HASH_FILE_BYTES) {
+    if (selectedFile.size > MAX_HASH_FILE_BYTES) {
       setComputeStatus(
         statusEl,
-        `File too large (${formatBytes(file.size)}). Limit is ${formatBytes(MAX_HASH_FILE_BYTES)} to avoid tab crashes.`,
+        `File too large (${formatBytes(selectedFile.size)}). Limit is ${formatBytes(MAX_HASH_FILE_BYTES)} to avoid tab crashes.`,
         "error"
       );
       fileInput.value = "";
@@ -204,32 +240,99 @@
       return;
     }
 
-    const exeWarning = isLikelyExe(file) ? "" : "Warning: file is not .exe; hashing anyway. ";
+    const prefixParts = [];
+    if (notePrefix) prefixParts.push(String(notePrefix).trim());
+    if (!isLikelyExe(selectedFile)) prefixParts.push("Warning: file is not .exe; hashing anyway.");
+    const prefix = prefixParts.length ? `${prefixParts.join(" ")} ` : "";
+    const prefixTone = prefixParts.length ? "warn" : "ok";
+
     const wasDisabled = updateBtn.disabled;
     updateBtn.disabled = true;
-    fileInput.disabled = true;
-    setComputeStatus(statusEl, `${exeWarning}Computing SHA-256...`);
+    if (fileInput) fileInput.disabled = true;
+    setComputeStatus(statusEl, `${prefix}Computing SHA-256...`);
 
     try {
-      const hash = await sha256HexFromFile(file);
+      const hash = await sha256HexFromFile(selectedFile);
       if (!hashRe.test(hash)) {
         throw new Error("Computed hash is invalid.");
       }
 
       hashInput.value = hash;
-      setComputeStatus(statusEl, `${exeWarning}Hash computed ✓ ${shortHash(hash)}`, exeWarning ? "warn" : "ok");
+      setComputeStatus(statusEl, `${prefix}Hash computed ✓ ${shortHash(hash)}`, prefixTone);
 
       if (hashAutoSubmitToggle?.checked) {
-        setComputeStatus(statusEl, `${exeWarning}Hash computed ✓ ${shortHash(hash)} • auto-submitting...`);
+        setComputeStatus(statusEl, `${prefix}Hash computed ✓ ${shortHash(hash)} • auto-submitting...`, prefixTone);
         await updateChannel(channel);
       }
     } catch (error) {
       setComputeStatus(statusEl, error?.message || "Hash compute failed.", "error");
     } finally {
-      fileInput.disabled = false;
+      if (fileInput) fileInput.disabled = false;
       updateBtn.disabled = isAdmin ? wasDisabled : true;
-      fileInput.value = "";
+      if (fileInput) fileInput.value = "";
     }
+  }
+
+  function wireHashDropZone(options) {
+    const { zone, fileInput, hashInput, updateBtn, statusEl, channel } = options;
+    if (!zone || !fileInput || !hashInput || !updateBtn) return;
+
+    const prevent = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    zone.addEventListener("click", (e) => {
+      prevent(e);
+      fileInput.click();
+    });
+
+    zone.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        prevent(e);
+        fileInput.click();
+      }
+    });
+
+    zone.addEventListener("dragenter", (e) => {
+      prevent(e);
+      setDropZoneActive(zone, true);
+    });
+
+    zone.addEventListener("dragover", (e) => {
+      prevent(e);
+      setDropZoneActive(zone, true);
+    });
+
+    zone.addEventListener("dragleave", (e) => {
+      prevent(e);
+      const toEl = e.relatedTarget;
+      if (!toEl || !zone.contains(toEl)) {
+        setDropZoneActive(zone, false);
+      }
+    });
+
+    zone.addEventListener("drop", async (e) => {
+      prevent(e);
+      setDropZoneActive(zone, false);
+      const files = e.dataTransfer?.files;
+      if (!files || files.length === 0) {
+        setComputeStatus(statusEl, "No file dropped.", "error");
+        return;
+      }
+
+      const first = files[0];
+      const note = files.length > 1 ? "Multiple files dropped; using first." : "";
+      await handleHashFileSelect({
+        file: first,
+        fileInput,
+        hashInput,
+        updateBtn,
+        statusEl,
+        channel,
+        notePrefix: note
+      });
+    });
   }
 
   async function copyText(value) {
@@ -314,7 +417,7 @@
     });
     const { payload } = await parseResponse(res, "fetch hashes", { url: getUrl, method: "GET" });
     if (!res.ok || !payload) {
-      throw new Error(payload?.error || "Failed to load hashes.");
+      throw new Error(payload?.message || payload?.error || "Failed to load hashes.");
     }
 
     const dev = payload.dev || {};
@@ -344,7 +447,7 @@
     }
     if (res.status === 403) return false;
     if (!res.ok) {
-      throw new Error(payload?.error || "Admin check failed.");
+      throw new Error(payload?.message || payload?.error || "Admin check failed.");
     }
     return !!payload?.is_admin;
   }
@@ -376,16 +479,20 @@
         method: "POST",
         channel
       });
+      const requestPayload = {
+        target: channel,
+        channel,
+        hash,
+        hash_sha256: hash
+      };
+      console.debug("[admin] update payload", requestPayload);
       const res = await fetch(setUrl, {
         method: "POST",
         headers: {
           ...authHeaders(token),
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          channel,
-          hash
-        })
+        body: JSON.stringify(requestPayload)
       });
 
       const { payload } = await parseResponse(res, `update ${channel}`, { url: setUrl, method: "POST" });
@@ -394,7 +501,7 @@
           renderUnauthorizedOnlyPage();
           return;
         }
-        throw new Error(payload?.error || "Update failed.");
+        throw new Error(payload?.message || payload?.error || "Update failed.");
       }
 
       setStatus(`${channel.toUpperCase()} hash updated.`);
@@ -464,27 +571,54 @@
 
   if (devExeInput && devHashInput && devUpdateBtn) {
     devExeInput.addEventListener("change", async () => {
+      const files = devExeInput.files;
+      const note = files && files.length > 1 ? "Multiple files selected; using first." : "";
       await handleHashFileSelect({
+        file: files?.[0] || null,
         fileInput: devExeInput,
         hashInput: devHashInput,
         updateBtn: devUpdateBtn,
         statusEl: devHashComputeStatus,
-        channel: "dev"
+        channel: "dev",
+        notePrefix: note
       });
     });
   }
 
   if (releaseExeInput && releaseHashInput && releaseUpdateBtn) {
     releaseExeInput.addEventListener("change", async () => {
+      const files = releaseExeInput.files;
+      const note = files && files.length > 1 ? "Multiple files selected; using first." : "";
       await handleHashFileSelect({
+        file: files?.[0] || null,
         fileInput: releaseExeInput,
         hashInput: releaseHashInput,
         updateBtn: releaseUpdateBtn,
         statusEl: releaseHashComputeStatus,
-        channel: "release"
+        channel: "release",
+        notePrefix: note
       });
     });
   }
+
+  wireGlobalNoDropNavigation();
+  wireFormSafety();
+  wireHashDropZone({
+    zone: devDropZone,
+    fileInput: devExeInput,
+    hashInput: devHashInput,
+    updateBtn: devUpdateBtn,
+    statusEl: devHashComputeStatus,
+    channel: "dev"
+  });
+  wireHashDropZone({
+    zone: releaseDropZone,
+    fileInput: releaseExeInput,
+    hashInput: releaseHashInput,
+    updateBtn: releaseUpdateBtn,
+    statusEl: releaseHashComputeStatus,
+    channel: "release"
+  });
 
   window.addEventListener("focus", refresh);
   document.addEventListener("visibilitychange", () => {

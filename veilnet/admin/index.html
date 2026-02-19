@@ -117,10 +117,26 @@
           <div class="panel" style="padding:12px;">
             <div style="font-weight:900;">Update DEV Hash</div>
             <input id="devHashInput" type="text" placeholder="64-char sha256 hex" spellcheck="false" style="margin-top:8px;">
-            <div style="margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-              <label class="btn ghost" for="devExeInput" style="cursor:pointer;">Select DEV EXE</label>
-              <input id="devExeInput" type="file" accept=".exe,application/x-msdownload" style="display:none;">
+            <div
+              id="devDropZone"
+              data-hash-dropzone="dev"
+              role="button"
+              tabindex="0"
+              style="
+                margin-top:10px;
+                border:1px dashed rgba(255,255,255,.22);
+                border-radius:12px;
+                padding:14px 12px;
+                text-align:center;
+                background:rgba(255,255,255,.02);
+                cursor:pointer;
+                user-select:none;
+              "
+            >
+              <div style="font-weight:800;">Drop DEV EXE here</div>
+              <div class="small" style="margin-top:4px; opacity:.86;">or click to choose</div>
             </div>
+            <input id="devExeInput" type="file" accept=".exe,application/x-msdownload" style="display:none;">
             <div id="devHashComputeStatus" class="small" aria-live="polite" style="margin-top:6px;"></div>
             <div style="margin-top:10px;">
               <button id="devUpdateBtn" class="btn" type="button">Update DEV</button>
@@ -130,10 +146,26 @@
           <div class="panel" style="padding:12px;">
             <div style="font-weight:900;">Update RELEASE Hash</div>
             <input id="releaseHashInput" type="text" placeholder="64-char sha256 hex" spellcheck="false" style="margin-top:8px;">
-            <div style="margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-              <label class="btn ghost" for="releaseExeInput" style="cursor:pointer;">Select RELEASE EXE</label>
-              <input id="releaseExeInput" type="file" accept=".exe,application/x-msdownload" style="display:none;">
+            <div
+              id="releaseDropZone"
+              data-hash-dropzone="release"
+              role="button"
+              tabindex="0"
+              style="
+                margin-top:10px;
+                border:1px dashed rgba(255,255,255,.22);
+                border-radius:12px;
+                padding:14px 12px;
+                text-align:center;
+                background:rgba(255,255,255,.02);
+                cursor:pointer;
+                user-select:none;
+              "
+            >
+              <div style="font-weight:800;">Drop RELEASE EXE here</div>
+              <div class="small" style="margin-top:4px; opacity:.86;">or click to choose</div>
             </div>
+            <input id="releaseExeInput" type="file" accept=".exe,application/x-msdownload" style="display:none;">
             <div id="releaseHashComputeStatus" class="small" aria-live="polite" style="margin-top:6px;"></div>
             <div style="margin-top:10px;">
               <button id="releaseUpdateBtn" class="btn" type="button">Update RELEASE</button>
