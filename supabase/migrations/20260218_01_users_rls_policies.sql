@@ -4,6 +4,10 @@
 -- Enable RLS on users table
 alter table public.users enable row level security;
 
+-- Grant SELECT privilege to anon and authenticated users
+grant select on table public.users to anon;
+grant select on table public.users to authenticated;
+
 -- Drop existing policies if they exist
 drop policy if exists "users_select_public" on public.users;
 drop policy if exists "users_select_own" on public.users;
