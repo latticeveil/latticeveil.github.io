@@ -325,35 +325,39 @@
 
     // Load profile from Supabase
     async function loadProfile() {
-      const usernameParam = new URLSearchParams(location.search).get("u");
+      const u = new URLSearchParams(location.search).get("u");
       
-      if (!usernameParam || usernameParam.trim() === '') {
-        renderUserNotFound('Missing username parameter');
-        return;
-      }
-
-      // Load profile by username (case-insensitive)
-      try {
-        const client = VeilnetAuth.init();
-        const { data, error } = await client
-          .from("users")
-          .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat")
-          .ilike("username", usernameParam.trim())
-          .maybeSingle();
+      if (!u || u.trim() === '') {
+        // No username param - try to redirect to own profile
+        try {
+          const me = await VeilnetAuth.getUser();
+          const myProfile = me ? await VeilnetAuth.getMyProfile().catch(() => null) : null;
           
-        if (error) {
-          console.error('Supabase profile query error:', error);
-          renderUserNotFound('Could not load profile');
+          if (myProfile?.username) {
+            location.replace(`./?u=${encodeURIComponent(myProfile.username)}`);
+            return;
+          } else {
+            renderUserNotFound("Missing username parameter");
+            return;
+          }
+        } catch (e) {
+          console.error('Failed to get own profile:', e);
+          renderUserNotFound("Missing username parameter");
           return;
         }
+      }
+
+      // Load profile by username using VeilnetAuth helper
+      try {
+        const profile = await VeilnetAuth.getProfileByUsername(u);
         
-        if (!data || !data.username) {
+        if (!profile || !profile.username) {
           renderUserNotFound();
           return;
         }
         
-        // Success - render the profile
-        renderProfile(data);
+        // Success - render profile
+        renderProfile(profile);
         
       } catch (error) {
         console.error('Profile load error:', error);

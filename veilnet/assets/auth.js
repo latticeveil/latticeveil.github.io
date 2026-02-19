@@ -240,11 +240,14 @@ window.VeilnetAuth = (function() {
     async getProfileByUsername(username) {
       if (!username) return null;
       
+      const trimmedUsername = username.trim();
+      if (!trimmedUsername) return null;
+      
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
         .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat")
-        .eq("username", username)
+        .ilike("username", trimmedUsername)
         .maybeSingle();
       
       if (error) {
