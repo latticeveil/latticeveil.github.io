@@ -40,6 +40,17 @@
       margin: 0 auto;
     }
     
+    /* Profile page specific spacing */
+    body.profile-page .profile-container {
+      padding-top: 60px;
+    }
+    
+    @media (max-width: 768px) {
+      body.profile-page .profile-container {
+        padding-top: 40px;
+      }
+    }
+    
     .profile-hero {
       position: relative;
       overflow: hidden;
@@ -129,7 +140,7 @@
     }
   </style>
 </head>
-<body>
+<body class="profile-page">
   <header class="topbar">
     <div class="container topbar-inner">
       <div class="brand">
