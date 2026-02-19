@@ -120,7 +120,7 @@ window.VeilnetAuth = (function() {
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat")
+        .select("id, username, picture, aboutme, statusmessage, themecolor, createdat")
         .eq("id", user.id)
         .maybeSingle();
       
@@ -163,7 +163,7 @@ window.VeilnetAuth = (function() {
         .from(VEILNET_CONFIG.PROFILE_TABLE)
         .update({ username: normalizedUsername })
         .eq("id", user.id)
-        .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat, updatedat")
+        .select("id, username, picture, aboutme, statusmessage, themecolor, createdat, updatedat")
         .single();
       
       if (profileError) {
@@ -227,7 +227,7 @@ window.VeilnetAuth = (function() {
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select("id, username, name, picture, aboutme, statusmessage, themecolor, createdat")
+        .select("id, username, picture, aboutme, statusmessage, themecolor, createdat")
         .eq("username", normalizedUsername)
         .maybeSingle();
       
@@ -257,7 +257,7 @@ window.VeilnetAuth = (function() {
       const email = user.email;
       const username = profile?.username;
       const picture = profile?.picture || user.user_metadata?.picture;
-      const displayName = username || profile?.name || user.user_metadata?.name || email;
+      const displayName = username || email;
       
       return { email, username, picture, displayName };
     }
