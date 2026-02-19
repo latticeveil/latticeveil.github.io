@@ -221,9 +221,9 @@
       </div>
       
       <div style="margin-bottom: 1.5rem;">
-        <label style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 600;">Profile Picture URL</label>
-        <input type="text" id="editPictureInput" placeholder="https://example.com/avatar.jpg" style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-size: 1rem;">
-        <small style="color: var(--muted); font-size: 0.85rem;">Leave empty to use default, or enter HTTP/HTTPS URL</small>
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 600;">Profile Picture</label>
+        <input type="file" id="editPictureInput" accept="image/*" style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-size: 1rem;">
+        <small style="color: var(--muted); font-size: 0.85rem;">Upload image file (JPG, PNG, WebP)</small>
       </div>
       
       <div style="margin-bottom: 1.5rem;">
@@ -473,11 +473,36 @@
     function setupEditProfileModal(profile) {
       const editProfileModal = document.getElementById('editProfileModal');
       const editUsernameInput = document.getElementById('editUsernameInput');
+      const editPictureInput = document.getElementById('editPictureInput');
+      const picturePreview = document.getElementById('picturePreview');
       const saveProfileBtn = document.getElementById('saveProfileBtn');
       const cancelEditBtn = document.getElementById('cancelEditBtn');
+      const resetPictureBtn = document.getElementById('resetPictureBtn');
       const editProfileError = document.getElementById('editProfileError');
       
       if (!saveProfileBtn || !cancelEditBtn) return;
+      
+      // Setup file input preview
+      if (editPictureInput && picturePreview) {
+        editPictureInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              picturePreview.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+      
+      // Setup reset button
+      if (resetPictureBtn && picturePreview) {
+        resetPictureBtn.addEventListener('click', () => {
+          picturePreview.src = '../assets/default_pfp.png';
+          if (editPictureInput) editPictureInput.value = '';
+        });
+      }
       
       // Remove existing listeners to avoid duplicates
       const newSaveBtn = saveProfileBtn.cloneNode(true);
@@ -501,8 +526,37 @@
         }
         
         try {
+          // Handle avatar upload if file selected
+          let avatarUrl = profile.picture;
+          if (editPictureInput.files[0]) {
+            const file = editPictureInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('mediaType', 'avatar');
+            
+            const response = await fetch('/functions/v1/upload-media', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${await VeilnetAuth.getToken()}`
+              },
+              body: formData
+            });
+            
+            if (response.ok) {
+              const result = await response.json();
+              if (result.success) {
+                avatarUrl = result.fileUrl;
+              }
+            }
+          }
+          
           const result = await VeilnetAuth.setUsername(username);
           if (result.ok) {
+            // Update avatar if changed
+            if (avatarUrl !== profile.picture) {
+              await VeilnetAuth.updateProfilePicture(avatarUrl);
+            }
+            
             editProfileModal.style.display = 'none';
             window.currentUserProfile = result.data;
             renderProfile(result.data);
@@ -511,7 +565,7 @@
             editProfileError.style.display = 'block';
           }
         } catch (error) {
-          editProfileError.textContent = 'Failed to save username. Please try again.';
+          editProfileError.textContent = 'Failed to save profile. Please try again.';
           editProfileError.style.display = 'block';
         }
       });
