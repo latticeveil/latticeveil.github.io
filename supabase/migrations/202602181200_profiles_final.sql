@@ -5,7 +5,6 @@
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique not null,
-  name text,
   picture text,
   aboutme text,
   statusmessage text,
@@ -64,11 +63,10 @@ grant usage on schema public to anon;
 grant select on public.profiles to anon;
 
 -- Migrate existing data from users table (safe UUID source)
-insert into public.profiles (id, username, name, picture, aboutme, statusmessage, themecolor, createdat)
+insert into public.profiles (id, username, picture, aboutme, statusmessage, themecolor, createdat)
 select 
   au.id,
   lower(u.username) as username,
-  u.name,
   u.picture,
   u.aboutme,
   u.statusmessage,
@@ -79,7 +77,6 @@ join auth.users au on au.email = u.email
 where u.username is not null and trim(u.username) <> ''
 on conflict (id) do update set
   username      = excluded.username,
-  name          = excluded.name,
   picture       = excluded.picture,
   aboutme       = excluded.aboutme,
   statusmessage = excluded.statusmessage,
@@ -89,11 +86,10 @@ on conflict (id) do update set
 create or replace function public.handle_new_user_profile()
 returns trigger as $$
 begin
-  insert into public.profiles (id, username, name, picture)
+  insert into public.profiles (id, username, picture)
   values (
     new.id,
     lower('user_' || left(new.id::text, 8)),
-    coalesce(new.raw_user_meta_data->>'name', null),
     coalesce(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture', null)
   )
   on conflict (id) do nothing;

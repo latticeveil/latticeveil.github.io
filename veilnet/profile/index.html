@@ -263,9 +263,8 @@
       document.title = `Veilnet • ${profile.username}`;
       document.getElementById('profileTitle').textContent = `Veilnet • ${profile.username}`;
       
-      // Display username in H1, proper name in status
+      // Display username in H1
       document.getElementById('profileUsername').textContent = profile.username;
-      document.getElementById('profileStatus').textContent = profile.name || "No name set yet";
       
       // Other profile fields
       document.getElementById('profileAbout').textContent = profile.aboutme || 'No information provided';
