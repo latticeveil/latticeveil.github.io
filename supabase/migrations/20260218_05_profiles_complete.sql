@@ -1,5 +1,5 @@
--- Create public profiles table with RLS
--- Migration: 20260218_10_create_public_profiles.sql
+-- Create public profiles table with RLS and auto-create trigger
+-- Migration: 20260218_05_profiles_complete.sql
 
 -- Create public.profiles table
 create table if not exists public.profiles (
@@ -28,7 +28,7 @@ create trigger handle_profiles_updated_at
   for each row
   execute function public.handle_updated_at();
 
--- Create case-insensitive unique index on username
+-- Add case-insensitive unique index on username
 create unique index if not exists profiles_username_ci_unique 
   on public.profiles (lower(username)) 
   where username is not null;
@@ -62,3 +62,51 @@ create policy "profiles_update_own"
 -- Grants for public access
 grant usage on schema public to anon;
 grant select on public.profiles to anon;
+
+-- Migrate existing data from users table (safe UUID source)
+insert into public.profiles (id, username, name, picture, aboutme, statusmessage, themecolor, createdat)
+select 
+  au.id,
+  lower(u.username) as username,
+  u.name,
+  u.picture,
+  u.aboutme,
+  u.statusmessage,
+  u.themecolor,
+  coalesce(u.createdat, now())
+from public.users u
+join auth.users au on au.email = u.email
+where u.username is not null and trim(u.username) <> ''
+on conflict (id) do update set
+  username      = excluded.username,
+  name          = excluded.name,
+  picture       = excluded.picture,
+  aboutme       = excluded.aboutme,
+  statusmessage = excluded.statusmessage,
+  themecolor    = excluded.themecolor;
+
+-- Function to auto-create profile on user signup
+create or replace function public.handle_new_user_profile()
+returns trigger as $$
+begin
+  insert into public.profiles (id, username, name, picture)
+  values (
+    new.id,
+    lower('user_' || left(new.id::text, 8)),
+    coalesce(new.raw_user_meta_data->>'name', null),
+    coalesce(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture', null)
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$ language plpgsql security definer;
+
+-- Trigger to auto-create profile on auth.users insert
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row
+  execute function public.handle_new_user_profile();
+
+-- Lock down public.users table (remove public access)
+drop policy if exists "users_select_public" on public.users;
+revoke select on public.users from anon;
