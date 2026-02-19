@@ -168,10 +168,16 @@
         color:#ffffff;
         font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
       ">
-        <div style="font-size:clamp(26px,4vw,52px); font-weight:900; letter-spacing:0.02em;">
-          YOU ARE NOT AUTHORIZED TO VIEW THIS PAGE
-        </div>
-        <div style="margin-top:24px;">
+        <div style="
+          display:flex;
+          flex-direction:column;
+          align-items:center;
+          justify-content:center;
+          gap:12px;
+        ">
+          <div style="font-size:clamp(26px,4vw,52px); font-weight:900; letter-spacing:0.02em;">
+            YOU ARE NOT AUTHORIZED TO VIEW THIS PAGE
+          </div>
           <button id="adminUnauthorizedBackBtn" class="btn" type="button">Back to Veilnet</button>
         </div>
       </main>
