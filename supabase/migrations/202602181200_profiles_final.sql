@@ -83,6 +83,12 @@ create trigger on_auth_user_created
   for each row
   execute function public.handle_new_user_profile();
 
--- Lock down public.users table (remove public access)
-drop policy if exists "users_select_public" on public.users;
-revoke select on public.users from anon;
+-- Lock down public.users table (remove public access) if legacy table exists.
+do $$
+begin
+  if to_regclass('public.users') is not null then
+    drop policy if exists "users_select_public" on public.users;
+    revoke select on public.users from anon;
+  end if;
+end
+$$;
