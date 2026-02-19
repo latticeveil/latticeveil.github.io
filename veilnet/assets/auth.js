@@ -11,7 +11,8 @@ window.VeilnetAuth = (function() {
       throw new Error("Supabase JS not loaded. Ensure <script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'></script> is included BEFORE auth.js");
     }
     
-    supa = window.supabase.createClient(
+    const { createClient } = window.supabase;
+    supa = createClient(
       VEILNET_CONFIG.SUPABASE_URL,
       VEILNET_CONFIG.SUPABASE_ANON_KEY,
       {
@@ -81,7 +82,12 @@ window.VeilnetAuth = (function() {
       
       // Force immediate UI refresh
       if (typeof window.refreshHeaderUI === 'function') {
-        window.refreshHeaderUI();
+        await window.refreshHeaderUI();
+      }
+      
+      // Re-wire the dropdown to ensure it works after logout
+      if (typeof window.wireProfileMenuToggle === 'function') {
+        window.wireProfileMenuToggle();
       }
       
       // Close dropdown if open (do not permanently hide it)
@@ -91,7 +97,7 @@ window.VeilnetAuth = (function() {
         // ensure we never leave it permanently hidden
         if (dropdown.style && dropdown.style.display === 'none') dropdown.style.display = '';
       }
-},
+    },
 
     // Backwards compatibility alias
     async logout() {

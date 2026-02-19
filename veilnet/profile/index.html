@@ -270,162 +270,136 @@
     
     // Load user profile data
     async function loadProfile() {
-      const debugFlag = localStorage.getItem('VEILNET_DEBUG') === '1';
-      
-      // Determine if the identifier is likely an ID or username
-      const isLikelyId = /^[0-9]{21,}$/.test(username) || username.length > 20;
-      
-      // Try different lookup strategies
-      async function tryLookup(identifier, method) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
-        const apiUrl = `https://veilnet.onrender.com/api/user/${identifier}`;
-        
-        if (debugFlag) {
-          console.log(`Trying ${method} lookup:`, { url: apiUrl, identifier });
+      try {
+        if (!username) {
+          // No username specified, show current user's profile
+          const user = await VeilnetAuth.getUser();
+          if (!user) {
+            document.querySelector('.profile-container').innerHTML = `
+              <div style="text-align: center; padding: 3rem;">
+                <h2>Please Log In</h2>
+                <p>Please log in to view your profile or specify a username in URL.</p>
+                <a href="../index.html" class="btn">Go to Veilnet</a>
+              </div>
+            `;
+            return;
+          }
+          
+          try {
+            const profile = await VeilnetAuth.getMyProfile();
+            username = profile?.username;
+            if (!username) {
+              document.querySelector('.profile-container').innerHTML = `
+                <div style="text-align: center; padding: 3rem;">
+                  <h2>No Profile Found</h2>
+                  <p>Please create a username to view your profile.</p>
+                  <a href="../index.html" class="btn">Go to Veilnet</a>
+                </div>
+              `;
+              return;
+            }
+          } catch (e) {
+            document.querySelector('.profile-container').innerHTML = `
+              <div style="text-align: center; padding: 3rem;">
+                <h2>No Profile Found</h2>
+                <p>Please create a username to view your profile.</p>
+                <a href="../index.html" class="btn">Go to Veilnet</a>
+              </div>
+            `;
+            return;
+          }
         }
+
+        // Set page title
+        document.getElementById('profileTitle').textContent = `Veilnet • ${username}`;
         
-        try {
-          const response = await fetch(apiUrl, { 
-            signal: controller.signal,
-            headers: { 'Accept': 'application/json' }
-          });
+        // Query Supabase for user by username
+        const client = VeilnetAuth.init();
+        const { data: user, error } = await client
+          .from('users')
+          .select("id, email, username, picture, name, aboutme, statusmessage, themecolor, createdat")
+          .eq("username", username)
+          .maybeSingle();
           
-          clearTimeout(timeoutId);
-          
-          if (debugFlag) {
-            console.log(`${method} lookup response:`, { status: response.status, ok: response.ok });
-          }
-          
-          if (response.ok) {
-            const user = await response.json();
-            if (debugFlag) {
-              console.log(`${method} lookup success:`, user);
-            }
-            return { success: true, user };
-          } else if (response.status === 404) {
-            if (debugFlag) {
-              console.log(`${method} lookup: User not found`);
-            }
-            return { success: false, notFound: true };
-          } else {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-        } catch (error) {
-          clearTimeout(timeoutId);
-          if (error.name === 'AbortError') {
-            if (debugFlag) {
-              console.log(`${method} lookup: Timeout`);
-            }
-            return { success: false, timeout: true };
-          }
+        if (error) {
+          console.error("Profile query error:", error);
           throw error;
         }
-      }
-      
-      try {
-        let result;
         
-        // First attempt: use the identifier as provided
-        result = await tryLookup(username, isLikelyId ? 'ID' : 'username');
-        
-        // If first attempt failed and it wasn't a 404, try the other method
-        if (!result.success && !result.notFound && !result.timeout) {
-          if (debugFlag) {
-            console.log('First attempt failed, trying alternate lookup method');
-          }
-          
-          // Try the opposite method
-          const alternateResult = await tryLookup(username, isLikelyId ? 'username' : 'ID');
-          if (alternateResult.success) {
-            result = alternateResult;
-          }
-        }
-        
-        // Handle the result
-        if (result && result.success) {
-          const user = result.user;
-          
-          // Safe avatar resolver
-          function getAvatarUrl(picture) {
-            if (!picture || typeof picture !== 'string') {
-              return '../assets/default_pfp.png';
-            }
-            // Allow HTTP/HTTPS URLs and relative paths
-            if (picture.startsWith('http://') || picture.startsWith('https://') || picture.startsWith('/')) {
-              return picture;
-            }
-            // Treat anything else as invalid, use default
-            return '../assets/default_pfp.png';
-          }
-          
-          // Update profile display
-          document.getElementById('profileUsername').textContent = user.username || 'Unknown User';
-          document.getElementById('profileStatus').textContent = `Online via Google`;
-          document.getElementById('profileAbout').textContent = user.aboutMe || 'No information provided';
-          document.getElementById('profileStatusMessage').textContent = user.statusMessage || 'No status message';
-          document.getElementById('profileTheme').style.background = user.themeColor || '#38e1ff';
-          
-          // Safe date formatting
-          let memberSinceText = 'Unknown';
-          if (user.createdAt) {
-            try {
-              memberSinceText = new Date(user.createdAt).toLocaleDateString();
-            } catch (e) {
-              memberSinceText = 'Unknown';
-            }
-          }
-          document.getElementById('profileMemberSince').textContent = memberSinceText;
-          
-          // Update avatar with fallback
-          const avatar = getAvatarUrl(user.picture);
-          document.getElementById('profileAvatar').src = avatar;
-          
-          // Update header
-          const avatarImg = document.querySelector('[data-veil-avatar-img]');
-          const ddImg = document.querySelector('[data-veil-dd-img]');
-          if (avatarImg) avatarImg.src = avatar;
-          if (ddImg) ddImg.src = avatar;
-          
-// Check if viewing own profile and show appropriate buttons
-          const currentUser = JSON.parse(localStorage.getItem('veilnet.user') || '{}');
-          const editUsernameBtn = document.getElementById('editUsernameBtn');
-          const editProfileBtn = document.getElementById('editProfileBtn');
-          
-          if (currentUser.username === user.username || currentUser.id === user.id) {
-            if (editUsernameBtn) editUsernameBtn.style.display = 'inline-block';
-            if (editProfileBtn) editProfileBtn.style.display = 'inline-block';
-            setupUsernameEditing(currentUser);
-            setupEditProfile();
-          } else {
-            if (editUsernameBtn) editUsernameBtn.style.display = 'none';
-            if (editProfileBtn) editProfileBtn.style.display = 'none';
-          }
-          
-        } else if (result && result.timeout) {
+        if (!user) {
+          // User not found
           document.querySelector('.profile-container').innerHTML = `
             <div style="text-align: center; padding: 3rem;">
-              <h2>Request Timeout</h2>
-              <p>Profile loading timed out. Please check your connection and try again.</p>
-              <button onclick="location.reload()" class="btn">Retry</button>
-            </div>
-          `;
-        } else {
-          // User not found after all attempts
-          document.querySelector('.profile-container').innerHTML = `
-            <div style="text-align: center; padding: 3rem;">
-              <h2>User Not Found</h2>
-              <p>The user "${username}" does not exist on Veilnet.</p>
+              <h2 style="color: var(--text); margin-bottom: 1rem;">User Not Found</h2>
+              <p style="color: var(--muted); margin-bottom: 2rem;">The user "${username}" does not exist on Veilnet.</p>
               <a href="../index.html" class="btn">Go to Veilnet</a>
             </div>
           `;
-        }
-      } catch (error) {
-        if (debugFlag) {
-          console.error('Profile fetch error:', error);
+          return;
         }
         
+        // Safe avatar resolver
+        function getAvatarUrl(picture) {
+          if (!picture || typeof picture !== 'string') {
+            return '../assets/default_pfp.png';
+          }
+          // Allow HTTP/HTTPS URLs and relative paths
+          if (picture.startsWith('http://') || picture.startsWith('https://') || picture.startsWith('/')) {
+            return picture;
+          }
+          // Treat anything else as invalid, use default
+          return '../assets/default_pfp.png';
+        }
+        
+        // Update profile display
+        document.getElementById('profileUsername').textContent = user.username || 'Unknown User';
+        document.getElementById('profileStatus').textContent = `Online via Google`;
+        document.getElementById('profileAbout').textContent = user.aboutme || 'No information provided';
+        document.getElementById('profileStatusMessage').textContent = user.statusmessage || 'No status message';
+        document.getElementById('profileTheme').style.background = user.themecolor || '#38e1ff';
+        
+        // Safe date formatting
+        let memberSinceText = 'Unknown';
+        if (user.createdat) {
+          try {
+            memberSinceText = new Date(user.createdat).toLocaleDateString();
+          } catch (e) {
+            memberSinceText = 'Unknown';
+          }
+        }
+        document.getElementById('profileMemberSince').textContent = memberSinceText;
+        
+        // Update avatar with fallback and cache busting
+        const avatar = getAvatarUrl(user.picture);
+        const avatarWithVersion = avatar.includes('?') ? 
+          `${avatar}&v=${Date.now()}` : 
+          `${avatar}?v=${Date.now()}`;
+        document.getElementById('profileAvatar').src = avatarWithVersion;
+        
+        // Update header
+        const avatarImg = document.querySelector('[data-veil-avatar-img]');
+        const ddImg = document.querySelector('[data-veil-dd-img]');
+        if (avatarImg) avatarImg.src = avatarWithVersion;
+        if (ddImg) ddImg.src = avatarWithVersion;
+        
+        // Check if viewing own profile and show appropriate buttons
+        const currentUser = await VeilnetAuth.getUser();
+        const currentProfile = currentUser ? await VeilnetAuth.getMyProfile().catch(() => null) : null;
+        const editUsernameBtn = document.getElementById('editUsernameBtn');
+        const editProfileBtn = document.getElementById('editProfileBtn');
+        
+        if (currentProfile && (currentProfile.username === user.username || currentUser.id === user.id)) {
+          if (editUsernameBtn) editUsernameBtn.style.display = 'inline-block';
+          if (editProfileBtn) editProfileBtn.style.display = 'inline-block';
+          setupUsernameEditing(currentProfile);
+          setupEditProfile();
+        } else {
+          if (editUsernameBtn) editUsernameBtn.style.display = 'none';
+          if (editProfileBtn) editProfileBtn.style.display = 'none';
+        }
+        
+      } catch (error) {
+        console.error('Profile fetch error:', error);
         document.querySelector('.profile-container').innerHTML = `
           <div style="text-align: center; padding: 3rem;">
             <h2>Error Loading Profile</h2>

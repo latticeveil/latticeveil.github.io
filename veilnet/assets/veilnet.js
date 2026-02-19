@@ -437,7 +437,7 @@
 
     // Event handlers - prevent closing modal
     modal.addEventListener('click', (e) => {
-      // Don't close modal when clicking outside - user MUST choose username or cancel
+      // Prevent any clicks from closing modal - user MUST choose username or cancel
       e.stopPropagation();
     });
     
@@ -498,8 +498,14 @@
   }
 
   async function cancelUsername() {
+    // Clear any pending profile data
+    sessionStorage.removeItem('veilnet_pending_profile');
+    
+    // Sign out completely - no partial accounts allowed
     await VeilnetAuth.logout();
     closeUsernameModal();
+    
+    // Ensure UI reflects signed-out state
     await refreshHeaderUI();
     wireProfileMenuToggle();
   }
@@ -550,6 +556,25 @@
 
         const { error } = await VeilnetAuth.signInWithGoogleIdToken(resp.credential);
         if (error) throw error;
+
+        // Check if user has a profile/username
+        const user = await VeilnetAuth.getUser();
+        if (user) {
+          try {
+            const profile = await VeilnetAuth.getMyProfile();
+            if (!profile || !profile.username) {
+              // New user or missing username - force username setup
+              overlay.style.display = "none";
+              setTimeout(() => openUsernameModal(), 100);
+              return;
+            }
+          } catch (e) {
+            // Profile doesn't exist - new user
+            overlay.style.display = "none";
+            setTimeout(() => openUsernameModal(), 100);
+            return;
+          }
+        }
 
         overlay.style.display = "none";
         
@@ -685,18 +710,20 @@ async function refreshHeaderUI() {
         console.warn("getMyProfile failed during refreshHeaderUI:", e);
       }
 
-      const displayName = profile?.username || profile?.name || user.user_metadata?.name || user.email || "Not signed in";
+      // MUST use users.username, not Google display name
+      const displayName = profile?.username || user.email || "Not signed in";
       cacheSet(VN_CACHE_NAME, displayName);
       const signedInSubtext = user.email || "Online via Google";
+      
+      // Prefer users.picture, fallback to Google picture
       const rawAvatar = profile?.picture || getUserAvatarFromAuth(user) || "";
       let avatarSrc = defaultAvatar;
 
       if (rawAvatar && !/default_pfp\.png/i.test(rawAvatar)) {
-        const avatarVersion = profile?.updatedat || window.__veilAvatarVersion || Date.now();
-        if (!profile?.updatedat && !window.__veilAvatarVersion) {
-          window.__veilAvatarVersion = avatarVersion;
-        }
+        // Cache bust using profile updated timestamp or current time
+        const avatarVersion = profile?.updatedat || Date.now();
         avatarSrc = appendAvatarVersion(rawAvatar, avatarVersion);
+        window.__veilAvatarVersion = avatarVersion;
       } else {
         window.__veilAvatarVersion = null;
       }
@@ -723,6 +750,7 @@ async function refreshHeaderUI() {
         ring.style.opacity = ".55";
       }
 
+      // Force username setup if no username exists
       if (!profile?.username) {
         const usernameModal = document.getElementById("veilnet-username-modal");
         if (!usernameModal || usernameModal.style.display === "none") {
@@ -769,16 +797,23 @@ async function refreshHeaderUI() {
   // Keep UI and toggle behavior healthy after BFCache/page lifecycle transitions
   window.addEventListener("pageshow", (e) => {
     if (e.persisted) {
+      // Page was restored from back/forward cache
       document.querySelector("[data-veil-dropdown]")?.classList.remove("open");
     }
-    wireProfileMenuToggle();
-    refreshHeaderUI();
+    // Always re-wire and refresh on pageshow
+    setTimeout(() => {
+      wireProfileMenuToggle();
+      refreshHeaderUI();
+    }, 0);
   });
 
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
-      wireProfileMenuToggle();
-      refreshHeaderUI();
+      // Tab became visible again, re-sync auth state
+      setTimeout(() => {
+        wireProfileMenuToggle();
+        refreshHeaderUI();
+      }, 0);
     }
   });
 
