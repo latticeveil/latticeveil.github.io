@@ -188,6 +188,27 @@
     </div>
   </main>
 
+  <!-- Choose Username Modal -->
+  <div id="chooseUsernameModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: var(--panel); border-radius: 12px; padding: 2rem; max-width: 400px; width: 90%;">
+      <h2 style="margin-top: 0; color: var(--text);">Choose Username</h2>
+      <p style="color: var(--muted); margin-bottom: 1.5rem;">Pick a unique username to continue using Veilnet</p>
+      
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 600;">Username</label>
+        <input type="text" id="chooseUsernameInput" placeholder="Enter username" style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-size: 1rem;">
+        <small style="color: var(--muted); font-size: 0.85rem;">3-20 characters, letters/numbers/_ only</small>
+      </div>
+      
+      <div id="chooseUsernameError" style="color: var(--red); margin-bottom: 1rem; display: none;"></div>
+      
+      <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+        <button id="cancelChooseUsernameBtn" style="padding: 0.75rem 1.5rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">Cancel</button>
+        <button id="saveUsernameBtn" style="padding: 0.75rem 1.5rem; background: var(--cyan); color: var(--bg); border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Continue</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Profile Modal -->
   <div id="editProfileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
     <div style="background: var(--panel); border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto;">
@@ -311,8 +332,12 @@
           if (editUsernameBtn) editUsernameBtn.style.display = 'inline-block';
           if (editProfileBtn) editProfileBtn.style.display = 'inline-block';
           // Setup edit functionality if needed
-          if (typeof setupUsernameEditing === 'function') setupUsernameEditing(profile);
-          if (typeof setupEditProfile === 'function') setupEditProfile();
+          if (profile.username === null || profile.username === '') {
+            setupUsernameSelection();
+          } else {
+            if (typeof setupUsernameEditing === 'function') setupUsernameEditing(profile);
+            if (typeof setupEditProfile === 'function') setupEditProfile();
+          }
         } else {
           if (editUsernameBtn) editUsernameBtn.style.display = 'none';
           if (editProfileBtn) editProfileBtn.style.display = 'none';
@@ -357,6 +382,12 @@
           return;
         }
         
+        // Check if user needs to choose username
+        if (profile.username === null || profile.username === '') {
+          setupUsernameSelection();
+          return;
+        }
+        
         // Success - render profile
         renderProfile(profile);
         
@@ -366,52 +397,127 @@
       }
     }
 
+    // Setup username selection for new users
+    function setupUsernameSelection() {
+      const chooseUsernameModal = document.getElementById('chooseUsernameModal');
+      const chooseUsernameInput = document.getElementById('chooseUsernameInput');
+      const saveUsernameBtn = document.getElementById('saveUsernameBtn');
+      const cancelChooseUsernameBtn = document.getElementById('cancelChooseUsernameBtn');
+      const chooseUsernameError = document.getElementById('chooseUsernameError');
+      
+      if (!chooseUsernameModal || !chooseUsernameInput || !saveUsernameBtn) return;
+      
+      // Show username selection modal
+      chooseUsernameModal.style.display = 'flex';
+      
+      // Pre-fill with current username if exists
+      if (window.currentUserProfile?.username) {
+        chooseUsernameInput.value = window.currentUserProfile.username;
+      }
+      
+      saveUsernameBtn.addEventListener('click', async () => {
+        const username = chooseUsernameInput.value.trim();
+        if (!username) {
+          chooseUsernameError.textContent = 'Please enter a username';
+          chooseUsernameError.style.display = 'block';
+          return;
+        }
+        
+        // Client-side validation
+        if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+          chooseUsernameError.textContent = 'Username must be 3-20 characters, only letters, numbers, and underscores';
+          chooseUsernameError.style.display = 'block';
+          return;
+        }
+        
+        try {
+          const result = await VeilnetAuth.setUsername(username);
+          if (result.ok) {
+            chooseUsernameModal.style.display = 'none';
+            window.currentUserProfile = result.data;
+            renderProfile(result.data);
+          } else if (result.reason === 'taken') {
+            chooseUsernameError.textContent = 'Username already taken. Please choose another.';
+            chooseUsernameError.style.display = 'block';
+          }
+        } catch (error) {
+          chooseUsernameError.textContent = 'Failed to save username. Please try again.';
+          chooseUsernameError.style.display = 'block';
+        }
+      });
+      
+      cancelChooseUsernameBtn.addEventListener('click', () => {
+        chooseUsernameModal.style.display = 'none';
+      });
+    }
+
     // Setup username editing functionality
     function setupUsernameEditing(profile) {
       const editUsernameBtn = document.getElementById('editUsernameBtn');
+      const editProfileModal = document.getElementById('editProfileModal');
       const editUsernameInput = document.getElementById('editUsernameInput');
       
       if (!editUsernameBtn || !editUsernameInput) return;
       
       editUsernameBtn.addEventListener('click', () => {
-        const newUsername = prompt('Enter new username:', profile.username);
-        if (!newUsername || newUsername.trim() === '') return;
-        
-        const trimmedUsername = newUsername.trim();
-        
-        // Client-side validation
-        if (!/^[a-z0-9_]{3,20}$/.test(trimmedUsername.toLowerCase())) {
-          alert('Username must be 3-20 characters, only lowercase letters, numbers, and underscores');
+        // Pre-fill the edit modal with current username
+        editUsernameInput.value = profile.username || '';
+        editProfileModal.style.display = 'flex';
+      });
+      
+      // Setup save functionality for the edit modal
+      setupEditProfileModal(profile);
+    }
+    
+    // Setup edit profile modal functionality
+    function setupEditProfileModal(profile) {
+      const editProfileModal = document.getElementById('editProfileModal');
+      const editUsernameInput = document.getElementById('editUsernameInput');
+      const saveProfileBtn = document.getElementById('saveProfileBtn');
+      const cancelEditBtn = document.getElementById('cancelEditBtn');
+      const editProfileError = document.getElementById('editProfileError');
+      
+      if (!saveProfileBtn || !cancelEditBtn) return;
+      
+      // Remove existing listeners to avoid duplicates
+      const newSaveBtn = saveProfileBtn.cloneNode(true);
+      saveProfileBtn.parentNode.replaceChild(newSaveBtn, saveProfileBtn);
+      const newCancelBtn = cancelEditBtn.cloneNode(true);
+      cancelEditBtn.parentNode.replaceChild(newCancelBtn, cancelEditBtn);
+      
+      newSaveBtn.addEventListener('click', async () => {
+        const username = editUsernameInput.value.trim();
+        if (!username) {
+          editProfileError.textContent = 'Username cannot be empty';
+          editProfileError.style.display = 'block';
           return;
         }
         
-        // Update username
-        VeilnetAuth.setUsername(trimmedUsername)
-          .then(result => {
-            if (result.ok) {
-              // Update UI
-              document.getElementById('profileUsername').textContent = result.data.username;
-              document.title = `Veilnet • ${result.data.username}`;
-              document.getElementById('profileTitle').textContent = `Veilnet • ${result.data.username}`;
-              
-              // Update URL
-              const newUrl = `./?u=${encodeURIComponent(result.data.username)}`;
-              history.replaceState(null, "", newUrl);
-              
-              // Update header if available
-              if (typeof updateHeaderProfile === 'function') {
-                updateHeaderProfile(result.data);
-              }
-              
-              alert('Username updated successfully!');
-            } else if (result.reason === 'taken') {
-              alert('Username already taken. Please choose another.');
-            }
-          })
-          .catch(error => {
-            console.error('Username update error:', error);
-            alert('Failed to update username. Please try again.');
-          });
+        // Client-side validation
+        if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+          editProfileError.textContent = 'Username must be 3-20 characters, only letters, numbers, and underscores';
+          editProfileError.style.display = 'block';
+          return;
+        }
+        
+        try {
+          const result = await VeilnetAuth.setUsername(username);
+          if (result.ok) {
+            editProfileModal.style.display = 'none';
+            window.currentUserProfile = result.data;
+            renderProfile(result.data);
+          } else if (result.reason === 'taken') {
+            editProfileError.textContent = 'Username already taken. Please choose another.';
+            editProfileError.style.display = 'block';
+          }
+        } catch (error) {
+          editProfileError.textContent = 'Failed to save username. Please try again.';
+          editProfileError.style.display = 'block';
+        }
+      });
+      
+      newCancelBtn.addEventListener('click', () => {
+        editProfileModal.style.display = 'none';
       });
     }
 
