@@ -186,7 +186,7 @@ window.VeilnetAuth = (function() {
         .from(VEILNET_CONFIG.PROFILE_TABLE)
         .update({ picture: nextUrl })
         .eq("id", user.id)
-        .select("id, username, picture, aboutme, statusmessage, themecolor, createdat, updatedat")
+        .select("id, username, picture, aboutme, statusmessage, theme, themecolor, createdat, updatedat")
         .maybeSingle();
       
       if (error) throw error;
@@ -209,7 +209,7 @@ window.VeilnetAuth = (function() {
         .from(VEILNET_CONFIG.PROFILE_TABLE)
         .update({ banner: nextUrl })
         .eq("id", user.id)
-        .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat, updatedat")
+        .select("id, username, picture, banner, aboutme, statusmessage, theme, themecolor, createdat, updatedat")
         .maybeSingle();
       
       if (error) throw error;
@@ -373,7 +373,7 @@ window.VeilnetAuth = (function() {
       
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat")
+        .select("id, username, picture, banner, aboutme, statusmessage, theme, themecolor, createdat")
         .eq("id", user.id)
         .maybeSingle();
       
@@ -419,7 +419,7 @@ window.VeilnetAuth = (function() {
           { id: user.id, username: normalizedUsername },
           { onConflict: "id" }
         )
-        .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat, updatedat")
+        .select("id, username, picture, banner, aboutme, statusmessage, theme, themecolor, createdat, updatedat")
         .maybeSingle();
       
       if (profileError) {
@@ -476,7 +476,7 @@ window.VeilnetAuth = (function() {
       const client = init();
       const { data, error } = await client
         .from(VEILNET_CONFIG.PROFILE_TABLE)
-        .select("id, username, picture, banner, aboutme, statusmessage, themecolor, createdat")
+        .select("id, username, picture, banner, aboutme, statusmessage, theme, themecolor, createdat")
         .eq("username", normalizedUsername)
         .maybeSingle();
       
