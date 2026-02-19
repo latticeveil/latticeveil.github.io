@@ -5,18 +5,14 @@
 create or replace function public.handle_new_user_profile()
 returns trigger as $$
 begin
-  -- Only create if profile doesn't exist
-  if not exists (
-    select 1 from public.profiles where id = new.id limit 1
-  ) then
-    insert into public.profiles (id, username, name, picture)
-    values (
-      new.id,
-      lower('user_' || left(new.id::text, 8)),
-      coalesce(new.raw_user_meta_data->>'name', null),
-      coalesce(new.raw_user_meta_data->>'picture', new.raw_user_meta_data->>'avatar_url', null)
-    );
-  end if;
+  insert into public.profiles (id, username, name, picture)
+  values (
+    new.id,
+    lower('user_' || left(new.id::text, 8)),
+    coalesce(new.raw_user_meta_data->>'name', null),
+    coalesce(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture', null)
+  )
+  on conflict (id) do nothing;
   return new;
 end;
 $$ language plpgsql security definer;
