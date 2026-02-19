@@ -22,6 +22,11 @@
   const releaseCopyBtn = document.getElementById("releaseCopyBtn");
   const releaseHashInput = document.getElementById("releaseHashInput");
   const releaseUpdateBtn = document.getElementById("releaseUpdateBtn");
+  const hashAutoSubmitToggle = document.getElementById("hashAutoSubmitToggle");
+  const devExeInput = document.getElementById("devExeInput");
+  const releaseExeInput = document.getElementById("releaseExeInput");
+  const devHashComputeStatus = document.getElementById("devHashComputeStatus");
+  const releaseHashComputeStatus = document.getElementById("releaseHashComputeStatus");
 
   if (
     !authStateEl ||
@@ -46,6 +51,7 @@
 
   let isAdmin = false;
   let hardBlocked = false;
+  const MAX_HASH_FILE_BYTES = Math.floor(1.5 * 1024 * 1024 * 1024);
 
   function authHeaders(token) {
     const anonKey = String(VEILNET_CONFIG?.SUPABASE_ANON_KEY || "").trim();
@@ -122,6 +128,108 @@
 
   function normalizeHash(value) {
     return String(value || "").trim().toLowerCase();
+  }
+
+  function formatBytes(bytes) {
+    const size = Number(bytes) || 0;
+    if (size < 1024) return `${size} B`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+    if (size < 1024 * 1024 * 1024) return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(size / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+  }
+
+  function shortHash(hash) {
+    const h = String(hash || "");
+    if (h.length < 16) return h;
+    return `${h.slice(0, 8)}...${h.slice(-8)}`;
+  }
+
+  function isLikelyExe(file) {
+    if (!file) return false;
+    const name = String(file.name || "").toLowerCase();
+    if (name.endsWith(".exe")) return true;
+    const type = String(file.type || "").toLowerCase();
+    return type.includes("x-msdownload") || type.includes("application/x-msdos-program");
+  }
+
+  function setComputeStatus(el, message, tone = "neutral") {
+    if (!el) return;
+    el.textContent = message || "";
+    if (tone === "error") {
+      el.style.color = "#ff8f8f";
+    } else if (tone === "warn") {
+      el.style.color = "#ffd36f";
+    } else if (tone === "ok") {
+      el.style.color = "#8ff7b0";
+    } else {
+      el.style.color = "";
+    }
+  }
+
+  async function sha256HexFromFile(file) {
+    if (!window.crypto?.subtle) {
+      throw new Error("Web Crypto API unavailable in this browser.");
+    }
+    const buf = await file.arrayBuffer();
+    const digest = await window.crypto.subtle.digest("SHA-256", buf);
+    const bytes = new Uint8Array(digest);
+    return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function handleHashFileSelect(options) {
+    const {
+      fileInput,
+      hashInput,
+      updateBtn,
+      statusEl,
+      channel
+    } = options;
+
+    const file = fileInput?.files?.[0];
+    if (!file || !hashInput || !updateBtn) return;
+
+    if (file.size > MAX_HASH_FILE_BYTES) {
+      setComputeStatus(
+        statusEl,
+        `File too large (${formatBytes(file.size)}). Limit is ${formatBytes(MAX_HASH_FILE_BYTES)} to avoid tab crashes.`,
+        "error"
+      );
+      fileInput.value = "";
+      return;
+    }
+
+    if (!window.crypto?.subtle) {
+      setComputeStatus(statusEl, "Crypto unavailable in this browser.", "error");
+      fileInput.value = "";
+      return;
+    }
+
+    const exeWarning = isLikelyExe(file) ? "" : "Warning: file is not .exe; hashing anyway. ";
+    const wasDisabled = updateBtn.disabled;
+    updateBtn.disabled = true;
+    fileInput.disabled = true;
+    setComputeStatus(statusEl, `${exeWarning}Computing SHA-256...`);
+
+    try {
+      const hash = await sha256HexFromFile(file);
+      if (!hashRe.test(hash)) {
+        throw new Error("Computed hash is invalid.");
+      }
+
+      hashInput.value = hash;
+      setComputeStatus(statusEl, `${exeWarning}Hash computed ✓ ${shortHash(hash)}`, exeWarning ? "warn" : "ok");
+
+      if (hashAutoSubmitToggle?.checked) {
+        setComputeStatus(statusEl, `${exeWarning}Hash computed ✓ ${shortHash(hash)} • auto-submitting...`);
+        await updateChannel(channel);
+      }
+    } catch (error) {
+      setComputeStatus(statusEl, error?.message || "Hash compute failed.", "error");
+    } finally {
+      fileInput.disabled = false;
+      updateBtn.disabled = isAdmin ? wasDisabled : true;
+      fileInput.value = "";
+    }
   }
 
   async function copyText(value) {
@@ -353,6 +461,30 @@
   releaseUpdateBtn.addEventListener("click", async () => {
     await updateChannel("release");
   });
+
+  if (devExeInput && devHashInput && devUpdateBtn) {
+    devExeInput.addEventListener("change", async () => {
+      await handleHashFileSelect({
+        fileInput: devExeInput,
+        hashInput: devHashInput,
+        updateBtn: devUpdateBtn,
+        statusEl: devHashComputeStatus,
+        channel: "dev"
+      });
+    });
+  }
+
+  if (releaseExeInput && releaseHashInput && releaseUpdateBtn) {
+    releaseExeInput.addEventListener("change", async () => {
+      await handleHashFileSelect({
+        fileInput: releaseExeInput,
+        hashInput: releaseHashInput,
+        updateBtn: releaseUpdateBtn,
+        statusEl: releaseHashComputeStatus,
+        channel: "release"
+      });
+    });
+  }
 
   window.addEventListener("focus", refresh);
   document.addEventListener("visibilitychange", () => {

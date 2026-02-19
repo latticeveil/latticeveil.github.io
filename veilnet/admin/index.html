@@ -89,6 +89,13 @@
         </div>
 
         <div id="adminMain" style="display:none; gap:16px; flex-direction:column;">
+          <div class="small" style="display:flex; align-items:center; gap:8px;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input id="hashAutoSubmitToggle" type="checkbox">
+              Auto-submit after compute
+            </label>
+          </div>
+
           <div class="panel" style="padding:12px;">
             <div style="font-weight:900;">DEV (Active)</div>
             <div class="small" style="margin-top:6px;">Hash: <code id="devCurrentHash">-</code></div>
@@ -110,6 +117,11 @@
           <div class="panel" style="padding:12px;">
             <div style="font-weight:900;">Update DEV Hash</div>
             <input id="devHashInput" type="text" placeholder="64-char sha256 hex" spellcheck="false" style="margin-top:8px;">
+            <div style="margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <label class="btn ghost" for="devExeInput" style="cursor:pointer;">Select DEV EXE</label>
+              <input id="devExeInput" type="file" accept=".exe,application/x-msdownload" style="display:none;">
+            </div>
+            <div id="devHashComputeStatus" class="small" aria-live="polite" style="margin-top:6px;"></div>
             <div style="margin-top:10px;">
               <button id="devUpdateBtn" class="btn" type="button">Update DEV</button>
             </div>
@@ -118,6 +130,11 @@
           <div class="panel" style="padding:12px;">
             <div style="font-weight:900;">Update RELEASE Hash</div>
             <input id="releaseHashInput" type="text" placeholder="64-char sha256 hex" spellcheck="false" style="margin-top:8px;">
+            <div style="margin-top:10px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+              <label class="btn ghost" for="releaseExeInput" style="cursor:pointer;">Select RELEASE EXE</label>
+              <input id="releaseExeInput" type="file" accept=".exe,application/x-msdownload" style="display:none;">
+            </div>
+            <div id="releaseHashComputeStatus" class="small" aria-live="polite" style="margin-top:6px;"></div>
             <div style="margin-top:10px;">
               <button id="releaseUpdateBtn" class="btn" type="button">Update RELEASE</button>
             </div>
