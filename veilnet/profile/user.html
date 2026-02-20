@@ -134,20 +134,21 @@
     // Load user profile data
     async function loadProfile() {
       try {
-        const response = await fetch(`https://veilnet.onrender.com/api/user/${username}`);
-        if (response.ok) {
-          const user = await response.json();
+        const user = await VeilnetAuth.getProfileByUsername(username);
+        if (user) {
           
           // Update profile display
           document.getElementById('profileUsername').textContent = user.username;
           document.getElementById('profileStatus').textContent = `Online via Google`;
-          document.getElementById('profileAbout').textContent = user.aboutMe || 'No information provided';
-          document.getElementById('profileStatusMessage').textContent = user.statusMessage || 'No status message';
-          document.getElementById('profileTheme').style.background = user.themeColor || '#38e1ff';
-          document.getElementById('profileMemberSince').textContent = new Date(user.createdAt).toLocaleDateString();
+          document.getElementById('profileAbout').textContent = user.aboutme || 'No information provided';
+          document.getElementById('profileStatusMessage').textContent = user.status_message || 'No status message';
+          document.getElementById('profileTheme').style.background = user.theme_color || '#38e1ff';
+          document.getElementById('profileMemberSince').textContent = user.created_at
+            ? new Date(user.created_at).toLocaleDateString()
+            : 'Unknown';
           
           // Update avatar
-          const avatar = user.picture || '../assets/default_pfp.png';
+          const avatar = user.avatar_url || '../assets/default_pfp.png';
           document.getElementById('profileAvatar').src = avatar;
           
           // Update header

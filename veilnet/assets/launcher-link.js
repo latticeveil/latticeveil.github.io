@@ -119,38 +119,38 @@
 
   function mapIssueError(res, payload) {
     const key = String(payload?.error || "");
-    const detail = String(payload?.detail || "");
     if (res.status === 409 && key === "username_required") {
       return "You must set a username before linking.";
     }
     if (res.status === 429 && (key === "active_code_exists" || key === "rate_limited")) {
       return "You already have an active code. Use it or wait for it to expire.";
     }
-    if (res.status === 401 && (key === "missing_auth" || key === "invalid_auth")) {
-      return "Your login session expired. Sign in again.";
+    if (res.status === 401) {
+      return "Session expired; sign in again.";
     }
     if (res.status === 404) {
       return "Link service not deployed yet.";
     }
-    if (key === "table_missing" || key === "launcher_link_codes_table_missing") {
-      return "Launcher link codes are not configured in Supabase yet.";
-    }
     if (key === "launcher_link_codes_schema_mismatch") {
-      return "Launcher link code schema mismatch. Ask admin to run latest SQL.";
+      return "Server setup incomplete (DB table).";
+    }
+    if (key === "table_missing" || key === "launcher_link_codes_table_missing") {
+      return "Server setup incomplete (DB table).";
     }
     if (key === "misconfigured_env") {
       return "Launcher link service is misconfigured on the server.";
     }
-    if (key === "code_issue_failed") {
-      return "Link code generation failed. Please try again in a moment.";
-    }
-    if (key === "db_error" && detail) {
-      return "Database error while generating code. Check console for details.";
+    if (key === "db_error" || key === "code_issue_failed") {
+      return "Link code generation failed. Please try again.";
     }
     return key || "Failed to generate code.";
   }
 
-  async function issueCode() {
+  async function issueCode(event) {
+    if (event && typeof event.preventDefault === "function") {
+      event.preventDefault();
+      event.stopPropagation();
+    }
     issueCodeBtn.disabled = true;
     setStatus("Generating code...", false);
     try {
@@ -260,12 +260,10 @@
     }
   });
 
-  launchGameBtn.addEventListener("click", () => {
-    if (!activeCode) {
-      setStatus("Generate a link code first.", true);
-      return;
-    }
-    const launchUrl = `latticeveil://link?code=${encodeURIComponent(activeCode)}`;
+  launchGameBtn.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const launchUrl = "latticeveil://launch";
     window.location.href = launchUrl;
     setStatus("Trying to open LatticeVeil Launcher...", false);
   });
