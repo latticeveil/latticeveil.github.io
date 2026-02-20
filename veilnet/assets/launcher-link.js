@@ -179,6 +179,7 @@
       }
       if (!res.ok) {
         const snippet = String(rawText || payload || "").slice(0, 500);
+        console.error("[launcher-link] launcher-issue failed body:", snippet);
         console.error("[launcher-link] launcher-issue failed", {
           status: res.status,
           body: snippet
