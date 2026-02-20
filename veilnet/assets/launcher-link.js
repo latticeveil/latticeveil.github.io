@@ -264,7 +264,14 @@
     event.preventDefault();
     event.stopPropagation();
     const launchUrl = "latticeveil://launch";
-    window.location.href = launchUrl;
+    const probe = document.createElement("iframe");
+    probe.style.display = "none";
+    probe.setAttribute("aria-hidden", "true");
+    probe.src = launchUrl;
+    document.body.appendChild(probe);
+    setTimeout(() => {
+      try { probe.remove(); } catch {}
+    }, 1500);
     setStatus("Trying to open LatticeVeil Launcher...", false);
   });
 
