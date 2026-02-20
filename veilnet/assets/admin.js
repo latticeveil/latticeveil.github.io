@@ -53,6 +53,7 @@
 
   let isAdmin = false;
   let hardBlocked = false;
+  let isComputingHash = false;
   const MAX_HASH_FILE_BYTES = Math.floor(1.5 * 1024 * 1024 * 1024);
 
   function authHeaders(token) {
@@ -126,6 +127,11 @@
     if (!value) return "-";
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? "-" : date.toLocaleString();
+  }
+
+  function pickHashRow(row) {
+    if (!row || typeof row !== "object") return null;
+    return row;
   }
 
   function normalizeHash(value) {
@@ -249,6 +255,7 @@
     const wasDisabled = updateBtn.disabled;
     updateBtn.disabled = true;
     if (fileInput) fileInput.disabled = true;
+    isComputingHash = true;
     setComputeStatus(statusEl, `${prefix}Computing SHA-256...`);
 
     try {
@@ -267,6 +274,7 @@
     } catch (error) {
       setComputeStatus(statusEl, error?.message || "Hash compute failed.", "error");
     } finally {
+      isComputingHash = false;
       if (fileInput) fileInput.disabled = false;
       updateBtn.disabled = isAdmin ? wasDisabled : true;
       if (fileInput) fileInput.value = "";
@@ -420,14 +428,14 @@
       throw new Error(payload?.message || payload?.error || "Failed to load hashes.");
     }
 
-    const dev = payload.dev || {};
-    const release = payload.release || {};
+    const dev = pickHashRow(payload.dev);
+    const release = pickHashRow(payload.release);
 
-    devCurrentHash.textContent = dev.hash || dev.sha256 || "-";
-    devCurrentUpdated.textContent = formatDate(dev.updated_at);
+    devCurrentHash.textContent = dev?.hash || dev?.sha256 || payload?.devHash || "-";
+    devCurrentUpdated.textContent = formatDate(dev?.updated_at || payload?.devUpdatedAt);
 
-    releaseCurrentHash.textContent = release.hash || release.sha256 || "-";
-    releaseCurrentUpdated.textContent = formatDate(release.updated_at);
+    releaseCurrentHash.textContent = release?.hash || release?.sha256 || payload?.releaseHash || "-";
+    releaseCurrentUpdated.textContent = formatDate(release?.updated_at || payload?.releaseUpdatedAt);
   }
 
   async function checkAdmin(token) {
@@ -481,9 +489,7 @@
       });
       const requestPayload = {
         target: channel,
-        channel,
-        hash,
-        hash_sha256: hash
+        hash
       };
       console.debug("[admin] update payload", requestPayload);
       const res = await fetch(setUrl, {
@@ -620,8 +626,12 @@
     channel: "release"
   });
 
-  window.addEventListener("focus", refresh);
+  window.addEventListener("focus", () => {
+    if (isComputingHash) return;
+    refresh();
+  });
   document.addEventListener("visibilitychange", () => {
+    if (isComputingHash) return;
     if (!document.hidden) refresh();
   });
 
