@@ -9,6 +9,8 @@
   const codeBlock = document.getElementById("launcherCodeBlock");
   const codeText = document.getElementById("launcherCodeText");
   const copyCodeBtn = document.getElementById("launcherCopyCodeBtn");
+  const launchGameBtn = document.getElementById("launcherLaunchGameBtn");
+  const launchHint = document.getElementById("launcherLaunchHint");
   const codeTimer = document.getElementById("launcherCodeTimer");
   const usernameText = document.getElementById("launcherLinkUsernameText");
 
@@ -23,6 +25,8 @@
     !codeBlock ||
     !codeText ||
     !copyCodeBtn ||
+    !launchGameBtn ||
+    !launchHint ||
     !codeTimer ||
     !usernameText
   ) {
@@ -31,9 +35,14 @@
 
   const FUNCTIONS_BASE = `${String(VEILNET_CONFIG?.SUPABASE_URL || "").replace(/\/+$/, "")}/functions/v1`;
   const ISSUE_URL = `${FUNCTIONS_BASE}/launcher-issue`;
+  const LAUNCHER_FALLBACK_URL = (() => {
+    if ((window.location.pathname || "").includes("/veilnet/")) return "/veilnet/";
+    return "/";
+  })();
 
   let countdownInterval = null;
   let expiresAtMs = 0;
+  let activeCode = "";
 
   function setStatus(message, isError) {
     statusEl.textContent = message || "";
@@ -44,6 +53,15 @@
     signedOutBox.style.display = section === "signed_out" ? "flex" : "none";
     usernameRequiredBox.style.display = section === "username_required" ? "flex" : "none";
     readyBox.style.display = section === "ready" ? "flex" : "none";
+  }
+
+  function clearCodeBlock() {
+    activeCode = "";
+    codeText.textContent = "";
+    codeBlock.style.display = "none";
+    launchHint.style.display = "none";
+    stopCountdown();
+    codeTimer.textContent = "";
   }
 
   function stopCountdown() {
@@ -104,11 +122,23 @@
     if (res.status === 409 && key === "username_required") {
       return "You must set a username before linking.";
     }
+    if (res.status === 429 && key === "active_code_exists") {
+      return "You already have an active code. Use it or wait for it to expire.";
+    }
     if (res.status === 401) {
       return "Your login session expired. Sign in again.";
     }
     if (res.status === 404) {
       return "Link service not deployed yet.";
+    }
+    if (key === "launcher_link_codes_table_missing") {
+      return "Launcher link codes are not configured in Supabase yet.";
+    }
+    if (key === "launcher_link_codes_schema_mismatch") {
+      return "Launcher link code schema mismatch. Ask admin to run latest SQL.";
+    }
+    if (key === "code_issue_failed") {
+      return "Link code generation failed. Please try again in a moment.";
     }
     return key || "Failed to generate code.";
   }
@@ -133,8 +163,18 @@
         body: "{}"
       });
 
-      const payload = await res.json().catch(() => ({}));
+      const rawText = await res.text().catch(() => "");
+      let payload = {};
+      try {
+        payload = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        payload = {};
+      }
       if (!res.ok) {
+        console.error("[launcher-link] launcher-issue failed", {
+          status: res.status,
+          body: rawText || payload
+        });
         if (res.status === 409 && payload?.error === "username_required") {
           setSection("username_required");
           openUsernameModal();
@@ -145,11 +185,14 @@
       const code = String(payload?.code || "").trim();
       const expiresAt = String(payload?.expires_at || "");
       if (!code) {
+        console.error("[launcher-link] launcher-issue invalid payload", payload);
         throw new Error("Link code response was invalid.");
       }
 
+      activeCode = code;
       codeText.textContent = code;
       codeBlock.style.display = "flex";
+      launchHint.style.display = "block";
       setStatus("Code ready. Paste it into the launcher.", false);
       startCountdown(expiresAt);
     } catch (err) {
@@ -163,6 +206,7 @@
     try {
       const user = await VeilnetAuth.getUser();
       if (!user) {
+        clearCodeBlock();
         setSection("signed_out");
         return;
       }
@@ -170,6 +214,7 @@
       const profile = await VeilnetAuth.getMyProfile().catch(() => null);
       const username = String(profile?.username || "").trim();
       if (!username) {
+        clearCodeBlock();
         setSection("username_required");
         setStatus("Choose a username to continue linking.", true);
         openUsernameModal();
@@ -206,6 +251,21 @@
       setStatus("Unable to copy. Copy it manually.", true);
     }
   });
+
+  launchGameBtn.addEventListener("click", () => {
+    if (!activeCode) {
+      setStatus("Generate a link code first.", true);
+      return;
+    }
+    const launchUrl = `latticeveil://link?code=${encodeURIComponent(activeCode)}`;
+    window.location.href = launchUrl;
+    setStatus("Trying to open LatticeVeil Launcher...", false);
+  });
+
+  const fallbackLink = launchHint.querySelector("a");
+  if (fallbackLink) {
+    fallbackLink.setAttribute("href", LAUNCHER_FALLBACK_URL);
+  }
 
   window.addEventListener("focus", refreshState);
   document.addEventListener("visibilitychange", () => {
