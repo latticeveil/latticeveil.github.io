@@ -121,7 +121,7 @@
                     </div>
                     
                     <div class="tool-description">
-                        <strong>Purpose:</strong> Update live gate hashes for Render deployment. Manages runtime allowlists and deployment targets for your LatticeVeil instances.
+                        <strong>Purpose:</strong> Update live gate hashes for Supabase deployment. Manages runtime allowlists and deployment targets for your LatticeVeil instances.
                     </div>
 
                     <div class="file-path">Location: Tools/UpdateGateHashGUI.ps1</div>
@@ -142,8 +142,8 @@
                             <div class="step-content">
                                 <div class="step-title">Configure Gate URL</div>
                                 <ul class="feature-list">
-                                    <li>Default shows "EXAMPLE.onrender.com" for new users</li>
-                                    <li>Click "Open Render" to visit the Render website</li>
+                                    <li>Default shows "https://YOUR_PROJECT.supabase.co/functions/v1" for new users</li>
+                                    <li>Click "Open Supabase" to visit your Supabase project</li>
                                     <li>Enter your actual gate URL when ready</li>
                                 </ul>
                             </div>
@@ -154,7 +154,7 @@
                             <div class="step-content">
                                 <div class="step-title">Enter Admin Token</div>
                                 <ul class="feature-list">
-                                    <li>Input your Render admin token</li>
+                                    <li>Input your admin token</li>
                                     <li>Click "Show" to toggle token visibility</li>
                                     <li>Token is automatically saved to local config</li>
                                 </ul>
@@ -240,12 +240,12 @@
 
                     <h3>Command Line Usage:</h3>
                     <div class="code-block">
-.\UpdateGateHash.ps1 -GateUrl "your-gate.onrender.com" -AdminToken "your-token" -Target "release" -ExePath "path\to\exe"
+.\UpdateGateHash.ps1 -GateUrl "https://YOUR_PROJECT.supabase.co/functions/v1" -AdminToken "your-token" -Target "release" -ExePath "path\to\exe"
                     </div>
 
                     <h3>Parameters:</h3>
                     <ul class="feature-list">
-                        <li><strong>-GateUrl:</strong> Your Render gate URL</li>
+                        <li><strong>-GateUrl:</strong> Your Supabase Functions base URL</li>
                         <li><strong>-AdminToken:</strong> Your admin authentication token</li>
                         <li><strong>-Target:</strong> Deployment target (auto/dev/release)</li>
                         <li><strong>-ExePath:</strong> Path to the executable to hash</li>
@@ -255,13 +255,13 @@
                     <h3>Examples:</h3>
                     <div class="code-block">
 # Release deployment
-.\UpdateGateHash.ps1 -GateUrl "prod-gate.onrender.com" -AdminToken "abc123" -Target "release" -ExePath "RELEASE\LatticeVeilMonoGame.exe"
+.\UpdateGateHash.ps1 -GateUrl "https://YOUR_PROJECT.supabase.co/functions/v1" -AdminToken "abc123" -Target "release" -ExePath "RELEASE\LatticeVeilMonoGame.exe"
 
 # Dev deployment  
-.\UpdateGateHash.ps1 -GateUrl "dev-gate.onrender.com" -AdminToken "def456" -Target "dev" -ExePath "DEV\LatticeVeilMonoGame.exe"
+.\UpdateGateHash.ps1 -GateUrl "https://YOUR_PROJECT.supabase.co/functions/v1" -AdminToken "def456" -Target "dev" -ExePath "DEV\LatticeVeilMonoGame.exe"
 
 # Auto-detect target
-.\UpdateGateHash.ps1 -GateUrl "gate.onrender.com" -AdminToken "xyz789" -Target "auto" -ExePath "bin\Release\LatticeVeilMonoGame.exe"
+.\UpdateGateHash.ps1 -GateUrl "https://YOUR_PROJECT.supabase.co/functions/v1" -AdminToken "xyz789" -Target "auto" -ExePath "bin\Release\LatticeVeilMonoGame.exe"
                     </div>
                 </div>
             </div>
