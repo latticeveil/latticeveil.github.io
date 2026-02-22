@@ -2,13 +2,25 @@
 
 ## v9.0.0 - "Gatekeeper's Update" - 2026-02-21
 
-### 🎨 Visual Design Updates
+### � Veilnet Integration
+- **Google Authentication**: Added Google OAuth login for seamless account creation
+- **Enhanced User Profiles**: Improved profile management with social login integration
+- **Unified Account System**: Single sign-on across Veilnet and game platforms
+- **Real-time Sync**: Enhanced profile synchronization between website and game
+
+### � Visual Design Updates
 - **Modernized Admin Interface**: Enhanced user experience with improved layout and navigation
 - **Responsive Design**: Better mobile and desktop compatibility across all screen sizes
 - **Enhanced Authentication Flow**: Streamlined login and user onboarding experience
 - **Improved Profile Management**: Better avatar and banner upload functionality
 - **Status Indicators**: Clear visual feedback for online/offline states
 
+### 🎮 Game Release Integration
+- **V9.0.0 Game Launch**: Full integration with latest "Gatekeeper's Fix" game release
+- **Online System Updates**: Enhanced multiplayer authentication and stability
+- **Command System**: Improved in-game commands and control rebinding
+- **Asset Compatibility**: Full support for new multiplayer background images
+- **Enhanced Security**: Improved JWT validation and gate ticket handling
 ### 🔧 Backend Integration
 - **Supabase Configuration**: Updated with proper authentication keys and CORS handling
 - **Real-time Updates**: Enhanced friend list and presence updates
