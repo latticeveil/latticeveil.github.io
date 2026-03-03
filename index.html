@@ -776,6 +776,27 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             
             <div id="log-game" class="sub-content active">
                 <div class="log-entry">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/fix/jwt-verify/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Worldshaper Reforged">
+                    <div class="log-header">
+                        <h3>🌍 V10.0.0 "Worldshaper Reforged" - Worldgen, Storage, Rendering, and UX vNext</h3>
+                        <span class="log-date">MAR 03, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p><strong>Worldshaper Reforged is the official V10.0.0 release.</strong> This update lands the new terrain-first generation contract, storage/file-format cleanup, stronger rejoin reliability, major transparency fixes, and broad gameplay UX upgrades.</p>
+                        <ul>
+                            <li><strong>Worldgen vNext:</strong> Non-flat terrain is now the default, flatlands stays optional, and biome generation/locate logic is deterministic.</li>
+                            <li><strong>Biome Expansion:</strong> Forest and Hills support was integrated into generation and command locate flows.</li>
+                            <li><strong>Stability + Recovery:</strong> World creation/rejoin flow was hardened with safer generation-state handling and spawn readiness improvements.</li>
+                            <li><strong>Storage Contract:</strong> Active worlds now align to canonical vNext storage conventions, with legacy runtime artifact paths removed from normal flow.</li>
+                            <li><strong>Rendering Pass:</strong> Transparency routing and face-ownership fixes reduce xray artifacts; glass/leaves/held transparency behavior was refined.</li>
+                            <li><strong>VeilSeer + Controls:</strong> Spectator-style behavior, mode controls, and fly-speed feedback were improved.</li>
+                            <li><strong>Artificer Inventory:</strong> Smooth catalog scrolling, search, favorites, and clear-inventory UX were added/refined.</li>
+                            <li><strong>Public Packaging:</strong> Spoiler-sensitive lore data tables were removed from public online source/asset distributions.</li>
+                        </ul>
+                        <p>Download: <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v10.0.0" style="color: var(--primary);">LatticeVeil V10.0.0</a> | Assets: <a href="https://github.com/latticeveil/Assets/releases/tag/v10.0.0" style="color: var(--primary);">Assets V10.0.0</a></p>
+                    </div>
+                </div>
+                <div class="log-entry">
                     <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Gatekeeper's Fix">
                     <div class="log-header">
                         <h3>🛡️ V9.0.0 "Gatekeeper's Fix" - Online Stability & Security Hardening</h3>
@@ -1182,6 +1203,37 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             <!-- WEBSITE UPDATES -->
 
             <div id="log-website" class="sub-content">
+                <div class="log-entry">
+
+                    <div class="log-header">
+
+                        <h3>Website: V10.0.0 "Worldshaper Reforged" Release and Texture Archive Sync</h3>
+
+                        <span class="log-date">MAR 03, 2026</span>
+
+                    </div>
+
+                    <div class="log-body">
+
+                        <p>Website feeds and texture library metadata were synchronized with the official V10.0.0 release set.</p>
+
+                        <ul>
+
+                            <li><strong>Game Updates Feed:</strong> Added the detailed <code>V10.0.0 "Worldshaper Reforged"</code> entry at the top of release history.</li>
+
+                            <li><strong>Release Links:</strong> Updated references to point to game and assets <code>v10.0.0</code> tags.</li>
+
+                            <li><strong>Texture Curation:</strong> Prior glass/veilglass/leaves/ore visuals were archived to the legacy section.</li>
+
+                            <li><strong>Current Texture Set:</strong> Promoted updated transparency-era textures (including glass family updates) into active texture listings.</li>
+
+                            <li><strong>Catalog Metadata:</strong> Updated ore naming and texture descriptions to align with current in-game naming.</li>
+
+                        </ul>
+
+                    </div>
+
+                </div>
                 <div class="log-entry">
 
                     <div class="log-header">
@@ -1736,11 +1788,11 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
             { id: 'chest', name: 'Chest', cat: 'util', desc: 'Storage for your blocks and items.' },
 
-            { id: 'coal', name: 'Coal', cat: 'ore', desc: 'Common fuel source found in stone layers.' },
+            { id: 'coal', name: 'Coal Ore', cat: 'ore', desc: 'Common ore vein used for early fuel and smelting.' },
 
-            { id: 'iron', name: 'Iron', cat: 'ore', desc: 'Essential metal for durable equipment.' },
+            { id: 'iron', name: 'Iron Ore', cat: 'ore', desc: 'Core mid-tier ore used for durable metal progression.' },
 
-            { id: 'gold', name: 'Gold', cat: 'ore', desc: 'Rare, heavy metal for the elite.' },
+            { id: 'gold', name: 'Gold Ore', cat: 'ore', desc: 'Richer ore with lower frequency and higher value.' },
 
             { id: 'diamond', name: 'Diamond', cat: 'ore', desc: 'The hardest and most precious material.' },
 
@@ -1749,6 +1801,18 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             { id: 'crafting_table', name: 'Crafting Table', cat: 'legacy', desc: 'The original workstation, now replaced by the Artificer Bench.' },
 
             { id: 'legacy/grass_patchy', name: 'Patchy Grass', cat: 'legacy', desc: 'Experimental version with sparse grass coverage.' },
+
+            { id: 'legacy/v9/glass_gatekeepersfix', name: 'Glass (V9)', cat: 'legacy', desc: 'Pre-v10 glass variant archived from the Gatekeeper era.' },
+
+            { id: 'legacy/v9/veilglass_gatekeepersfix', name: 'Veilglass (V9)', cat: 'legacy', desc: 'Pre-v10 veilglass variant archived for comparison.' },
+
+            { id: 'legacy/v9/leaves_gatekeepersfix', name: 'Leaves (V9)', cat: 'legacy', desc: 'Pre-v10 foliage transparency variant.' },
+
+            { id: 'legacy/v9/coal_gatekeepersfix', name: 'Coal Texture (V9)', cat: 'legacy', desc: 'Legacy ore texture archived before v10 ore naming pass.' },
+
+            { id: 'legacy/v9/iron_gatekeepersfix', name: 'Iron Texture (V9)', cat: 'legacy', desc: 'Legacy ore texture archived before v10 ore naming pass.' },
+
+            { id: 'legacy/v9/gold_gatekeepersfix', name: 'Gold Texture (V9)', cat: 'legacy', desc: 'Legacy ore texture archived before v10 ore naming pass.' },
 
             { id: 'legacy/hd/grass', name: 'HD Grass', cat: 'hd', desc: 'Original high-resolution grass from V1.' },
 
