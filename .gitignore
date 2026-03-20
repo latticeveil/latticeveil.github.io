@@ -2,4 +2,5 @@ supabase/
 .env
 .env.local
 .env.*.local
+plans/
 
