@@ -192,18 +192,27 @@
       }
 
       const code = String(payload?.code || "").trim();
-      const expiresAt = String(payload?.expires_at || "");
       if (!code) {
         console.error("[launcher-link] launcher-issue invalid payload", payload);
         throw new Error("Link code response was invalid.");
       }
 
-      activeCode = code;
-      codeText.textContent = code;
-      codeBlock.style.display = "flex";
+      // --- New flow: redirect to protocol handler ---
+      const redirectUrl = `latticeveil://link?code=${encodeURIComponent(code)}`;
+      setStatus("Success! Redirecting to launcher...", false);
+
+      // Update UI to reflect the redirect.
+      issueCodeBtn.style.display = "none";
+      codeBlock.style.display = "none";
+      copyCodeBtn.style.display = "none";
+      launchGameBtn.style.display = "none";
+      codeTimer.style.display = "none";
+      
+      launchHint.textContent = "Your browser should ask for permission to open the LatticeVeil Launcher. If it doesn't, you may need to launch the game manually first.";
       launchHint.style.display = "block";
-      setStatus("Code ready. Paste it into the launcher.", false);
-      startCountdown(expiresAt);
+
+      // Perform the redirect to trigger the launcher.
+      window.location.href = redirectUrl;
     } catch (err) {
       setStatus(err?.message || "Failed to generate code.", true);
     } finally {
