@@ -3,4 +3,5 @@ supabase/
 .env.local
 .env.*.local
 plans/
+push_site.cmd
 

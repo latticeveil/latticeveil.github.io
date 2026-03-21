@@ -1810,6 +1810,11 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 tab.style.display = "block";
                 tab.classList.add("active");
                 localStorage.setItem('activeTab', tabName);
+
+                // Update URL with ?page=
+                const url = new URL(window.location);
+                url.searchParams.set('page', tabName);
+                window.history.pushState({}, '', url);
             }
         }
 
@@ -2008,14 +2013,18 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
         }
         checkVR();
 
-        // Sync Tabs with URL Hash or LocalStorage
+        // Sync Tabs with URL Params, Hash, or LocalStorage
         function syncTab() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pageParam = urlParams.get('page');
             const hash = window.location.hash.replace('#', '');
             const savedTab = localStorage.getItem('activeTab');
 
             let targetTab = 'home'; // Default
 
-            if (hash && document.getElementById(hash)) {
+            if (pageParam && document.getElementById(pageParam)) {
+                targetTab = pageParam;
+            } else if (hash && document.getElementById(hash)) {
                 targetTab = hash;
             } else if (savedTab && document.getElementById(savedTab)) {
                 targetTab = savedTab;
@@ -2024,10 +2033,8 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             openTab(null, targetTab);
         }
 
-        window.addEventListener('hashchange', () => {
-             const hash = window.location.hash.replace('#', '');
-             if(hash) openTab(null, hash);
-        });
+        window.addEventListener('popstate', syncTab);
+        window.addEventListener('hashchange', syncTab);
 
         // Init on load
         document.addEventListener('DOMContentLoaded', syncTab);
