@@ -392,6 +392,16 @@ function setupEventListeners() {
         const progress = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
         const bar = document.getElementById('progressBar'); if(bar) bar.style.width = progress + '%';
     });
+    
+    // ESC key to close panels
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const activePanel = document.querySelector('.panel-overlay.active');
+            if (activePanel) {
+                window.togglePanel(null);
+            }
+        }
+    });
 }
 
 function handleManualHighlight(e, span) {
