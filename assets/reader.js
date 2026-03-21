@@ -183,20 +183,35 @@ function prepareTextForReading() {
 }
 
 function applySettings() {
-    const root = document.documentElement;
     const body = document.body;
-
-    body.className = `${state.theme} ${state.font}`;
-    if (state.highContrast) body.classList.add('high-contrast');
-    if (state.focusMode) body.classList.add('focus-mode');
+    body.className = `${state.theme} ${state.font} ${state.highContrast ? 'high-contrast' : ''} ${state.focusMode ? 'focus-mode' : ''} ${state.showUserHighlights ? '' : 'hide-highlights'}`;
     
-    const scaledSize = state.size * state.zoom;
-    root.style.setProperty('--reader-size', `${scaledSize}px`);
-    root.style.setProperty('--reader-line-height', state.lineHeight);
-    root.style.setProperty('--reader-letter-spacing', `${state.letterSpacing}px`);
-    root.style.setProperty('--reader-para-spacing', `${state.paraSpacing}em`);
-    root.style.setProperty('--reader-max-width', `${state.pageWidth}px`);
-    root.style.setProperty('--reader-align', state.textAlign);
+    document.documentElement.style.setProperty('--reader-font', state.font === 'font-serif' ? "'Merriweather', serif" : state.font === 'font-sans' ? "'Inter', sans-serif" : "'VT323', monospace");
+    document.documentElement.style.setProperty('--reader-size', `${state.size * state.zoom}px`);
+    document.documentElement.style.setProperty('--reader-line-height', state.lineHeight);
+    document.documentElement.style.setProperty('--reader-letter-spacing', `${state.letterSpacing}px`);
+    document.documentElement.style.setProperty('--reader-max-width', `${state.pageWidth}px`);
+    
+    const bookContent = document.getElementById('bookContent');
+    if (bookContent) bookContent.style.textAlign = state.textAlign;
+    bookContent.style.setProperty('--reader-para-spacing', `${state.paraSpacing}em`);
+    
+    // Update text preview
+    const preview = document.getElementById('textPreview');
+    if (preview) {
+        preview.style.fontFamily = state.font === 'font-serif' ? "'Merriweather', serif" : state.font === 'font-sans' ? "'Inter', sans-serif" : "'VT323', monospace";
+        preview.style.fontSize = `${state.size * state.zoom * 0.9}px`;
+        preview.style.lineHeight = state.lineHeight;
+        preview.style.letterSpacing = `${state.letterSpacing}px`;
+        preview.style.maxWidth = `${state.pageWidth}px`;
+        preview.style.textAlign = state.textAlign;
+    }
+    
+    // Update sliders and buttons
+    const chSelect = document.getElementById('chapterSelect');
+    if(chSelect) chSelect.value = state.chapter;
+    
+    const tl = document.getElementById('tempoLabel'); if(tl) tl.innerText = `TEMPO: ${state.tempo} WPM`;
     
     // UI Sync
     const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
@@ -207,11 +222,6 @@ function applySettings() {
     setVal('letterSpacingSlider', state.letterSpacing);
     setVal('pageWidthSlider', state.pageWidth);
     setVal('tempoSlider', state.tempo);
-    
-    const chSelect = document.getElementById('chapterSelect');
-    if(chSelect) chSelect.value = state.chapter;
-    
-    const tl = document.getElementById('tempoLabel'); if(tl) tl.innerText = `TEMPO: ${state.tempo} WPM`;
     
     setCheck('contrastToggle', state.highContrast);
     setCheck('focusModeToggle', state.focusMode);
@@ -230,19 +240,17 @@ function applySettings() {
         body.classList.toggle('highlight-mode-active', state.highlightMode);
     }
     
-    // Apply selected color to color picker
-    document.querySelectorAll('.color-pick').forEach(b => {
-        const color = b.dataset.color || b.style.backgroundColor;
-        if (color === state.selectedColor || 
-            (state.selectedColor && color.includes(state.selectedColor.replace(/[^\d,]/g, '').split(',')[0]))) {
-            b.classList.add('active');
-        } else {
-            b.classList.remove('active');
-        }
-    });
+    const lb = document.getElementById('lockBtn');
+    if (lb) {
+        lb.classList.toggle('active', state.zoomLocked);
+        lb.innerHTML = state.zoomLocked ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>';
+    }
     
-    // Apply highlight visibility
-    body.classList.toggle('hide-highlights', !state.showUserHighlights);
+    if (state.readAlongActive) {
+        const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
+    } else {
+        const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-play"></i>';
+    }
 }
 
 function setupEventListeners() {
@@ -260,9 +268,36 @@ function setupEventListeners() {
 
     click('zoomReset', () => { state.zoom = 1.0; saveState(); applySettings(); });
     click('tempoReset', () => { state.tempo = 250; saveState(); applySettings(); });
-    click('defaultAllBtn', () => {
-        if(confirm("Restore all reader settings to defaults?")) {
-            Object.assign(state, { theme: 'theme-oled', font: 'font-serif', zoom: 1.0, lineHeight: 1.6, letterSpacing: 0, paraSpacing: 1.5, pageWidth: 700, textAlign: 'justify', highContrast: false, focusMode: false, tempo: 250, showLore: true, showHighlight: true, readAlongActive: false });
+    click('typoReset', () => {
+        if(confirm("Reset all typography settings to defaults?")) {
+            Object.assign(state, { font: 'font-serif', zoom: 1.0, lineHeight: 1.6, letterSpacing: 0, pageWidth: 700, textAlign: 'justify' });
+            saveState(); applySettings();
+        }
+    });
+    click('resetAllBtn', () => {
+        if(confirm("Reset ALL settings to defaults? This will restore the black theme and reset everything.")) {
+            Object.assign(state, { 
+                theme: 'theme-oled', 
+                font: 'font-serif', 
+                zoom: 1.0, 
+                lineHeight: 1.6, 
+                letterSpacing: 0, 
+                paraSpacing: 1.5, 
+                pageWidth: 700, 
+                textAlign: 'justify', 
+                highContrast: false, 
+                focusMode: false, 
+                tempo: 250, 
+                showLore: true, 
+                showHighlight: true, 
+                showUserHighlights: true,
+                zoomLocked: false,
+                selectedColor: 'rgba(242, 193, 78, 0.4)',
+                wakeLock: false,
+                readAlongActive: false,
+                ttsPaused: false,
+                ttsSpanId: ''
+            });
             saveState(); applySettings();
         }
     });
@@ -786,20 +821,17 @@ function speakNext() {
 
 function pauseReading() {
     if (window.speechSynthesis) {
-        window.speechSynthesis.pause();
+        window.speechSynthesis.cancel(); // Use cancel instead of pause for immediate stop
         state.ttsPaused = true;
+        state.readAlongActive = false; // Reset to allow restart from same position
         const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-play"></i>';
         saveState();
     }
 }
 
 function resumeReading() {
-    if (window.speechSynthesis) {
-        window.speechSynthesis.resume();
-        state.ttsPaused = false;
-        const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
-        saveState();
-    }
+    // Resume by starting from current position
+    startReadAlong();
 }
 
 function stopReading() {

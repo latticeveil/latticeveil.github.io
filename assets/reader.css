@@ -99,21 +99,38 @@ body {
     box-shadow: 0 30px 60px rgba(0,0,0,0.8);
 }
 
+.settings-header {
+    background: rgba(56, 225, 255, 0.1);
+    border-bottom: 1px solid var(--reader-accent);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: var(--reader-accent);
+}
+
+.settings-header i {
+    font-size: 16px;
+}
+
  .settings-close {
      position: absolute;
-     top: 8px;
-     right: 8px;
-     width: 44px;
-     height: 44px;
+     top: 12px;
+     right: -48px;
+     width: 36px;
+     height: 36px;
      display: flex;
      align-items: center;
      justify-content: center;
-     border-radius: 12px;
-     background: rgba(0,0,0,0.55);
+     border-radius: 8px;
+     background: rgba(0,0,0,0.8);
      border: 1px solid var(--reader-accent);
      color: var(--reader-accent);
      cursor: pointer;
-     font-size: 32px;
+     font-size: 24px;
      line-height: 1;
      padding: 0;
      z-index: 5000;
@@ -121,7 +138,20 @@ body {
 
  .settings-close:hover {
      background: rgba(56, 225, 255, 0.2);
- }
+}
+
+.text-preview {
+    border: 1px solid var(--reader-accent);
+    border-radius: 8px;
+    padding: 15px;
+    margin-top: 8px;
+    background: var(--reader-bg);
+    color: var(--reader-text);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    max-height: 120px;
+    overflow-y: auto;
+}
 
 .settings-tab-bar {
     display: flex;
