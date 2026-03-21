@@ -9,7 +9,8 @@ const state = {
     paraSpacing: parseFloat(localStorage.getItem('reader_ps')) || 1.5,
     pageWidth: parseInt(localStorage.getItem('reader_pw')) || 700,
     textAlign: localStorage.getItem('reader_align') || 'justify',
-    scroll: parseInt(localStorage.getItem('reader_scroll')) || 0,
+    scroll: 0, 
+    chapter: 1,
     highContrast: localStorage.getItem('reader_high_contrast') === 'true',
     focusMode: localStorage.getItem('reader_focus') === 'true',
     voiceName: localStorage.getItem('reader_voice') || '',
@@ -47,6 +48,7 @@ const loreData = {
     "Veil": { role: "Phenomenon", desc: "The separation between places, states, and routes." },
     "Echo": { role: "Phenomenon", desc: "Pressure that seeks completion at a heavy cost." },
     "Limiter": { role: "Concept", desc: "Termination condition that prevents system breakage." },
+    "Timed Limiter": { role: "Concept", desc: "A device designed to force an ending onto a local pattern." },
     "Nullrock": { role: "Block", img: "assets/img/nullrock.png", desc: "World bottom (Y=0). 'Refusal made physical'." },
     "Veilglass": { role: "Block", img: "assets/img/veilglass.png", desc: "Material tuned to the frequency of the Veil." },
     "Runestone": { role: "Block", img: "assets/img/runestone.png", desc: "Continuist stone used to anchor rites." },
@@ -56,13 +58,19 @@ const loreData = {
 
 let wakeLockObj = null;
 
+// Initialization
 document.addEventListener('DOMContentLoaded', () => {
     prepareTextForReading();
     applySettings();
     setupEventListeners();
     setupLoreLinks();
-    restoreProgress();
     
+    // Chapter Sync
+    const urlParams = new URLSearchParams(window.location.search);
+    const chParam = urlParams.get('chapter');
+    if (chParam) switchChapter(parseInt(chParam), false);
+    else restoreProgress();
+
     if (window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = populateVoices;
         populateVoices();
@@ -73,7 +81,6 @@ function prepareTextForReading() {
     const paragraphs = document.querySelectorAll('#bookContent p');
     paragraphs.forEach((p, pIdx) => {
         let html = p.innerHTML;
-        // Split into sentences, preserving HTML tags within them
         const sentences = html.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [html];
         p.innerHTML = sentences.map((s, sIdx) => {
             const id = `s-${pIdx}-${sIdx}`;
@@ -98,7 +105,7 @@ function applySettings() {
     root.style.setProperty('--reader-max-width', `${state.pageWidth}px`);
     root.style.setProperty('--reader-align', state.textAlign);
     
-    // Sync UI components
+    // UI Sync
     const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val; };
     const setCheck = (id, val) => { const el = document.getElementById(id); if(el) el.checked = val; };
     
@@ -107,6 +114,7 @@ function applySettings() {
     setVal('letterSpacingSlider', state.letterSpacing);
     setVal('pageWidthSlider', state.pageWidth);
     setVal('tempoSlider', state.tempo);
+    setVal('chapterSelect', state.chapter);
     
     const tl = document.getElementById('tempoLabel'); if(tl) tl.innerText = `TEMPO: ${state.tempo} WPM`;
     
@@ -117,24 +125,18 @@ function applySettings() {
     setCheck('toggleHighlight', state.showHighlight);
     
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === state.theme));
-    document.querySelectorAll('.align-btn, .btn-toggle[data-align]').forEach(b => b.classList.toggle('active', b.dataset.align === state.textAlign));
+    document.querySelectorAll('.btn-toggle[data-align]').forEach(b => b.classList.toggle('active', b.dataset.align === state.textAlign));
     document.querySelectorAll('.btn-toggle[data-font]').forEach(b => b.classList.toggle('active', b.dataset.font === state.font));
     
-    const hb = document.getElementById('highlightModeBtn'); if(hb) hb.classList.toggle('active', state.highlightMode);
-    const lb = document.getElementById('lockBtn'); 
-    if(lb) {
-        lb.innerHTML = state.zoomLocked ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>';
-        lb.classList.toggle('active', state.zoomLocked);
-    }
-
-    const viewport = document.querySelector('meta[name="viewport"]');
-    if (viewport) {
-        if (state.zoomLocked) viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-        else viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+    const hb = document.getElementById('highlightModeBtn');
+    if (hb) {
+        hb.classList.toggle('active', state.highlightMode);
+        body.classList.toggle('highlight-mode-active', state.highlightMode);
     }
 }
 
 function setupEventListeners() {
+    // Advanced Sliders
     const bind = (id, key, isFloat = true) => {
         const el = document.getElementById(id);
         if(el) el.oninput = (e) => { state[key] = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value); saveState(); applySettings(); };
@@ -154,9 +156,18 @@ function setupEventListeners() {
         saveState(); applySettings();
     });
 
+    // Settings Tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.tab-btn, .tab-content-area').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(btn.dataset.tab).classList.add('active');
+        };
+    });
+
     document.querySelectorAll('.btn-toggle[data-font]').forEach(b => { b.onclick = () => { state.font = b.dataset.font; saveState(); applySettings(); }; });
     document.querySelectorAll('.btn-toggle[data-align]').forEach(b => { b.onclick = () => { state.textAlign = b.dataset.align; saveState(); applySettings(); }; });
-    document.querySelectorAll('.theme-btn').forEach(b => { b.onclick = () => { state.theme = b.dataset.theme; saveState(); applySettings(); }; });
+    document.querySelectorAll('.theme-btn[data-theme]').forEach(b => { b.onclick = () => { state.theme = b.dataset.theme; saveState(); applySettings(); }; });
 
     click('settingsBtn', () => togglePanel('settingsPanel'));
     click('helpBtn', () => togglePanel('helpPanel'));
@@ -166,11 +177,16 @@ function setupEventListeners() {
     click('downloadBtn', downloadBook);
     click('lockBtn', () => { state.zoomLocked = !state.zoomLocked; saveState(); applySettings(); });
 
+    click('chapterSelect', (e) => switchChapter(parseInt(e.target.value)));
+
+    // Highlight Mode
     click('highlightModeBtn', () => {
         state.highlightMode = !state.highlightMode;
         state.highlightStart = null;
-        document.querySelectorAll('.tap-indicator').forEach(i => i.remove());
-        document.querySelectorAll('.read-span').forEach(s => s.classList.remove('highlight-start-marker'));
+        document.querySelectorAll('.tap-indicator, .highlight-start-marker').forEach(el => {
+            if (el.classList.contains('tap-indicator')) el.remove();
+            else el.classList.remove('highlight-start-marker');
+        });
         applySettings();
     });
 
@@ -180,6 +196,16 @@ function setupEventListeners() {
             const span = e.target.closest('.read-span');
             if (state.highlightMode && span) handleManualHighlight(e, span);
             else handleNoteTap(e);
+        };
+        // Drag support for manual mode
+        area.onmouseup = (e) => {
+            if (!state.highlightMode) return;
+            const sel = window.getSelection();
+            if (sel.toString().trim().length > 5) {
+                const range = sel.getRangeAt(0);
+                state.tempRange = range;
+                togglePanel('commentPanel');
+            }
         };
     }
 
@@ -194,8 +220,10 @@ function setupEventListeners() {
     click('saveHighlightBtn', saveManualHighlight);
     click('closeComment', () => {
         togglePanel(null); state.highlightStart = null;
-        document.querySelectorAll('.tap-indicator, .highlight-start-marker').forEach(el => el.classList.remove('highlight-start-marker'));
-        document.querySelectorAll('.tap-indicator').forEach(el => el.remove());
+        document.querySelectorAll('.tap-indicator, .highlight-start-marker').forEach(el => {
+            if(el.classList.contains('tap-indicator')) el.remove();
+            else el.classList.remove('highlight-start-marker');
+        });
     });
 
     const toggle = (id, key) => { const el = document.getElementById(id); if(el) el.onchange = (e) => { state[key] = e.target.checked; saveState(); applySettings(); }; };
@@ -209,10 +237,28 @@ function setupEventListeners() {
 
     window.addEventListener('scroll', () => {
         state.scroll = window.scrollY;
-        localStorage.setItem('reader_scroll', state.scroll);
+        localStorage.setItem(`reader_scroll_ch${state.chapter}`, state.scroll);
         const progress = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
         const bar = document.getElementById('progressBar'); if(bar) bar.style.width = progress + '%';
     });
+}
+
+function switchChapter(num, scroll = true) {
+    state.chapter = num;
+    const url = new URL(window.location);
+    url.searchParams.set('chapter', num);
+    window.history.pushState({}, '', url);
+    
+    document.querySelectorAll('section[data-chapter]').forEach(s => s.style.display = 'none');
+    const ch = document.querySelector(`section[data-chapter="${num}"]`);
+    if (ch) {
+        ch.style.display = 'block';
+        if (scroll) {
+            const savedScroll = parseInt(localStorage.getItem(`reader_scroll_ch${num}`)) || 0;
+            window.scrollTo(0, savedScroll);
+        }
+    }
+    applySettings();
 }
 
 function handleManualHighlight(e, span) {
@@ -252,11 +298,7 @@ function saveManualHighlight() {
         state.comments[id] = note;
     }
 
-    try { state.tempRange.surroundContents(wrap); } 
-    catch(e) { 
-        // Fallback for complex ranges: wrap individual spans
-        console.warn("Complex highlight fallback");
-    }
+    try { state.tempRange.surroundContents(wrap); } catch(e) { console.warn("Complex selection"); }
 
     state.highlightMode = false; state.highlightStart = null;
     document.querySelectorAll('.tap-indicator, .highlight-start-marker').forEach(el => {
@@ -264,6 +306,7 @@ function saveManualHighlight() {
         else el.classList.remove('highlight-start-marker');
     });
     saveState(); applySettings(); togglePanel(null);
+    window.getSelection().removeAllRanges();
 }
 
 function handleNoteTap(e) {
@@ -307,7 +350,8 @@ function togglePanel(id) {
 }
 
 function populateVoices() {
-    const vs = document.getElementById('voiceSelect'); if(!vs) return;
+    if(!window.speechSynthesis) return;
+    const vs = document.getElementById('voiceSelect'); if (!vs) return;
     let voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
     voices.sort((a, b) => (b.name.includes('Natural') ? 10 : 0) - (a.name.includes('Natural') ? 10 : 0));
     vs.innerHTML = voices.map(v => `<option value="${v.name}" ${v.name === state.voiceName ? 'selected' : ''}>${v.name}</option>`).join('');
@@ -322,7 +366,7 @@ function getSelectedVoice() {
 function previewVoice() {
     window.speechSynthesis.cancel();
     const voice = getSelectedVoice();
-    const utter = new SpeechSynthesisUtterance("System check complete.");
+    const utter = new SpeechSynthesisUtterance("Continuist system check.");
     if(voice) utter.voice = voice;
     window.speechSynthesis.speak(utter);
 }
@@ -335,7 +379,7 @@ function toggleReading() {
 function startReadAlong() {
     state.readAlongActive = true;
     const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
-    const spans = Array.from(document.querySelectorAll('.read-span'));
+    const spans = Array.from(document.querySelectorAll(`section[data-chapter="${state.chapter}"] .read-span`));
     let idx = spans.indexOf(spans.find(s => s.getBoundingClientRect().top > 100)) || 0;
 
     const next = () => {
@@ -361,7 +405,7 @@ function stopReading() {
 
 async function toggleWakeLock(e) {
     state.wakeLock = e.target.checked;
-    if (state.wakeLock && navigator.wakeLock) { try { wakeLockObj = await navigator.wakeLock.request('screen'); } catch(err) {} }
+    if (state.wakeLock && navigator.wakeLock) { try { wakeLockObj = await navigator.wakeLock.request('screen'); } catch (err) {} }
     else if (wakeLockObj) { await wakeLockObj.release(); wakeLockObj = null; }
     saveState();
 }
@@ -369,11 +413,34 @@ async function toggleWakeLock(e) {
 function saveState() {
     const keys = ['theme', 'font', 'size', 'zoom', 'lh', 'ls', 'ps', 'pw', 'align', 'scroll', 'high_contrast', 'focus', 'voice', 'tempo', 'show_lore', 'show_highlight', 'zoom_locked'];
     const map = { lh: 'lineHeight', ls: 'letterSpacing', ps: 'paraSpacing', pw: 'pageWidth', align: 'textAlign', focus: 'focusMode', voice: 'voiceName', show_lore: 'showLore', show_highlight: 'showHighlight', zoom_locked: 'zoomLocked', high_contrast: 'highContrast' };
-    keys.forEach(k => localStorage.setItem(`reader_${k}`, state[map[k] || k]));
+    keys.forEach(k => {
+        const val = state[map[k] || k];
+        if(val !== undefined) localStorage.setItem(`reader_theme`, state.theme); // Fix key
+    });
+    // Corrected bulk save
+    localStorage.setItem('reader_theme', state.theme);
+    localStorage.setItem('reader_font', state.font);
+    localStorage.setItem('reader_size', state.size);
+    localStorage.setItem('reader_zoom', state.zoom);
+    localStorage.setItem('reader_lh', state.lineHeight);
+    localStorage.setItem('reader_ls', state.letterSpacing);
+    localStorage.setItem('reader_ps', state.paraSpacing);
+    localStorage.setItem('reader_pw', state.pageWidth);
+    localStorage.setItem('reader_align', state.textAlign);
+    localStorage.setItem('reader_focus', state.focusMode);
+    localStorage.setItem('reader_voice', state.voiceName);
+    localStorage.setItem('reader_tempo', state.tempo);
+    localStorage.setItem('reader_show_lore', state.showLore);
+    localStorage.setItem('reader_show_highlight', state.showHighlight);
+    localStorage.setItem('reader_zoom_locked', state.zoomLocked);
+    localStorage.setItem('reader_high_contrast', state.highContrast);
     localStorage.setItem('reader_comments', JSON.stringify(state.comments));
 }
 
-function restoreProgress() { if (state.scroll > 0) window.scrollTo(0, state.scroll); }
+function restoreProgress() {
+    const savedScroll = parseInt(localStorage.getItem(`reader_scroll_ch${state.chapter}`)) || 0;
+    if (savedScroll > 0) window.scrollTo(0, savedScroll);
+}
 
 function downloadBook() {
     const blob = new Blob([document.getElementById('bookContent').innerText], { type: 'text/plain' });
