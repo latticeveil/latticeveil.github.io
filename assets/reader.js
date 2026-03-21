@@ -312,8 +312,7 @@ function setupEventListeners() {
             // Force voice refresh to apply immediately
             const voices = window.speechSynthesis.getVoices();
             console.log('Voice changed to:', state.voiceName, 'Available voices:', voices.map(v => v.name));
-            // Auto-preview with new voice
-            setTimeout(() => previewVoice(), 100);
+            // No auto-preview - user must click preview button
         };
     }
 
@@ -625,7 +624,7 @@ function previewVoice() {
     console.log('Available voices for preview:', voices.map(v => `${v.name} (${v.lang})`));
     
     const voice = getSelectedVoice();
-    const utter = new SpeechSynthesisUtterance("Continuist system check. This is a voice preview to test the selected voice.");
+    const utter = new SpeechSynthesisUtterance("Continuist system check. This is a voice preview to test the selected voice at the current tempo setting.");
     
     if(voice) {
         utter.voice = voice;
@@ -634,8 +633,12 @@ function previewVoice() {
         console.warn('No voice found for preview');
     }
     
+    // Apply tempo setting to preview
+    utter.rate = state.tempo / 200;
+    console.log('Preview tempo rate:', utter.rate);
+    
     // Add event listeners to verify
-    utter.onstart = () => console.log('Preview started with voice:', utter.voice?.name);
+    utter.onstart = () => console.log('Preview started with voice:', utter.voice?.name, 'Rate:', utter.rate);
     utter.onend = () => console.log('Preview ended');
     utter.onerror = (e) => console.error('Preview error:', e);
     
