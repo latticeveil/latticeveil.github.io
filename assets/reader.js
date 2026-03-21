@@ -17,6 +17,7 @@ const state = {
     tempo: 250,
     showLore: true,
     showHighlight: true,
+    showUserHighlights: true,
     zoomLocked: false,
     highlightMode: false,
     highlightStart: null,
@@ -44,6 +45,7 @@ const storageMap = {
     tempo: 'reader_tempo',
     showLore: 'reader_show_lore',
     showHighlight: 'reader_show_highlight',
+    showUserHighlights: 'reader_show_user_highlights',
     zoomLocked: 'reader_zoom_locked',
     selectedColor: 'reader_selected_color'
 };
@@ -208,7 +210,8 @@ function applySettings() {
     setCheck('focusModeToggle', state.focusMode);
     setCheck('wakeLockToggle', state.wakeLock);
     setCheck('toggleLore', state.showLore);
-    setCheck('toggleHighlight', state.showHighlight);
+    setCheck('toggleHighlight', state.showUserHighlights);
+    setCheck('toggleReadAlong', state.showHighlight);
     
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === state.theme));
     document.querySelectorAll('.btn-toggle[data-align]').forEach(b => b.classList.toggle('active', b.dataset.align === state.textAlign));
@@ -230,6 +233,9 @@ function applySettings() {
             b.classList.remove('active');
         }
     });
+    
+    // Apply highlight visibility
+    body.classList.toggle('hide-highlights', !state.showUserHighlights);
 }
 
 function setupEventListeners() {
@@ -381,7 +387,8 @@ function setupEventListeners() {
     toggle('contrastToggle', 'highContrast');
     toggle('focusModeToggle', 'focusMode');
     toggle('toggleLore', 'showLore');
-    toggle('toggleHighlight', 'showHighlight');
+    toggle('toggleHighlight', 'showUserHighlights');
+    toggle('toggleReadAlong', 'showHighlight');
     
     const wake = document.getElementById('wakeLockToggle');
     if(wake) wake.onchange = toggleWakeLock;
