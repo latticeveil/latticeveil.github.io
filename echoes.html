@@ -24,6 +24,7 @@
         <div class="reader-controls">
             <button class="icon-btn" id="helpBtn" title="How to Use"><i class="fas fa-question-circle"></i></button>
             <button class="icon-btn" id="highlightModeBtn" title="Manual Highlight Mode"><i class="fas fa-highlighter"></i></button>
+            <button class="icon-btn" id="toggleHighlightsBtn" title="Show/Hide Highlights"><i class="fas fa-eye"></i></button>
             <button class="icon-btn" id="lockBtn" title="Zoom/Scroll Lock"><i class="fas fa-lock-open"></i></button>
             <button class="icon-btn" id="ttsBtn" title="Play/Pause Reading"><i class="fas fa-play"></i></button>
             <button class="icon-btn" id="ttsRestartBtn" title="Restart from top of chapter"><i class="fas fa-step-backward"></i></button>
@@ -114,7 +115,43 @@
         </div>
     </div>
 
-    <!-- Download Menu -->
+    <!-- Highlight Color Picker -->
+    <div class="panel-overlay" id="highlightPickerPanel">
+        <div class="settings-panel">
+            <div class="settings-header">
+                <i class="fas fa-highlighter"></i>
+                <span>HIGHLIGHT COLOR</span>
+                <div class="settings-header-controls">
+                    <button class="settings-close" onclick="window.togglePanel(null)" aria-label="Close color picker">&times;</button>
+                </div>
+            </div>
+            <div class="panel-body" style="padding:20px; overflow-y:auto;">
+                <div class="setting-item">
+                    <span class="category-label">Choose Color</span>
+                    <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
+                        <input type="color" id="highlightColorPicker" value="#f2c14e" style="width: 80px; height: 80px; border: none; border-radius: 8px; cursor: pointer;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                            <button class="color-preset" data-color="#f2c14e" style="background: #f2c14e;"></button>
+                            <button class="color-preset" data-color="#38e1ff" style="background: #38e1ff;"></button>
+                            <button class="color-preset" data-color="#ff6b6b" style="background: #ff6b6b;"></button>
+                            <button class="color-preset" data-color="#4ecdc4" style="background: #4ecdc4;"></button>
+                            <button class="color-preset" data-color="#45b7d1" style="background: #45b7d1;"></button>
+                            <button class="color-preset" data-color="#96ceb4" style="background: #96ceb4;"></button>
+                            <button class="color-preset" data-color="#ffeaa7" style="background: #ffeaa7;"></button>
+                            <button class="color-preset" data-color="#dfe6e9" style="background: #dfe6e9;"></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div style="display:flex; justify-content:space-between;"><span class="setting-item-label">ADD NOTE</span><button class="btn-toggle" id="addNoteBtn" style="padding:4px 12px; font-size:0.7rem;">ADD</button></div>
+                    <textarea id="highlightNote" placeholder="Add optional note..." style="width:100%; min-height:60px; background:var(--reader-bg); color:var(--reader-text); border:1px solid var(--reader-accent); border-radius:4px; padding:8px; margin-top:8px; resize:vertical; font-family:inherit;"></textarea>
+                </div>
+                <div class="setting-item">
+                    <button class="btn-toggle" id="saveHighlightBtn" style="width:100%; padding:10px; font-size:0.8rem;">SAVE HIGHLIGHT</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="panel-overlay" id="downloadPanel">
         <div class="settings-panel">
             <div class="settings-header">
