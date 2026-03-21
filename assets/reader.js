@@ -1,4 +1,4 @@
-// Reader Configuration & State - Initialized with safe defaults
+// Reader Configuration & State - Initialized with hard defaults
 const state = {
     theme: 'theme-oled',
     font: 'font-serif',
@@ -27,34 +27,42 @@ const state = {
     comments: {}
 };
 
-// Load state from localStorage safely
+// Safe storage mapping
+const storageMap = {
+    theme: 'reader_theme',
+    font: 'reader_font',
+    size: 'reader_size',
+    zoom: 'reader_zoom',
+    lineHeight: 'reader_lh',
+    letterSpacing: 'reader_ls',
+    paraSpacing: 'reader_ps',
+    pageWidth: 'reader_pw',
+    textAlign: 'reader_align',
+    highContrast: 'reader_high_contrast',
+    focusMode: 'reader_focus',
+    voiceName: 'reader_voice',
+    tempo: 'reader_tempo',
+    showLore: 'reader_show_lore',
+    showHighlight: 'reader_show_highlight',
+    zoomLocked: 'reader_zoom_locked'
+};
+
 function loadPersistentState() {
     try {
-        state.theme = localStorage.getItem('reader_theme') || 'theme-oled';
-        state.font = localStorage.getItem('reader_font') || 'font-serif';
-        state.size = parseInt(localStorage.getItem('reader_size')) || 18;
-        state.zoom = parseFloat(localStorage.getItem('reader_zoom')) || 1.0;
-        state.lineHeight = parseFloat(localStorage.getItem('reader_lh')) || 1.6;
-        state.letterSpacing = parseFloat(localStorage.getItem('reader_ls')) || 0;
-        state.paraSpacing = parseFloat(localStorage.getItem('reader_ps')) || 1.5;
-        state.pageWidth = parseInt(localStorage.getItem('reader_pw')) || 700;
-        state.textAlign = localStorage.getItem('reader_align') || 'justify';
-        state.highContrast = localStorage.getItem('reader_high_contrast') === 'true';
-        state.focusMode = localStorage.getItem('reader_focus') === 'true';
-        state.voiceName = localStorage.getItem('reader_voice') || '';
-        state.tempo = parseInt(localStorage.getItem('reader_tempo')) || 250;
-        state.showLore = localStorage.getItem('reader_show_lore') !== 'false';
-        state.showHighlight = localStorage.getItem('reader_show_highlight') !== 'false';
-        state.zoomLocked = localStorage.getItem('reader_zoom_locked') === 'true';
-        
+        Object.keys(storageMap).forEach(key => {
+            const val = localStorage.getItem(storageMap[key]);
+            if (val !== null) {
+                if (val === 'true') state[key] = true;
+                else if (val === 'false') state[key] = false;
+                else if (!isNaN(val) && val !== "") state[key] = parseFloat(val);
+                else state[key] = val;
+            }
+        });
         const savedComments = localStorage.getItem('reader_comments');
         if (savedComments) state.comments = JSON.parse(savedComments);
-    } catch (e) {
-        console.warn("Storage load error, using defaults", e);
-    }
+    } catch (e) { console.warn("Storage load error", e); }
 }
 
-// Lore Database
 const loreData = {
     "Avery": { role: "Character", img: "assets/img/hero_bg.png", desc: "Avery Hale, lead Continuist Surveyor. Measured, procedural, and stubbornly humane." },
     "Eli": { role: "Character", desc: "Eli, 'The Listener.' Uses alcohol as a crude limiter to dull the constant mental noise of the Echo." },
@@ -79,24 +87,18 @@ const loreData = {
 
 let wakeLockObj = null;
 
-// Initialization
 document.addEventListener('DOMContentLoaded', () => {
     loadPersistentState();
-    setupEventListeners(); // Bind early
     prepareTextForReading();
+    // Setup listeners FIRST so buttons are alive even if applySettings stutters
+    setupEventListeners(); 
     applySettings();
     setupLoreLinks();
     
-    // Chapter / URL Sync
     const urlParams = new URLSearchParams(window.location.search);
     const chParam = urlParams.get('chapter');
-    
-    if (chParam) {
-        switchChapter(parseInt(chParam), false);
-    } else {
-        // Force ?chapter=1 by default
-        switchChapter(1, true);
-    }
+    if (chParam) switchChapter(parseInt(chParam), false);
+    else switchChapter(1, true); // Force ?chapter=1
 
     if (window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = populateVoices;
@@ -109,10 +111,7 @@ function prepareTextForReading() {
     paragraphs.forEach((p, pIdx) => {
         let html = p.innerHTML;
         const sentences = html.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [html];
-        p.innerHTML = sentences.map((s, sIdx) => {
-            const id = `s-${pIdx}-${sIdx}`;
-            return `<span class="read-span" id="${id}">${s}</span>`;
-        }).join(' ');
+        p.innerHTML = sentences.map((s, sIdx) => `<span class="read-span" id="s-${pIdx}-${sIdx}">${s}</span>`).join(' ');
     });
 }
 
@@ -160,18 +159,6 @@ function applySettings() {
         hb.classList.toggle('active', state.highlightMode);
         body.classList.toggle('highlight-mode-active', state.highlightMode);
     }
-    
-    const lb = document.getElementById('lockBtn');
-    if(lb) {
-        lb.innerHTML = state.zoomLocked ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>';
-        lb.classList.toggle('active', state.zoomLocked);
-    }
-
-    const viewport = document.querySelector('meta[name="viewport"]');
-    if (viewport) {
-        if (state.zoomLocked) viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-        else viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
-    }
 }
 
 function setupEventListeners() {
@@ -194,7 +181,7 @@ function setupEventListeners() {
         saveState(); applySettings();
     });
 
-    // Settings Tabs
+    // Tab Logic
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.tab-btn, .tab-content-area').forEach(el => el.classList.remove('active'));
@@ -211,18 +198,14 @@ function setupEventListeners() {
     click('settingsBtn', () => togglePanel('settingsPanel'));
     click('helpBtn', () => togglePanel('helpPanel'));
     click('closeSettings', () => togglePanel(null));
-    // Header Close button
-    document.querySelectorAll('.close-btn').forEach(btn => {
-        btn.onclick = () => togglePanel(null);
-    });
+    document.querySelectorAll('.close-btn').forEach(btn => { btn.onclick = () => togglePanel(null); });
 
     click('ttsBtn', toggleReading);
     click('previewVoiceBtn', previewVoice);
     click('downloadBtn', downloadBook);
     click('lockBtn', () => { state.zoomLocked = !state.zoomLocked; saveState(); applySettings(); });
 
-    const chSelect = document.getElementById('chapterSelect');
-    if(chSelect) chSelect.onchange = (e) => switchChapter(parseInt(e.target.value));
+    click('chapterSelect', (e) => switchChapter(parseInt(e.target.value)));
 
     // Highlight Mode
     click('highlightModeBtn', () => {
@@ -242,13 +225,11 @@ function setupEventListeners() {
             if (state.highlightMode && span) handleManualHighlight(e, span);
             else handleNoteTap(e);
         };
-        // Drag support for manual mode
-        area.onmouseup = (e) => {
+        area.onmouseup = () => {
             if (!state.highlightMode) return;
             const sel = window.getSelection();
             if (sel.toString().trim().length > 5) {
-                const range = sel.getRangeAt(0);
-                state.tempRange = range;
+                state.tempRange = sel.getRangeAt(0).cloneRange();
                 togglePanel('commentPanel');
             }
         };
@@ -263,13 +244,7 @@ function setupEventListeners() {
     });
 
     click('saveHighlightBtn', saveManualHighlight);
-    click('closeComment', () => {
-        togglePanel(null); state.highlightStart = null;
-        document.querySelectorAll('.tap-indicator, .highlight-start-marker').forEach(el => {
-            if(el.classList.contains('tap-indicator')) el.remove();
-            else el.classList.remove('highlight-start-marker');
-        });
-    });
+    click('closeComment', () => { togglePanel(null); state.highlightStart = null; });
 
     const toggle = (id, key) => { const el = document.getElementById(id); if(el) el.onchange = (e) => { state[key] = e.target.checked; saveState(); applySettings(); }; };
     toggle('contrastToggle', 'highContrast');
@@ -290,9 +265,11 @@ function setupEventListeners() {
 
 function switchChapter(num, autoScroll = true) {
     state.chapter = num;
-    const url = new URL(window.location);
-    url.searchParams.set('chapter', num);
-    window.history.pushState({}, '', url);
+    try {
+        const url = new URL(window.location);
+        url.searchParams.set('chapter', num);
+        window.history.pushState({}, '', url);
+    } catch(e) {}
     
     document.querySelectorAll('section[data-chapter]').forEach(s => s.style.display = 'none');
     const ch = document.querySelector(`section[data-chapter="${num}"]`);
@@ -310,11 +287,10 @@ function handleManualHighlight(e, span) {
     if (!state.highlightStart) {
         state.highlightStart = span.id;
         span.classList.add('highlight-start-marker');
-        const indicator = document.createElement('div');
-        indicator.className = 'tap-indicator';
-        indicator.style.left = `${e.pageX}px`;
-        indicator.style.top = `${e.pageY - 12}px`;
-        document.body.appendChild(indicator);
+        const ind = document.createElement('div');
+        ind.className = 'tap-indicator';
+        ind.style.left = `${e.pageX}px`; ind.style.top = `${e.pageY - 12}px`;
+        document.body.appendChild(ind);
     } else {
         const start = document.getElementById(state.highlightStart);
         if (!start) { state.highlightStart = null; return; }
@@ -327,24 +303,19 @@ function handleManualHighlight(e, span) {
 }
 
 function saveManualHighlight() {
-    const input = document.getElementById('commentInput');
-    const note = input ? input.value : "";
+    const note = document.getElementById('commentInput').value;
     const id = "h-" + Date.now();
     const wrap = document.createElement('span');
     wrap.className = 'user-highlight';
     wrap.style.backgroundColor = state.selectedColor;
     wrap.dataset.id = id;
-    
     if (note) {
         const tip = document.createElement('span');
-        tip.className = 'note-tooltip';
-        tip.innerText = note;
+        tip.className = 'note-tooltip'; tip.innerText = note;
         wrap.appendChild(tip);
         state.comments[id] = note;
     }
-
-    try { state.tempRange.surroundContents(wrap); } catch(e) { console.warn("Complex selection"); }
-
+    try { state.tempRange.surroundContents(wrap); } catch(e) {}
     state.highlightMode = false; state.highlightStart = null;
     document.querySelectorAll('.tap-indicator, .highlight-start-marker').forEach(el => {
         if(el.classList.contains('tap-indicator')) el.remove();
@@ -357,15 +328,12 @@ function saveManualHighlight() {
 function handleNoteTap(e) {
     const h = e.target.closest('.user-highlight');
     if (h && h.querySelector('.note-tooltip')) {
-        const wasActive = h.classList.contains('active-note');
         document.querySelectorAll('.user-highlight').forEach(el => el.classList.remove('active-note'));
-        if (!wasActive) {
-            h.classList.add('active-note');
-            setTimeout(() => {
-                const clear = (ev) => { if (!h.contains(ev.target)) { h.classList.remove('active-note'); window.removeEventListener('click', clear); } };
-                window.addEventListener('click', clear);
-            }, 10);
-        }
+        h.classList.add('active-note');
+        setTimeout(() => {
+            const clear = (ev) => { if (!h.contains(ev.target)) { h.classList.remove('active-note'); window.removeEventListener('click', clear); } };
+            window.addEventListener('click', clear);
+        }, 10);
     }
 }
 
@@ -381,9 +349,9 @@ function setupLoreLinks() {
 }
 
 function showLore(title, data) {
-    const t = document.getElementById('loreTitle'); if(t) t.innerText = title;
-    const r = document.getElementById('loreRole'); if(r) r.innerText = data.role;
-    const d = document.getElementById('loreDesc'); if(d) d.innerText = data.desc;
+    document.getElementById('loreTitle').innerText = title;
+    document.getElementById('loreRole').innerText = data.role;
+    document.getElementById('loreDesc').innerText = data.desc;
     const img = document.getElementById('loreImg');
     if (img) { if (data.img) { img.src = data.img; img.style.display = 'block'; } else img.style.display = 'none'; }
     togglePanel('lorePanel');
@@ -400,7 +368,6 @@ function populateVoices() {
     let voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
     voices.sort((a, b) => (b.name.includes('Natural') ? 10 : 0) - (a.name.includes('Natural') ? 10 : 0));
     vs.innerHTML = voices.map(v => `<option value="${v.name}" ${v.name === state.voiceName ? 'selected' : ''}>${v.name}</option>`).join('');
-    if (!state.voiceName && voices.length > 0) { state.voiceName = voices[0].name; saveState(); }
 }
 
 function getSelectedVoice() {
@@ -427,7 +394,6 @@ function startReadAlong() {
     const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
     const spans = Array.from(document.querySelectorAll(`section[data-chapter="${state.chapter}"] .read-span`));
     let idx = spans.indexOf(spans.find(s => s.getBoundingClientRect().top > 100)) || 0;
-
     const next = () => {
         if (!state.readAlongActive || idx >= spans.length) { stopReading(); return; }
         const s = spans[idx];
@@ -443,7 +409,7 @@ function startReadAlong() {
 }
 
 function stopReading() {
-    window.speechSynthesis.cancel();
+    if(window.speechSynthesis) window.speechSynthesis.cancel();
     state.readAlongActive = false;
     const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-play"></i>';
     document.querySelectorAll('.read-span').forEach(el => el.classList.remove('reading-highlight'));
@@ -457,22 +423,7 @@ async function toggleWakeLock(e) {
 }
 
 function saveState() {
-    localStorage.setItem('reader_theme', state.theme);
-    localStorage.setItem('reader_font', state.font);
-    localStorage.setItem('reader_size', state.size);
-    localStorage.setItem('reader_zoom', state.zoom);
-    localStorage.setItem('reader_lh', state.lineHeight);
-    localStorage.setItem('reader_ls', state.letterSpacing);
-    localStorage.setItem('reader_ps', state.paraSpacing);
-    localStorage.setItem('reader_pw', state.pageWidth);
-    localStorage.setItem('reader_align', state.textAlign);
-    localStorage.setItem('reader_focus', state.focusMode);
-    localStorage.setItem('reader_voice', state.voiceName);
-    localStorage.setItem('reader_tempo', state.tempo);
-    localStorage.setItem('reader_show_lore', state.showLore);
-    localStorage.setItem('reader_show_highlight', state.showHighlight);
-    localStorage.setItem('reader_zoom_locked', state.zoomLocked);
-    localStorage.setItem('reader_high_contrast', state.highContrast);
+    Object.keys(storageMap).forEach(key => localStorage.setItem(storageMap[key], state[key]));
     localStorage.setItem('reader_comments', JSON.stringify(state.comments));
 }
 
