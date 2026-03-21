@@ -98,6 +98,14 @@ const loreData = {
 
 let wakeLockObj = null;
 
+// Highlight System Variables
+let highlightMode = false;
+let highlightStart = null;
+let highlightEnd = null;
+let isDragging = false;
+let currentHighlightColor = '#f2c14e';
+let highlightsVisible = true;
+
 // GLOBAL FUNCTIONS
 window.togglePanel = function(id) {
     document.querySelectorAll('.panel-overlay').forEach(p => p.classList.remove('active'));
@@ -110,16 +118,199 @@ window.togglePanel = function(id) {
         url.searchParams.set('chapter', state.chapter);
         if (id === 'settingsPanel') url.searchParams.set('settings', '1');
         else if (id === 'helpPanel') url.searchParams.set('help', '1');
-        else { url.searchParams.delete('settings'); url.searchParams.delete('help'); }
+        else if (id === 'downloadPanel') url.searchParams.set('download', '1');
+        else if (id === 'highlightPickerPanel') url.searchParams.set('highlight', '1');
+        else { url.searchParams.delete('settings'); url.searchParams.delete('help'); url.searchParams.delete('download'); url.searchParams.delete('highlight'); }
         window.history.pushState({}, '', url);
     } else {
         const url = new URL(window.location);
         url.searchParams.set('chapter', state.chapter);
         url.searchParams.delete('settings');
         url.searchParams.delete('help');
+        url.searchParams.delete('download');
+        url.searchParams.delete('highlight');
         window.history.pushState({}, '', url);
     }
 };
+
+window.toggleHighlightMode = function() {
+    highlightMode = !highlightMode;
+    highlightStart = null;
+    highlightEnd = null;
+    isDragging = false;
+    
+    document.body.classList.toggle('highlight-mode-active', highlightMode);
+    
+    const btn = document.getElementById('highlightModeBtn');
+    if(btn) {
+        btn.classList.toggle('active', highlightMode);
+        btn.innerHTML = highlightMode ? '<i class="fas fa-highlighter"></i>' : '<i class="fas fa-mouse-pointer"></i>';
+    }
+};
+
+window.toggleHighlights = function() {
+    highlightsVisible = !highlightsVisible;
+    document.body.classList.toggle('hide-highlights', !highlightsVisible);
+    
+    const btn = document.getElementById('toggleHighlightsBtn');
+    if(btn) {
+        btn.innerHTML = highlightsVisible ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+    }
+};
+
+window.saveHighlight = function() {
+    if (!highlightStart || !highlightEnd) return;
+    
+    const note = document.getElementById('highlightNote').value.trim();
+    const color = document.getElementById('highlightColorPicker').value;
+    
+    // Create unique ID
+    const id = `hl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Store highlight
+    state.comments[id] = {
+        text: highlightStart.textContent + '...' + highlightEnd.textContent,
+        color: color,
+        note: note,
+        chapter: state.chapter,
+        timestamp: new Date().toISOString()
+    };
+    
+    // Apply highlight to DOM
+    applyHighlightToDOM(highlightStart, highlightEnd, id, color, note);
+    
+    // Save and close
+    saveState();
+    window.togglePanel(null);
+    
+    // Reset
+    highlightStart = null;
+    highlightEnd = null;
+    document.getElementById('highlightNote').value = '';
+};
+
+function applyHighlightToDOM(start, end, id, color, note) {
+    const range = document.createRange();
+    range.setStart(start, 0);
+    range.setEnd(end, end.textContent.length);
+    
+    const span = document.createElement('span');
+    span.className = 'user-highlight';
+    span.setAttribute('data-id', id);
+    span.style.backgroundColor = color;
+    span.style.padding = '2px 0';
+    span.style.borderRadius = '3px';
+    span.style.cursor = 'pointer';
+    span.style.position = 'relative';
+    
+    try {
+        range.surroundContents(span);
+    } catch(e) {
+        // If range can't be applied, wrap text nodes individually
+        const walker = document.createTreeWalker(
+            start.parentElement,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+        
+        let node;
+        let inRange = false;
+        const nodes = [];
+        
+        while(node = walker.nextNode()) {
+            if (node === start) inRange = true;
+            if (inRange) nodes.push(node);
+            if (node === end) break;
+        }
+        
+        if (nodes.length > 0) {
+            const first = nodes[0];
+            const last = nodes[nodes.length - 1];
+            
+            first.parentNode.insertBefore(span, first);
+            nodes.forEach(n => span.appendChild(n));
+        }
+    }
+    
+    // Add note tooltip if exists
+    if (note) {
+        const tooltip = document.createElement('span');
+        tooltip.className = 'note-tooltip';
+        tooltip.textContent = note;
+        tooltip.style.cssText = `
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 1000;
+        `;
+        
+        span.appendChild(tooltip);
+        
+        span.addEventListener('mouseenter', () => {
+            tooltip.style.opacity = '1';
+        });
+        
+        span.addEventListener('mouseleave', () => {
+            tooltip.style.opacity = '0';
+        });
+    }
+    
+    // Add click to open color picker
+    span.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const existingId = span.getAttribute('data-id');
+        const existing = state.comments[existingId];
+        if (existing) {
+            document.getElementById('highlightColorPicker').value = existing.color;
+            document.getElementById('highlightNote').value = existing.note || '';
+            window.togglePanel('highlightPickerPanel');
+        }
+    });
+}
+
+function loadHighlights() {
+    Object.entries(state.comments).forEach(([id, data]) => {
+        if (data.chapter !== state.chapter) return;
+        
+        // Find and highlight the text
+        const text = data.text;
+        const walker = document.createTreeWalker(
+            document.getElementById('bookContent'),
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+        
+        let node;
+        let found = false;
+        const nodes = [];
+        
+        while(node = walker.nextNode()) {
+            if (!found && node.textContent.includes(text.substring(0, 10))) {
+                found = true;
+            }
+            if (found) nodes.push(node);
+            if (nodes.join('').length >= text.length) break;
+        }
+        
+        if (nodes.length > 0) {
+            const start = nodes[0];
+            const end = nodes[nodes.length - 1];
+            applyHighlightToDOM(start, end, id, data.color, data.note);
+        }
+    });
+}
 
 window.downloadEbook = function(format) {
     const bookContent = document.getElementById('bookContent');
@@ -411,17 +602,24 @@ document.addEventListener('DOMContentLoaded', () => {
     applySettings();
     setupLoreLinks();
     
-    // 5. URL Sync
+    // 5. Load highlights
+    loadHighlights();
+    
+    // 6. URL Sync
     const urlParams = new URLSearchParams(window.location.search);
     const chParam = urlParams.get('chapter');
     const setParam = urlParams.get('settings');
     const helpParam = urlParams.get('help');
+    const downloadParam = urlParams.get('download');
+    const highlightParam = urlParams.get('highlight');
     
     if (chParam) switchChapter(parseInt(chParam), false);
     else switchChapter(1, true);
 
     if (setParam) window.togglePanel('settingsPanel');
     if (helpParam) window.togglePanel('helpPanel');
+    if (downloadParam) window.togglePanel('downloadPanel');
+    if (highlightParam) window.togglePanel('highlightPickerPanel');
 
     if (window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = () => ensureVoicesLoaded();
@@ -541,6 +739,9 @@ function setupEventListeners() {
 
     click('settingsBtn', () => window.togglePanel('settingsPanel'));
     click('helpBtn', () => window.togglePanel('helpPanel'));
+    click('downloadBtn', () => window.togglePanel('downloadPanel'));
+    click('highlightModeBtn', toggleHighlightMode);
+    click('toggleHighlightsBtn', toggleHighlights);
     document.querySelectorAll('.close-btn').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
     document.querySelectorAll('.settings-close').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
 
@@ -556,7 +757,6 @@ function setupEventListeners() {
     click('ttsBtn', toggleReading);
     click('ttsRestartBtn', restartFromTop);
     click('previewVoiceBtn', previewVoice);
-    click('downloadBtn', () => window.togglePanel('downloadPanel'));
     click('lockBtn', () => { state.zoomLocked = !state.zoomLocked; saveState(); applySettings(); });
 
     const chSelect = document.getElementById('chapterSelect');
@@ -685,6 +885,7 @@ function setupEventListeners() {
     };
     toggle('contrastToggle', 'highContrast');
     toggle('focusModeToggle', 'focusMode');
+    toggle('wakeLockToggle', 'wakeLock');
     toggle('toggleLore', 'showLore');
     toggle('toggleHighlight', 'showUserHighlights');
     toggle('toggleReadAlong', 'readAlongActive');

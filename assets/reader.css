@@ -233,6 +233,55 @@ body {
     line-height: 1.4;
 }
 
+.color-preset {
+    width: 32px;
+    height: 32px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.color-preset:hover {
+    border-color: var(--reader-accent);
+    transform: scale(1.1);
+}
+
+.color-preset.active {
+    border-color: var(--reader-accent);
+    box-shadow: 0 0 0 2px rgba(56, 225, 255, 0.3);
+}
+
+#highlightColorPicker {
+    cursor: crosshair;
+}
+
+body.highlight-mode-active {
+    cursor: crosshair !important;
+}
+
+body.highlight-mode-active #readingArea {
+    cursor: crosshair !important;
+}
+
+body.highlight-mode-active .read-span {
+    cursor: pointer !important;
+    transition: background-color 0.2s ease;
+}
+
+body.highlight-mode-active .read-span:hover {
+    background-color: rgba(56, 225, 255, 0.1);
+}
+
+body.hide-highlights .user-highlight {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+body.hide-highlights .note-tooltip {
+    display: none !important;
+}
+
 .settings-tab-bar {
     display: flex;
     background: rgba(255,255,255,0.05);
