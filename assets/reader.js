@@ -136,6 +136,7 @@ window.togglePanel = function(id) {
 
 window.toggleHighlightMode = function() {
     highlightMode = !highlightMode;
+    console.log('Highlight mode toggled:', highlightMode);
     
     document.body.classList.toggle('highlight-mode-active', highlightMode);
     
@@ -143,6 +144,9 @@ window.toggleHighlightMode = function() {
     if(btn) {
         btn.classList.toggle('active', highlightMode);
         btn.innerHTML = highlightMode ? '<i class="fas fa-highlighter"></i>' : '<i class="fas fa-mouse-pointer"></i>';
+        console.log('Button updated, active:', highlightMode);
+    } else {
+        console.error('Highlight mode button not found!');
     }
     
     // Clear any existing selection when exiting highlight mode
@@ -760,7 +764,10 @@ function setupEventListeners() {
             const selection = window.getSelection();
             const selectedText = selection.toString().trim();
             
+            console.log('Selection changed:', selectedText.length, 'characters:', selectedText.substring(0, 50));
+            
             if (selectedText.length > 1 && selectionTimer === null) {
+                console.log('Showing highlight indicator');
                 // Show highlight indicator after selection
                 const range = selection.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
@@ -818,6 +825,7 @@ function setupEventListeners() {
                     indicator.style.transform = 'scale(1)';
                 });
             } else if (selectedText.length === 0) {
+                console.log('Clearing highlight indicator');
                 // Clear indicator if selection is cleared
                 const existingIndicator = document.getElementById('highlight-indicator');
                 if (existingIndicator) {
