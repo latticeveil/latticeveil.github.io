@@ -107,6 +107,29 @@ body {
     padding-right: 44px;
 }
 
+.settings-tab-bar .close-btn {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 44px !important;
+    height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: none !important;
+    border: none !important;
+    color: var(--reader-accent) !important;
+    cursor: pointer !important;
+    font-size: 1.4rem !important;
+    line-height: 1 !important;
+    padding: 0 !important;
+    z-index: 10 !important;
+}
+
+.settings-tab-bar .close-btn:hover {
+    background: rgba(255,255,255,0.1) !important;
+}
+
  .panel-header {
      position: relative;
      padding-right: 44px;
@@ -279,6 +302,16 @@ input:checked + .slider:before { transform: translateX(22px); }
 
 .user-highlight.active-note .note-tooltip {
     opacity: 1;
+}
+
+/* Hide highlights when toggle is off */
+body.hide-highlights .user-highlight {
+    background: transparent !important;
+    cursor: default !important;
+}
+
+body.hide-highlights .user-highlight .note-tooltip {
+    display: none !important;
 }
 
 .highlight-start-marker {
