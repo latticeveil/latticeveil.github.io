@@ -309,6 +309,11 @@ function setupEventListeners() {
         voiceSelect.onchange = (e) => {
             state.voiceName = e.target.value;
             saveState();
+            // Force voice refresh to apply immediately
+            const voices = window.speechSynthesis.getVoices();
+            console.log('Voice changed to:', state.voiceName, 'Available voices:', voices.map(v => v.name));
+            // Auto-preview with new voice
+            setTimeout(() => previewVoice(), 100);
         };
     }
 
@@ -525,13 +530,28 @@ function showLore(title, data) {
 function populateVoices() {
     if(!window.speechSynthesis) return;
     const vs = document.getElementById('voiceSelect'); if (!vs) return;
-    let voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
-    voices.sort((a, b) => (b.name.includes('Natural') ? 10 : 0) - (a.name.includes('Natural') ? 10 : 0));
-    vs.innerHTML = voices.map(v => `<option value="${v.name}" ${v.name === state.voiceName ? 'selected' : ''}>${v.name}</option>`).join('');
+    let voices = window.speechSynthesis.getVoices();
+    console.log('All available voices:', voices.map(v => `${v.name} (${v.lang})`));
+    
+    // Filter for English voices but include more options
+    voices = voices.filter(v => v.lang.startsWith('en'));
+    console.log('English voices:', voices.map(v => `${v.name} (${v.lang})`));
+    
+    // Sort to put natural voices first, then by name
+    voices.sort((a, b) => {
+        const aNatural = a.name.includes('Natural') || a.name.includes('Google') || a.name.includes('Samantha') || a.name.includes('Karen') || a.name.includes('Daniel');
+        const bNatural = b.name.includes('Natural') || b.name.includes('Google') || b.name.includes('Samantha') || b.name.includes('Karen') || b.name.includes('Daniel');
+        if (aNatural && !bNatural) return -1;
+        if (!aNatural && bNatural) return 1;
+        return a.name.localeCompare(b.name);
+    });
+    
+    vs.innerHTML = voices.map(v => `<option value="${v.name}" ${v.name === state.voiceName ? 'selected' : ''}>${v.name} (${v.lang})</option>`).join('');
     if (!state.voiceName && voices.length > 0) { 
         state.voiceName = voices[0].name; 
         saveState(); 
     }
+    console.log('Selected voice:', state.voiceName);
 }
 
 // Mobile-friendly voice loading with retries
@@ -562,15 +582,20 @@ function ensureVoicesLoaded(callback, retries = 0) {
 function getSelectedVoice() {
     const voices = window.speechSynthesis.getVoices();
     if (!voices || voices.length === 0) return null;
-    return voices.find(v => v.name === state.voiceName) || voices[0];
+    // Always try to get the selected voice, fallback to first available
+    const selected = voices.find(v => v.name === state.voiceName);
+    return selected || voices[0];
 }
 
 function previewVoice() {
     if(!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const voice = getSelectedVoice();
-    const utter = new SpeechSynthesisUtterance("Continuist system check.");
-    if(voice) utter.voice = voice;
+    const utter = new SpeechSynthesisUtterance("Continuist system check. This is a voice preview.");
+    if(voice) {
+        utter.voice = voice;
+        console.log('Previewing voice:', voice.name);
+    }
     window.speechSynthesis.speak(utter);
 }
 
