@@ -100,11 +100,13 @@ let wakeLockObj = null;
 
 // Highlight System Variables
 let highlightMode = false;
-let highlightStart = null;
-let highlightEnd = null;
-let isDragging = false;
-let currentHighlightColor = '#f2c14e';
 let highlightsVisible = true;
+let userHighlights = new Map(); // Store user highlights
+let currentHighlightColor = '#f2c14e';
+let highlightCounter = 0;
+
+// Check for CSS Custom Highlight API support
+const supportsCustomHighlight = CSS.highlights && typeof Highlight === 'function';
 
 // GLOBAL FUNCTIONS
 window.togglePanel = function(id) {
@@ -135,9 +137,6 @@ window.togglePanel = function(id) {
 
 window.toggleHighlightMode = function() {
     highlightMode = !highlightMode;
-    highlightStart = null;
-    highlightEnd = null;
-    isDragging = false;
     
     document.body.classList.toggle('highlight-mode-active', highlightMode);
     
@@ -172,24 +171,56 @@ window.saveHighlight = function() {
     const note = document.getElementById('highlightNote').value.trim();
     const color = document.getElementById('highlightColorPicker').value;
     
-    // Create unique ID
-    const id = `hl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Create unique ID for this highlight
+    const highlightId = `user-highlight-${++highlightCounter}`;
     
-    // Store highlight
-    state.comments[id] = {
+    // Store highlight data
+    const highlightData = {
         text: selectedText,
         color: color,
         note: note,
         chapter: state.chapter,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        range: selection.getRangeAt(0).cloneRange()
     };
     
-    // Apply highlight to DOM
-    const range = selection.getRangeAt(0);
+    userHighlights.set(highlightId, highlightData);
+    
+    // Apply highlight using appropriate method
+    if (supportsCustomHighlight) {
+        applyHighlightWithAPI(highlightId, highlightData);
+    } else {
+        applyHighlightWithDOM(highlightId, highlightData);
+    }
+    
+    // Save to state
+    state.comments[highlightId] = highlightData;
+    saveState();
+    
+    // Close panel and reset
+    window.togglePanel(null);
+    selection.removeAllRanges();
+    document.getElementById('highlightNote').value = '';
+};
+
+function applyHighlightWithAPI(highlightId, data) {
+    // Use CSS Custom Highlight API
+    const highlight = new Highlight(data.range);
+    CSS.highlights.set(highlightId, highlight);
+    
+    // Add hover tooltip if note exists
+    if (data.note) {
+        addTooltipToHighlight(highlightId, data.note);
+    }
+}
+
+function applyHighlightWithDOM(highlightId, data) {
+    // Fallback: Use DOM manipulation
+    const range = data.range;
     const span = document.createElement('span');
     span.className = 'user-highlight';
-    span.setAttribute('data-id', id);
-    span.style.backgroundColor = color;
+    span.setAttribute('data-highlight-id', highlightId);
+    span.style.backgroundColor = data.color;
     span.style.padding = '2px 0';
     span.style.borderRadius = '3px';
     span.style.cursor = 'pointer';
@@ -205,146 +236,93 @@ window.saveHighlight = function() {
     }
     
     // Add note tooltip if exists
-    if (note) {
-        const tooltip = document.createElement('span');
-        tooltip.className = 'note-tooltip';
-        tooltip.textContent = note;
-        tooltip.style.cssText = `
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.9);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-            z-index: 1000;
-        `;
-        
-        span.appendChild(tooltip);
-        
-        span.addEventListener('mouseenter', () => {
-            tooltip.style.opacity = '1';
-        });
-        
-        span.addEventListener('mouseleave', () => {
-            tooltip.style.opacity = '0';
-        });
+    if (data.note) {
+        addTooltipToElement(span, data.note);
     }
     
-    // Add click to open color picker
+    // Add click handler to edit
     span.addEventListener('click', (e) => {
         e.stopPropagation();
-        const existingId = span.getAttribute('data-id');
-        const existing = state.comments[existingId];
-        if (existing) {
-            document.getElementById('highlightColorPicker').value = existing.color;
-            document.getElementById('highlightNote').value = existing.note || '';
+        const existingData = userHighlights.get(highlightId);
+        if (existingData) {
+            document.getElementById('highlightColorPicker').value = existingData.color;
+            document.getElementById('highlightNote').value = existingData.note || '';
             window.togglePanel('highlightPickerPanel');
         }
     });
-    
-    // Save and close
-    saveState();
-    window.togglePanel(null);
-    
-    // Clear selection and reset
-    selection.removeAllRanges();
-    document.getElementById('highlightNote').value = '';
-};
+}
 
-function applyHighlightToDOM(start, end, id, color, note) {
-    const range = document.createRange();
-    range.setStart(start, 0);
-    range.setEnd(end, end.textContent.length);
+function addTooltipToHighlight(highlightId, note) {
+    // Create a floating tooltip that follows the highlight
+    const tooltip = document.createElement('div');
+    tooltip.className = 'highlight-tooltip';
+    tooltip.textContent = note;
+    tooltip.style.cssText = `
+        position: absolute;
+        background: rgba(0,0,0,0.9);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 10000;
+    `;
     
-    const span = document.createElement('span');
-    span.className = 'user-highlight';
-    span.setAttribute('data-id', id);
-    span.style.backgroundColor = color;
-    span.style.padding = '2px 0';
-    span.style.borderRadius = '3px';
-    span.style.cursor = 'pointer';
-    span.style.position = 'relative';
+    document.body.appendChild(tooltip);
     
-    try {
-        range.surroundContents(span);
-    } catch(e) {
-        // If range can't be applied, wrap text nodes individually
-        const walker = document.createTreeWalker(
-            start.parentElement,
-            NodeFilter.SHOW_TEXT,
-            null,
-            false
-        );
-        
-        let node;
-        let inRange = false;
-        const nodes = [];
-        
-        while(node = walker.nextNode()) {
-            if (node === start) inRange = true;
-            if (inRange) nodes.push(node);
-            if (node === end) break;
-        }
-        
-        if (nodes.length > 0) {
-            const first = nodes[0];
-            const last = nodes[nodes.length - 1];
-            
-            first.parentNode.insertBefore(span, first);
-            nodes.forEach(n => span.appendChild(n));
-        }
-    }
-    
-    // Add note tooltip if exists
-    if (note) {
-        const tooltip = document.createElement('span');
-        tooltip.className = 'note-tooltip';
-        tooltip.textContent = note;
-        tooltip.style.cssText = `
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.9);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            white-space: nowrap;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s;
-            z-index: 1000;
-        `;
-        
-        span.appendChild(tooltip);
-        
-        span.addEventListener('mouseenter', () => {
-            tooltip.style.opacity = '1';
-        });
-        
-        span.addEventListener('mouseleave', () => {
-            tooltip.style.opacity = '0';
+    // Position tooltip on hover (implementation depends on API support)
+    if (supportsCustomHighlight) {
+        // For Custom Highlight API, we need to track mouse position
+        document.addEventListener('mousemove', (e) => {
+            // Check if mouse is over highlighted text
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                const highlight = userHighlights.get(highlightId);
+                if (highlight && range.intersectsNode(highlight.range.commonAncestorContainer)) {
+                    tooltip.style.left = e.pageX + 10 + 'px';
+                    tooltip.style.top = e.pageY - 30 + 'px';
+                    tooltip.style.opacity = '1';
+                } else {
+                    tooltip.style.opacity = '0';
+                }
+            }
         });
     }
+}
+
+function addTooltipToElement(element, note) {
+    const tooltip = document.createElement('span');
+    tooltip.className = 'note-tooltip';
+    tooltip.textContent = note;
+    tooltip.style.cssText = `
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.9);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 1000;
+    `;
     
-    // Add click to open color picker
-    span.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const existingId = span.getAttribute('data-id');
-        const existing = state.comments[existingId];
-        if (existing) {
-            document.getElementById('highlightColorPicker').value = existing.color;
-            document.getElementById('highlightNote').value = existing.note || '';
-            window.togglePanel('highlightPickerPanel');
-        }
+    element.appendChild(tooltip);
+    
+    element.addEventListener('mouseenter', () => {
+        tooltip.style.opacity = '1';
+    });
+    
+    element.addEventListener('mouseleave', () => {
+        tooltip.style.opacity = '0';
     });
 }
 
@@ -352,31 +330,16 @@ function loadHighlights() {
     Object.entries(state.comments).forEach(([id, data]) => {
         if (data.chapter !== state.chapter) return;
         
-        // Find and highlight the text
-        const text = data.text;
-        const walker = document.createTreeWalker(
-            document.getElementById('bookContent'),
-            NodeFilter.SHOW_TEXT,
-            null,
-            false
-        );
+        // Restore highlight data
+        userHighlights.set(id, data);
         
-        let node;
-        let found = false;
-        const nodes = [];
-        
-        while(node = walker.nextNode()) {
-            if (!found && node.textContent.includes(text.substring(0, 10))) {
-                found = true;
+        // Re-apply highlight
+        if (data.range) {
+            if (supportsCustomHighlight) {
+                applyHighlightWithAPI(id, data);
+            } else {
+                applyHighlightWithDOM(id, data);
             }
-            if (found) nodes.push(node);
-            if (nodes.join('').length >= text.length) break;
-        }
-        
-        if (nodes.length > 0) {
-            const start = nodes[0];
-            const end = nodes[nodes.length - 1];
-            applyHighlightToDOM(start, end, id, data.color, data.note);
         }
     });
 }
@@ -844,7 +807,7 @@ function setupEventListeners() {
         };
     }
 
-    // Highlight system - use normal text selection
+    // Highlight system - use normal text selection with marker-like behavior
     const area = document.getElementById('readingArea');
     if(area) {
         let selectionTimeout = null;
@@ -856,7 +819,7 @@ function setupEventListeners() {
             const selection = window.getSelection();
             const selectedText = selection.toString().trim();
             
-            if (selectedText.length > 3) {
+            if (selectedText.length > 2) {
                 // Clear previous timeout
                 if (selectionTimeout) clearTimeout(selectionTimeout);
                 
@@ -864,34 +827,33 @@ function setupEventListeners() {
                 const range = selection.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
                 
-                // Create temporary indicator
+                // Create temporary indicator that looks like a marker tip
                 const indicator = document.createElement('div');
                 indicator.style.cssText = `
                     position: fixed;
                     left: ${rect.right + 5}px;
                     top: ${rect.top}px;
-                    width: 24px;
-                    height: 24px;
-                    background: rgba(56, 225, 255, 0.9);
-                    border: 2px solid var(--reader-accent);
-                    border-radius: 50%;
+                    width: 20px;
+                    height: 20px;
+                    background: linear-gradient(45deg, ${currentHighlightColor}, ${currentHighlightColor}dd);
+                    border: 2px solid rgba(0,0,0,0.3);
+                    border-radius: 50% 50% 50% 0;
+                    transform: rotate(-45deg);
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: white;
-                    font-size: 12px;
                     z-index: 10000;
                     cursor: pointer;
-                    animation: pulse 1s infinite;
+                    animation: markerPulse 1s infinite;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
                 `;
-                indicator.innerHTML = '<i class="fas fa-highlighter"></i>';
                 document.body.appendChild(indicator);
                 
                 // Auto-open color picker after short delay
                 selectionTimeout = setTimeout(() => {
                     indicator.remove();
                     window.togglePanel('highlightPickerPanel');
-                }, 800);
+                }, 1000);
                 
                 // Click indicator to open immediately
                 indicator.addEventListener('click', () => {
@@ -910,7 +872,7 @@ function setupEventListeners() {
                 const selection = window.getSelection();
                 const selectedText = selection.toString().trim();
                 
-                if (selectedText.length > 3) {
+                if (selectedText.length > 2) {
                     window.togglePanel('highlightPickerPanel');
                 }
             }, 100);
@@ -922,7 +884,44 @@ function setupEventListeners() {
                 e.preventDefault();
             }
         });
+        
+        // Add visual feedback for highlight mode
+        area.addEventListener('mousemove', (e) => {
+            if (!highlightMode) return;
+            
+            const target = e.target;
+            if (target.nodeType === Node.TEXT_NODE && target.textContent.trim().length > 0) {
+                target.parentElement.style.backgroundColor = 'rgba(56, 225, 255, 0.05)';
+                setTimeout(() => {
+                    target.parentElement.style.backgroundColor = '';
+                }, 100);
+            }
+        });
     }
+
+    // Color picker handlers
+    const colorPicker = document.getElementById('highlightColorPicker');
+    if (colorPicker) {
+        colorPicker.onchange = (e) => {
+            currentHighlightColor = e.target.value;
+        };
+    }
+
+    // Color preset buttons
+    document.querySelectorAll('.color-preset').forEach(btn => {
+        btn.onclick = () => {
+            const color = btn.dataset.color;
+            document.getElementById('highlightColorPicker').value = color;
+            currentHighlightColor = color;
+            
+            // Update active state
+            document.querySelectorAll('.color-preset').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        };
+    });
+
+    click('saveHighlightBtn', saveHighlight);
+    click('closeComment', () => { window.togglePanel(null); });
 
     document.querySelectorAll('.color-pick').forEach(b => {
         b.onclick = () => {
@@ -932,8 +931,6 @@ function setupEventListeners() {
         };
     });
 
-    click('saveHighlightBtn', saveManualHighlight);
-    click('closeComment', () => { window.togglePanel(null); state.highlightStart = null; });
 
     const toggle = (id, key) => { 
         const el = document.getElementById(id); 
