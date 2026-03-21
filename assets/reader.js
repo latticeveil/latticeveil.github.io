@@ -146,6 +146,11 @@ window.toggleHighlightMode = function() {
         btn.classList.toggle('active', highlightMode);
         btn.innerHTML = highlightMode ? '<i class="fas fa-highlighter"></i>' : '<i class="fas fa-mouse-pointer"></i>';
     }
+    
+    // Clear any existing selection when exiting highlight mode
+    if (!highlightMode) {
+        window.getSelection().removeAllRanges();
+    }
 };
 
 window.toggleHighlights = function() {
@@ -159,7 +164,10 @@ window.toggleHighlights = function() {
 };
 
 window.saveHighlight = function() {
-    if (!highlightStart || !highlightEnd) return;
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
+    
+    if (!selection || selectedText.length === 0) return;
     
     const note = document.getElementById('highlightNote').value.trim();
     const color = document.getElementById('highlightColorPicker').value;
@@ -169,7 +177,7 @@ window.saveHighlight = function() {
     
     // Store highlight
     state.comments[id] = {
-        text: highlightStart.textContent + '...' + highlightEnd.textContent,
+        text: selectedText,
         color: color,
         note: note,
         chapter: state.chapter,
@@ -177,15 +185,76 @@ window.saveHighlight = function() {
     };
     
     // Apply highlight to DOM
-    applyHighlightToDOM(highlightStart, highlightEnd, id, color, note);
+    const range = selection.getRangeAt(0);
+    const span = document.createElement('span');
+    span.className = 'user-highlight';
+    span.setAttribute('data-id', id);
+    span.style.backgroundColor = color;
+    span.style.padding = '2px 0';
+    span.style.borderRadius = '3px';
+    span.style.cursor = 'pointer';
+    span.style.position = 'relative';
+    
+    try {
+        range.surroundContents(span);
+    } catch(e) {
+        // If range can't be applied, clone the contents
+        span.appendChild(range.cloneContents());
+        range.deleteContents();
+        range.insertNode(span);
+    }
+    
+    // Add note tooltip if exists
+    if (note) {
+        const tooltip = document.createElement('span');
+        tooltip.className = 'note-tooltip';
+        tooltip.textContent = note;
+        tooltip.style.cssText = `
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            z-index: 1000;
+        `;
+        
+        span.appendChild(tooltip);
+        
+        span.addEventListener('mouseenter', () => {
+            tooltip.style.opacity = '1';
+        });
+        
+        span.addEventListener('mouseleave', () => {
+            tooltip.style.opacity = '0';
+        });
+    }
+    
+    // Add click to open color picker
+    span.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const existingId = span.getAttribute('data-id');
+        const existing = state.comments[existingId];
+        if (existing) {
+            document.getElementById('highlightColorPicker').value = existing.color;
+            document.getElementById('highlightNote').value = existing.note || '';
+            window.togglePanel('highlightPickerPanel');
+        }
+    });
     
     // Save and close
     saveState();
     window.togglePanel(null);
     
-    // Reset
-    highlightStart = null;
-    highlightEnd = null;
+    // Clear selection and reset
+    selection.removeAllRanges();
     document.getElementById('highlightNote').value = '';
 };
 
@@ -775,90 +844,84 @@ function setupEventListeners() {
         };
     }
 
-    // Highlight Mode
-    click('highlightModeBtn', () => {
-        state.highlightMode = !state.highlightMode;
-        state.highlightStart = null;
-        document.querySelectorAll('.tap-indicator, .highlight-start-marker').forEach(el => {
-            if (el.classList.contains('tap-indicator')) el.remove();
-            else el.classList.remove('highlight-start-marker');
-        });
-        applySettings();
-    });
-
+    // Highlight system - use normal text selection
     const area = document.getElementById('readingArea');
     if(area) {
-        let isDragging = false;
-        let dragStartSpan = null;
+        let selectionTimeout = null;
         
-        area.onclick = (e) => {
-            // Don't handle clicks while dragging
-            if (isDragging) return;
+        // Handle mouseup for selection
+        area.addEventListener('mouseup', (e) => {
+            if (!highlightMode) return;
             
-            const span = e.target.closest('.read-span');
-            if (state.highlightMode && span && !state.highlightStart) {
-                handleManualHighlight(e, span);
-            } else if (!state.highlightMode) {
-                handleNoteTap(e);
-            }
-        };
-        
-        // Mouse events for drag highlighting
-        area.onmousedown = (e) => {
-            if (!state.highlightMode) return;
-            isDragging = true;
-            dragStartSpan = e.target.closest('.read-span');
-            if (dragStartSpan && !state.highlightStart) {
-                handleManualHighlight(e, dragStartSpan);
-            }
-        };
-        
-        area.onmouseup = (e) => {
-            if (!state.highlightMode) return;
-            isDragging = false;
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
             
-            // Check if we have a selection from dragging
-            const sel = window.getSelection();
-            if (sel.toString().trim().length > 5) {
-                state.tempRange = sel.getRangeAt(0).cloneRange();
-                window.togglePanel('commentPanel');
-            } else if (state.highlightStart && dragStartSpan) {
-                // Handle click-to-select second span
-                const endSpan = e.target.closest('.read-span');
-                if (endSpan && endSpan !== dragStartSpan) {
-                    handleManualHighlight(e, endSpan);
+            if (selectedText.length > 3) {
+                // Clear previous timeout
+                if (selectionTimeout) clearTimeout(selectionTimeout);
+                
+                // Show highlight indicator briefly, then open color picker
+                const range = selection.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                
+                // Create temporary indicator
+                const indicator = document.createElement('div');
+                indicator.style.cssText = `
+                    position: fixed;
+                    left: ${rect.right + 5}px;
+                    top: ${rect.top}px;
+                    width: 24px;
+                    height: 24px;
+                    background: rgba(56, 225, 255, 0.9);
+                    border: 2px solid var(--reader-accent);
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 12px;
+                    z-index: 10000;
+                    cursor: pointer;
+                    animation: pulse 1s infinite;
+                `;
+                indicator.innerHTML = '<i class="fas fa-highlighter"></i>';
+                document.body.appendChild(indicator);
+                
+                // Auto-open color picker after short delay
+                selectionTimeout = setTimeout(() => {
+                    indicator.remove();
+                    window.togglePanel('highlightPickerPanel');
+                }, 800);
+                
+                // Click indicator to open immediately
+                indicator.addEventListener('click', () => {
+                    clearTimeout(selectionTimeout);
+                    indicator.remove();
+                    window.togglePanel('highlightPickerPanel');
+                });
+            }
+        });
+        
+        // Handle touch events for mobile
+        area.addEventListener('touchend', (e) => {
+            if (!highlightMode) return;
+            
+            setTimeout(() => {
+                const selection = window.getSelection();
+                const selectedText = selection.toString().trim();
+                
+                if (selectedText.length > 3) {
+                    window.togglePanel('highlightPickerPanel');
                 }
-            }
-        };
+            }, 100);
+        });
         
-        area.onmousemove = (e) => {
-            if (!state.highlightMode || !isDragging) return;
-            // Visual feedback for dragging could be added here
-        };
-        
-        // Touch events for mobile
-        area.ontouchstart = (e) => {
-            if (!state.highlightMode) return;
-            isDragging = true;
-            const touch = e.touches[0];
-            const element = document.elementFromPoint(touch.clientX, touch.clientY);
-            dragStartSpan = element?.closest('.read-span');
-            if (dragStartSpan && !state.highlightStart) {
-                handleManualHighlight(e, dragStartSpan);
+        // Prevent selection when not in highlight mode
+        area.addEventListener('selectstart', (e) => {
+            if (!highlightMode) {
+                e.preventDefault();
             }
-        };
-        
-        area.ontouchend = (e) => {
-            if (!state.highlightMode) return;
-            isDragging = false;
-            
-            // Check if we have a selection from touch dragging
-            const sel = window.getSelection();
-            if (sel.toString().trim().length > 5) {
-                state.tempRange = sel.getRangeAt(0).cloneRange();
-                window.togglePanel('commentPanel');
-            }
-        };
+        });
     }
 
     document.querySelectorAll('.color-pick').forEach(b => {
@@ -1002,53 +1065,68 @@ function populateVoices() {
     let voices = window.speechSynthesis.getVoices();
     console.log('All available voices:', voices.map(v => `${v.name} (${v.lang}) - Local: ${v.localService}`));
     
-    // Filter for English voices but include more options
-    voices = voices.filter(v => v.lang.startsWith('en'));
-    console.log('English voices:', voices.map(v => `${v.name} (${v.lang}) - Local: ${v.localService}`));
+    // Include all voices first, then filter for English
+    console.log('Total voices available:', voices.length);
     
-    // Sort to put Siri-like voices first, then natural voices, then by name
+    // Check for Siri-like voices on all platforms
+    const siriPatterns = [
+        'Samantha', 'Karen', 'Daniel', 'Tessa', 'Moira', 'Ava', 'Eddie', 'Alex', 'Victoria', 'Fred',
+        'Monica', 'Nicky', 'Allison', 'Susan', 'Rishi', 'Amelie', 'Thomas', 'Serena'
+    ];
+    
+    // Also check for high-quality voices
+    const qualityPatterns = [
+        'Neural', 'Premium', 'Natural', 'Enhanced', 'Wavenet', 'Standard', 'Google'
+    ];
+    
+    // Sort voices by priority
     voices.sort((a, b) => {
-        // Siri voices (Apple devices)
-        const aSiri = a.name.includes('Samantha') || a.name.includes('Karen') || a.name.includes('Daniel') || a.name.includes('Tessa') || a.name.includes('Moira') || a.name.includes('Ava') || a.name.includes('Eddie');
-        const bSiri = b.name.includes('Samantha') || b.name.includes('Karen') || b.name.includes('Daniel') || b.name.includes('Tessa') || b.name.includes('Moira') || b.name.includes('Ava') || b.name.includes('Eddie');
+        // Check for Siri-like voices
+        const aSiri = siriPatterns.some(pattern => a.name.includes(pattern));
+        const bSiri = siriPatterns.some(pattern => b.name.includes(pattern));
         
-        // Google/Chrome voices
-        const aGoogle = a.name.includes('Google');
-        const bGoogle = b.name.includes('Google');
+        // Check for quality indicators
+        const aQuality = qualityPatterns.some(pattern => a.name.includes(pattern));
+        const bQuality = qualityPatterns.some(pattern => b.name.includes(pattern));
         
-        // Microsoft voices
-        const aMicrosoft = a.name.includes('Microsoft');
-        const bMicrosoft = b.name.includes('Microsoft');
-        
-        // Priority: Siri > Google > Microsoft > Natural > Others
+        // Priority: Siri-like > Quality > Local > Others
         if (aSiri && !bSiri) return -1;
         if (!aSiri && bSiri) return 1;
-        if (aGoogle && !bGoogle) return -1;
-        if (!aGoogle && bGoogle) return 1;
-        if (aMicrosoft && !bMicrosoft) return -1;
-        if (!aMicrosoft && bMicrosoft) return 1;
+        if (aQuality && !bQuality) return -1;
+        if (!aQuality && bQuality) return 1;
+        if (a.localService && !b.localService) return -1;
+        if (!a.localService && b.localService) return 1;
         
-        // Then by natural sounding indicators
-        const aNatural = a.name.includes('Natural') || a.name.includes('Premium') || a.localService;
-        const bNatural = b.name.includes('Natural') || b.name.includes('Premium') || b.localService;
-        if (aNatural && !bNatural) return -1;
-        if (!aNatural && bNatural) return 1;
+        // Then by language (English first)
+        const aEnglish = a.lang.startsWith('en');
+        const bEnglish = b.lang.startsWith('en');
+        if (aEnglish && !bEnglish) return -1;
+        if (!aEnglish && bEnglish) return 1;
         
         // Finally by name
         return a.name.localeCompare(b.name);
     });
     
+    console.log('Siri-like voices found:', voices.filter(v => siriPatterns.some(pattern => v.name.includes(pattern))).map(v => v.name));
+    
     vs.innerHTML = voices.map(v => {
-        const label = v.localService ? `${v.name} (${v.lang}) 🍎` : `${v.name} (${v.lang})`;
+        let label = v.name;
+        if (v.localService) label += ' 🍎';
+        if (siriPatterns.some(pattern => v.name.includes(pattern))) label += ' ✨';
+        if (qualityPatterns.some(pattern => v.name.includes(pattern))) label += ' �';
+        label += ` (${v.lang})`;
+        
         return `<option value="${v.name}" ${v.name === state.voiceName ? 'selected' : ''}>${label}</option>`;
     }).join('');
     
-    if (!state.voiceName && voices.length > 0) { 
-        state.voiceName = voices[0].name; 
-        saveState(); 
+    // Auto-select best voice if none selected
+    if (!state.voiceName && voices.length > 0) {
+        // Try to find a Siri-like voice first
+        const siriVoice = voices.find(v => siriPatterns.some(pattern => v.name.includes(pattern)));
+        state.voiceName = siriVoice ? siriVoice.name : voices[0].name;
+        saveState();
     }
     console.log('Selected voice:', state.voiceName);
-    console.log('Siri-like voices available:', voices.filter(v => v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Daniel')).map(v => v.name));
 }
 
 // Mobile-friendly voice loading with retries
