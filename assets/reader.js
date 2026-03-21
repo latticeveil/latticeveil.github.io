@@ -277,6 +277,16 @@ function setupEventListeners() {
     click('settingsBtn', () => window.togglePanel('settingsPanel'));
     click('helpBtn', () => window.togglePanel('helpPanel'));
     document.querySelectorAll('.close-btn').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
+    document.querySelectorAll('.settings-close').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
+
+    document.querySelectorAll('.panel-overlay').forEach(overlay => {
+        overlay.addEventListener('mousedown', (e) => {
+            if (e.target === overlay) window.togglePanel(null);
+        });
+        overlay.addEventListener('touchstart', (e) => {
+            if (e.target === overlay) window.togglePanel(null);
+        }, { passive: true });
+    });
 
     click('ttsBtn', toggleReading);
     click('previewVoiceBtn', previewVoice);

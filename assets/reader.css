@@ -94,9 +94,34 @@ body {
     height: 80vh; max-height: 600px;
     border-radius: 16px;
     display: flex; flex-direction: column;
+    position: relative;
     overflow: hidden;
     box-shadow: 0 30px 60px rgba(0,0,0,0.8);
 }
+
+ .settings-close {
+     position: absolute;
+     top: 8px;
+     right: 8px;
+     width: 44px;
+     height: 44px;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     border-radius: 12px;
+     background: rgba(0,0,0,0.55);
+     border: 1px solid var(--reader-accent);
+     color: var(--reader-accent);
+     cursor: pointer;
+     font-size: 32px;
+     line-height: 1;
+     padding: 0;
+     z-index: 5000;
+ }
+
+ .settings-close:hover {
+     background: rgba(56, 225, 255, 0.2);
+ }
 
 .settings-tab-bar {
     display: flex;
