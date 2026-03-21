@@ -116,18 +116,20 @@ body {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    background: none !important;
-    border: none !important;
+    background: rgba(255,255,255,0.1) !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
     color: var(--reader-accent) !important;
     cursor: pointer !important;
     font-size: 1.4rem !important;
     line-height: 1 !important;
     padding: 0 !important;
-    z-index: 10 !important;
+    z-index: 1000 !important;
+    border-radius: 0 0 0 8px !important;
 }
 
 .settings-tab-bar .close-btn:hover {
-    background: rgba(255,255,255,0.1) !important;
+    background: rgba(255,255,255,0.2) !important;
+    border-color: var(--reader-accent) !important;
 }
 
  .panel-header {
