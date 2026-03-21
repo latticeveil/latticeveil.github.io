@@ -104,32 +104,31 @@ body {
     border-bottom: 1px solid rgba(255,255,255,0.1);
     width: 100%;
     position: relative;
-    padding-right: 44px;
 }
 
 .settings-tab-bar .close-btn {
     position: absolute !important;
     top: 0 !important;
     right: 0 !important;
-    width: 44px !important;
-    height: 44px !important;
+    width: 50px !important;
+    height: 100% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    background: rgba(255,255,255,0.1) !important;
-    border: 1px solid rgba(255,255,255,0.2) !important;
+    background: rgba(255,255,255,0.2) !important;
+    border: 1px solid var(--reader-accent) !important;
     color: var(--reader-accent) !important;
     cursor: pointer !important;
-    font-size: 1.4rem !important;
+    font-size: 1.5rem !important;
+    font-weight: bold !important;
     line-height: 1 !important;
     padding: 0 !important;
-    z-index: 1000 !important;
-    border-radius: 0 0 0 8px !important;
+    z-index: 9999 !important;
 }
 
 .settings-tab-bar .close-btn:hover {
-    background: rgba(255,255,255,0.2) !important;
-    border-color: var(--reader-accent) !important;
+    background: var(--reader-accent) !important;
+    color: #000 !important;
 }
 
  .panel-header {
