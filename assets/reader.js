@@ -102,12 +102,14 @@ window.togglePanel = function(id) {
         
         // Update URL state
         const url = new URL(window.location);
+        url.searchParams.set('chapter', state.chapter);
         if (id === 'settingsPanel') url.searchParams.set('settings', '1');
         else if (id === 'helpPanel') url.searchParams.set('help', '1');
         else { url.searchParams.delete('settings'); url.searchParams.delete('help'); }
         window.history.pushState({}, '', url);
     } else {
         const url = new URL(window.location);
+        url.searchParams.set('chapter', state.chapter);
         url.searchParams.delete('settings');
         url.searchParams.delete('help');
         window.history.pushState({}, '', url);
@@ -276,6 +278,7 @@ function setupEventListeners() {
 
     click('settingsBtn', () => window.togglePanel('settingsPanel'));
     click('helpBtn', () => window.togglePanel('helpPanel'));
+    click('settingsCloseBtn', () => window.togglePanel(null));
     document.querySelectorAll('.close-btn').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
     document.querySelectorAll('.settings-close').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
 
