@@ -51,7 +51,8 @@ const storageMap = {
     zoomLocked: 'reader_zoom_locked',
     selectedColor: 'reader_selected_color',
     ttsPaused: 'reader_tts_paused',
-    ttsSpanId: 'reader_tts_span'
+    ttsSpanId: 'reader_tts_span',
+    readAlongActive: 'reader_read_along_active'
 };
 
 function loadPersistentState() {
@@ -217,7 +218,7 @@ function applySettings() {
     setCheck('wakeLockToggle', state.wakeLock);
     setCheck('toggleLore', state.showLore);
     setCheck('toggleHighlight', state.showUserHighlights);
-    setCheck('toggleReadAlong', state.showHighlight);
+    setCheck('toggleReadAlong', state.readAlongActive);
     
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === state.theme));
     document.querySelectorAll('.btn-toggle[data-align]').forEach(b => b.classList.toggle('active', b.dataset.align === state.textAlign));
@@ -261,7 +262,7 @@ function setupEventListeners() {
     click('tempoReset', () => { state.tempo = 250; saveState(); applySettings(); });
     click('defaultAllBtn', () => {
         if(confirm("Restore all reader settings to defaults?")) {
-            Object.assign(state, { theme: 'theme-oled', font: 'font-serif', zoom: 1.0, lineHeight: 1.6, letterSpacing: 0, paraSpacing: 1.5, pageWidth: 700, textAlign: 'justify', highContrast: false, focusMode: false, tempo: 250, showLore: true, showHighlight: true });
+            Object.assign(state, { theme: 'theme-oled', font: 'font-serif', zoom: 1.0, lineHeight: 1.6, letterSpacing: 0, paraSpacing: 1.5, pageWidth: 700, textAlign: 'justify', highContrast: false, focusMode: false, tempo: 250, showLore: true, showHighlight: true, readAlongActive: false });
             saveState(); applySettings();
         }
     });
@@ -413,12 +414,22 @@ function setupEventListeners() {
     click('saveHighlightBtn', saveManualHighlight);
     click('closeComment', () => { window.togglePanel(null); state.highlightStart = null; });
 
-    const toggle = (id, key) => { const el = document.getElementById(id); if(el) el.onchange = (e) => { state[key] = e.target.checked; saveState(); applySettings(); }; };
+    const toggle = (id, key) => { 
+        const el = document.getElementById(id); 
+        if(el) el.onchange = (e) => { 
+            state[key] = e.target.checked; 
+            // If toggling readAlongActive off, stop reading
+            if (key === 'readAlongActive' && !state[key]) {
+                stopReading();
+            }
+            saveState(); applySettings(); 
+        }; 
+    };
     toggle('contrastToggle', 'highContrast');
     toggle('focusModeToggle', 'focusMode');
     toggle('toggleLore', 'showLore');
     toggle('toggleHighlight', 'showUserHighlights');
-    toggle('toggleReadAlong', 'showHighlight');
+    toggle('toggleReadAlong', 'readAlongActive');
     
     const wake = document.getElementById('wakeLockToggle');
     if(wake) wake.onchange = toggleWakeLock;
