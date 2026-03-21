@@ -54,12 +54,17 @@ function loadPersistentState() {
             if (val !== null) {
                 if (val === 'true') state[key] = true;
                 else if (val === 'false') state[key] = false;
-                else if (!isNaN(val) && val !== "") state[key] = parseFloat(val);
-                else state[key] = val;
+                else if (!isNaN(val) && val !== "" && key !== 'theme' && key !== 'font' && key !== 'textAlign' && key !== 'voiceName') {
+                    state[key] = parseFloat(val);
+                } else {
+                    state[key] = val;
+                }
             }
         });
         const savedComments = localStorage.getItem('reader_comments');
-        if (savedComments) state.comments = JSON.parse(savedComments);
+        if (savedComments) {
+            try { state.comments = JSON.parse(savedComments); } catch(e) { state.comments = {}; }
+        }
     } catch (e) { console.warn("Storage load error", e); }
 }
 
@@ -87,18 +92,27 @@ const loreData = {
 
 let wakeLockObj = null;
 
+// Initialization
 document.addEventListener('DOMContentLoaded', () => {
-    loadPersistentState();
-    prepareTextForReading();
-    // Setup listeners FIRST so buttons are alive even if applySettings stutters
-    setupEventListeners(); 
-    applySettings();
-    setupLoreLinks();
+    // 1. ATTACH LISTENERS FIRST (Crucial for robustness)
+    try { setupEventListeners(); } catch(e) { console.error("Listener setup failed", e); }
     
+    // 2. LOAD DATA
+    loadPersistentState();
+    
+    // 3. PREPARE UI
+    try { prepareTextForReading(); } catch(e) { console.error("Text prep failed", e); }
+    try { applySettings(); } catch(e) { console.error("Initial apply settings failed", e); }
+    try { setupLoreLinks(); } catch(e) { console.error("Lore setup failed", e); }
+    
+    // 4. CHAPTER SYNC
     const urlParams = new URLSearchParams(window.location.search);
     const chParam = urlParams.get('chapter');
-    if (chParam) switchChapter(parseInt(chParam), false);
-    else switchChapter(1, true); // Force ?chapter=1
+    if (chParam) {
+        switchChapter(parseInt(chParam), false);
+    } else {
+        switchChapter(1, true); // Force ?chapter=1
+    }
 
     if (window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = populateVoices;
@@ -158,6 +172,18 @@ function applySettings() {
     if (hb) {
         hb.classList.toggle('active', state.highlightMode);
         body.classList.toggle('highlight-mode-active', state.highlightMode);
+    }
+    
+    const lb = document.getElementById('lockBtn');
+    if(lb) {
+        lb.innerHTML = state.zoomLocked ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>';
+        lb.classList.toggle('active', state.zoomLocked);
+    }
+
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+        if (state.zoomLocked) viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+        else viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
     }
 }
 
@@ -349,9 +375,9 @@ function setupLoreLinks() {
 }
 
 function showLore(title, data) {
-    document.getElementById('loreTitle').innerText = title;
-    document.getElementById('loreRole').innerText = data.role;
-    document.getElementById('loreDesc').innerText = data.desc;
+    const t = document.getElementById('loreTitle'); if(t) t.innerText = title;
+    const r = document.getElementById('loreRole'); if(r) r.innerText = data.role;
+    const d = document.getElementById('loreDesc'); if(d) d.innerText = data.desc;
     const img = document.getElementById('loreImg');
     if (img) { if (data.img) { img.src = data.img; img.style.display = 'block'; } else img.style.display = 'none'; }
     togglePanel('lorePanel');

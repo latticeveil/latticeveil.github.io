@@ -60,6 +60,11 @@
             <a href="./veilnet/logout/" class="dropdown-item">
                 <span>Log Out</span>
             </a>
+            <div class="dropdown-divider"></div>
+            <button onclick="fullResetSite()" class="dropdown-item" style="color: #ff4d4d; width: 100%; text-align: left; background: none; border: none; font-family: inherit; cursor: pointer; padding: 10px 15px;">
+                <i class="fas fa-trash-alt" style="margin-right: 8px;"></i>
+                <span>HARD RESET SITE</span>
+            </button>
         </div>
     </div>
 
@@ -2086,6 +2091,14 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 closeDropdown();
             });
         });
+
+        function fullResetSite() {
+            if (confirm("THIS WILL DELETE ALL SAVED TABS, READER SETTINGS, AND PERSONAL NOTES.\n\nAre you sure you want to perform a FULL RESET?")) {
+                localStorage.clear();
+                sessionStorage.clear();
+                window.location.href = window.location.pathname; // Reload without query params
+            }
+        }
     </script>
 
 </body>
