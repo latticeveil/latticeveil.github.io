@@ -227,7 +227,16 @@
         <div class="settings-panel" style="max-width: 400px;">
             <div class="panel-header" style="padding:15px 20px;"><span class="panel-title">SAVE HIGHLIGHT</span><button class="close-btn" onclick="window.togglePanel(null)" style="background:none; border:none; color:var(--reader-accent); cursor:pointer;">&times;</button></div>
             <div class="panel-body" style="padding:20px;">
-                <div style="display:flex; gap:10px; margin-bottom:20px;"><button class="theme-btn color-pick active" data-color="rgba(242, 193, 78, 0.4)" style="background:#f2c14e;"></button><button class="theme-btn color-pick" data-color="rgba(56, 225, 255, 0.4)" style="background:#38e1ff;"></button><button class="theme-btn color-pick" data-color="rgba(77, 255, 136, 0.4)" style="background:#4dff88;"></button></div>
+                <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+                    <button class="theme-btn color-pick active" data-color="rgba(242, 193, 78, 0.4)" style="background:#f2c14e;" title="Gold"></button>
+                    <button class="theme-btn color-pick" data-color="rgba(56, 225, 255, 0.4)" style="background:#38e1ff;" title="Cyan"></button>
+                    <button class="theme-btn color-pick" data-color="rgba(77, 255, 136, 0.4)" style="background:#4dff88;" title="Green"></button>
+                    <button class="theme-btn color-pick" data-color="rgba(255, 107, 107, 0.4)" style="background:#ff6b6b;" title="Red"></button>
+                    <button class="theme-btn color-pick" data-color="rgba(167, 139, 250, 0.4)" style="background:#a78bfa;" title="Purple"></button>
+                    <button class="theme-btn color-pick" data-color="rgba(255, 159, 67, 0.4)" style="background:#ff9f43;" title="Orange"></button>
+                    <button class="theme-btn color-pick" data-color="rgba(255, 255, 255, 0.3)" style="background:#ffffff;" title="White"></button>
+                    <button class="theme-btn color-pick" data-color="rgba(0, 255, 255, 0.3)" style="background:#00ffff;" title="Aqua"></button>
+                </div>
                 <textarea id="commentInput" style="width:100%; height:80px; background:rgba(255,255,255,0.05); color:white; border:1px solid var(--reader-accent); padding:10px; border-radius:4px; font-family:inherit; margin-bottom:15px;" placeholder="Optional note..."></textarea>
                 <button class="btn-toggle active" id="saveHighlightBtn" style="width:100%; height:40px;">SAVE</button>
             </div>
