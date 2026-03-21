@@ -19,9 +19,6 @@ const state = {
     showHighlight: true,
     showUserHighlights: true,
     zoomLocked: false,
-    highlightMode: false,
-    highlightStart: null,
-    selectedColor: 'rgba(242, 193, 78, 0.4)',
     wakeLock: false,
     speaking: false,
     readAlongActive: false,
@@ -49,7 +46,6 @@ const storageMap = {
     showHighlight: 'reader_show_highlight',
     showUserHighlights: 'reader_show_user_highlights',
     zoomLocked: 'reader_zoom_locked',
-    selectedColor: 'reader_selected_color',
     ttsPaused: 'reader_tts_paused',
     ttsSpanId: 'reader_tts_span',
     readAlongActive: 'reader_read_along_active'
@@ -98,14 +94,403 @@ const loreData = {
 
 let wakeLockObj = null;
 
-// Highlight System Variables
-let highlightMode = false;
-let highlightsVisible = true;
-let currentHighlightColor = '#f2c14e';
-let highlightCounter = 0;
-let isSelecting = false;
-let selectionStartX = 0;
-let selectionStartY = 0;
+// New Text-Offset-Based Highlight System
+let currentSelection = null;
+let currentRange = null;
+let highlights = [];
+let highlightToolbar = null;
+let noteModal = null;
+let pendingHighlightData = null;
+
+// Text Offset Calculation Functions
+function getTextOffsets(range) {
+    const container = document.getElementById('bookContent');
+    if (!container) return null;
+    
+    const treeWalker = document.createTreeWalker(
+        container,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+    
+    let startOffset = 0;
+    let endOffset = 0;
+    let currentOffset = 0;
+    let foundStart = false;
+    let foundEnd = false;
+    
+    const startContainer = range.startContainer;
+    const endContainer = range.endContainer;
+    
+    while (treeWalker.nextNode()) {
+        const node = treeWalker.currentNode;
+        const nodeLength = node.textContent.length;
+        
+        // Check if this node contains the start of our range
+        if (!foundStart && (node === startContainer || node.contains(startContainer))) {
+            if (node === startContainer) {
+                startOffset = currentOffset + range.startOffset;
+            } else {
+                // Find the exact text node within this container
+                startOffset = currentOffset + getTextOffsetInNode(startContainer, range.startOffset);
+            }
+            foundStart = true;
+        }
+        
+        // Check if this node contains the end of our range
+        if (!foundEnd && (node === endContainer || node.contains(endContainer))) {
+            if (node === endContainer) {
+                endOffset = currentOffset + range.endOffset;
+            } else {
+                // Find the exact text node within this container
+                endOffset = currentOffset + getTextOffsetInNode(endContainer, range.endOffset);
+            }
+            foundEnd = true;
+        }
+        
+        currentOffset += nodeLength;
+        
+        // If we've found both start and end, we can stop
+        if (foundStart && foundEnd) {
+            break;
+        }
+    }
+    
+    return { start: startOffset, end: endOffset };
+}
+
+function getTextOffsetInNode(targetNode, offset) {
+    let totalOffset = 0;
+    let walker = document.createTreeWalker(
+        targetNode.parentNode || targetNode,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+    
+    while (walker.nextNode()) {
+        const node = walker.currentNode;
+        if (node === targetNode) {
+            return totalOffset + offset;
+        }
+        totalOffset += node.textContent.length;
+    }
+    
+    return totalOffset;
+}
+
+function createRangeFromOffsets(startOffset, endOffset) {
+    const container = document.getElementById('bookContent');
+    if (!container) return null;
+    
+    const treeWalker = document.createTreeWalker(
+        container,
+        NodeFilter.SHOW_TEXT,
+        null,
+        false
+    );
+    
+    let currentOffset = 0;
+    let startNode = null;
+    let startNodeOffset = 0;
+    let endNode = null;
+    let endNodeOffset = 0;
+    
+    while (treeWalker.nextNode()) {
+        const node = treeWalker.currentNode;
+        const nodeLength = node.textContent.length;
+        
+        // Find start node
+        if (!startNode && currentOffset + nodeLength >= startOffset) {
+            startNode = node;
+            startNodeOffset = startOffset - currentOffset;
+        }
+        
+        // Find end node
+        if (!endNode && currentOffset + nodeLength >= endOffset) {
+            endNode = node;
+            endNodeOffset = endOffset - currentOffset;
+        }
+        
+        currentOffset += nodeLength;
+        
+        // If we've found both nodes, we can stop
+        if (startNode && endNode) {
+            break;
+        }
+    }
+    
+    if (!startNode || !endNode) return null;
+    
+    const range = document.createRange();
+    range.setStart(startNode, startNodeOffset);
+    range.setEnd(endNode, endNodeOffset);
+    
+    return range;
+}
+
+// Highlight Storage Functions
+function loadHighlights() {
+    try {
+        const stored = localStorage.getItem('reader_highlights_v2');
+        if (stored) {
+            highlights = JSON.parse(stored);
+        }
+    } catch (e) {
+        console.warn('Failed to load highlights:', e);
+        highlights = [];
+    }
+}
+
+function saveHighlights() {
+    try {
+        localStorage.setItem('reader_highlights_v2', JSON.stringify(highlights));
+    } catch (e) {
+        console.warn('Failed to save highlights:', e);
+    }
+}
+
+function getCurrentChapter() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('chapter') || '1';
+}
+
+function addHighlight(startOffset, endOffset, color, note = '') {
+    const chapter = getCurrentChapter();
+    const highlight = {
+        id: crypto.randomUUID(),
+        chapter: chapter,
+        start: startOffset,
+        end: endOffset,
+        color: color,
+        note: note,
+        timestamp: new Date().toISOString()
+    };
+    
+    highlights.push(highlight);
+    saveHighlights();
+    renderHighlight(highlight);
+    return highlight;
+}
+
+function removeHighlight(highlightId) {
+    highlights = highlights.filter(h => h.id !== highlightId);
+    saveHighlights();
+    removeHighlightElement(highlightId);
+}
+
+function renderHighlight(highlight) {
+    const range = createRangeFromOffsets(highlight.start, highlight.end);
+    if (!range) return;
+    
+    const span = document.createElement('span');
+    span.className = 'highlight';
+    span.setAttribute('data-highlight-id', highlight.id);
+    span.style.backgroundColor = highlight.color;
+    
+    if (highlight.note) {
+        span.setAttribute('data-note', highlight.note);
+        span.classList.add('has-note');
+    }
+    
+    // Add click handler for note display
+    span.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showHighlightNote(highlight, e.target);
+    });
+    
+    try {
+        range.surroundContents(span);
+    } catch (e) {
+        console.warn('Failed to surround contents with highlight:', e);
+    }
+}
+
+function removeHighlightElement(highlightId) {
+    const element = document.querySelector(`[data-highlight-id="${highlightId}"]`);
+    if (element) {
+        const parent = element.parentNode;
+        while (element.firstChild) {
+            parent.insertBefore(element.firstChild, element);
+        }
+        parent.removeChild(element);
+    }
+}
+
+function renderAllHighlights() {
+    const chapter = getCurrentChapter();
+    const chapterHighlights = highlights.filter(h => h.chapter === chapter);
+    
+    chapterHighlights.forEach(highlight => {
+        renderHighlight(highlight);
+    });
+}
+
+function clearAllHighlights() {
+    document.querySelectorAll('.highlight').forEach(element => {
+        const highlightId = element.getAttribute('data-highlight-id');
+        if (highlightId) {
+            removeHighlightElement(highlightId);
+        }
+    });
+}
+
+// Selection and Toolbar Functions
+function handleSelectionChange() {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) return;
+    
+    const range = selection.getRangeAt(0);
+    const selectedText = selection.toString().trim();
+    
+    if (selectedText.length > 0) {
+        currentSelection = selection;
+        currentRange = range;
+        showHighlightToolbar(range);
+    } else {
+        hideHighlightToolbar();
+    }
+}
+
+function showHighlightToolbar(range) {
+    if (!highlightToolbar) {
+        highlightToolbar = document.getElementById('highlightToolbar');
+    }
+    
+    if (!highlightToolbar) return;
+    
+    // Get selection coordinates
+    const rect = range.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    
+    // Position toolbar above the selection
+    let top = rect.top + scrollTop - 50;
+    let left = rect.left + scrollLeft + (rect.width / 2) - 100; // Center the toolbar
+    
+    // Keep toolbar within viewport
+    if (top < 10) top = rect.bottom + scrollTop + 10;
+    if (left < 10) left = 10;
+    if (left + 200 > window.innerWidth) left = window.innerWidth - 210;
+    
+    highlightToolbar.style.top = top + 'px';
+    highlightToolbar.style.left = left + 'px';
+    highlightToolbar.style.display = 'block';
+    
+    // Auto-hide after 5 seconds if no interaction
+    setTimeout(() => {
+        if (highlightToolbar && highlightToolbar.style.display === 'block') {
+            hideHighlightToolbar();
+        }
+    }, 5000);
+}
+
+function hideHighlightToolbar() {
+    if (highlightToolbar) {
+        highlightToolbar.style.display = 'none';
+    }
+    currentSelection = null;
+    currentRange = null;
+}
+
+function createHighlightWithColor(color) {
+    if (!currentRange) return;
+    
+    const offsets = getTextOffsets(currentRange);
+    if (!offsets) return;
+    
+    hideHighlightToolbar();
+    
+    // Store pending data for potential note
+    pendingHighlightData = {
+        start: offsets.start,
+        end: offsets.end,
+        color: color
+    };
+    
+    // Create highlight immediately
+    addHighlight(offsets.start, offsets.end, color);
+    
+    // Clear selection
+    window.getSelection().removeAllRanges();
+}
+
+function showNoteModal() {
+    if (!noteModal) {
+        noteModal = document.getElementById('noteModal');
+    }
+    if (!noteModal || !pendingHighlightData) return;
+    
+    noteModal.style.display = 'flex';
+    document.getElementById('noteInput').value = '';
+    document.getElementById('noteInput').focus();
+}
+
+function hideNoteModal() {
+    if (noteModal) {
+        noteModal.style.display = 'none';
+    }
+    pendingHighlightData = null;
+}
+
+function saveNote() {
+    if (!pendingHighlightData) return;
+    
+    const noteText = document.getElementById('noteInput').value.trim();
+    
+    // Remove the temporary highlight and create one with note
+    const tempHighlights = highlights.filter(h => 
+        h.start === pendingHighlightData.start && 
+        h.end === pendingHighlightData.end &&
+        !h.note
+    );
+    
+    tempHighlights.forEach(h => removeHighlight(h.id));
+    
+    // Create highlight with note
+    addHighlight(
+        pendingHighlightData.start,
+        pendingHighlightData.end,
+        pendingHighlightData.color,
+        noteText
+    );
+    
+    hideNoteModal();
+}
+
+function showHighlightNote(highlight, element) {
+    if (!highlight.note) return;
+    
+    // Remove existing tooltips
+    document.querySelectorAll('.note-tooltip').forEach(t => t.remove());
+    
+    const tooltip = document.createElement('div');
+    tooltip.className = 'note-tooltip';
+    tooltip.textContent = highlight.note;
+    
+    document.body.appendChild(tooltip);
+    
+    const rect = element.getBoundingClientRect();
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+    
+    tooltip.style.top = (rect.bottom + scrollTop + 5) + 'px';
+    tooltip.style.left = (rect.left + scrollLeft) + 'px';
+    
+    // Auto-hide after 3 seconds or on click
+    setTimeout(() => {
+        if (tooltip.parentNode) {
+            tooltip.parentNode.removeChild(tooltip);
+        }
+    }, 3000);
+    
+    tooltip.addEventListener('click', () => {
+        if (tooltip.parentNode) {
+            tooltip.parentNode.removeChild(tooltip);
+        }
+    });
+}
 
 // GLOBAL FUNCTIONS
 window.togglePanel = function(id) {
@@ -135,159 +520,34 @@ window.togglePanel = function(id) {
 };
 
 window.toggleHighlightMode = function() {
-    highlightMode = !highlightMode;
-    console.log('Highlight mode toggled:', highlightMode);
-    
-    document.body.classList.toggle('highlight-mode-active', highlightMode);
-    
-    const btn = document.getElementById('highlightModeBtn');
-    if(btn) {
-        btn.classList.toggle('active', highlightMode);
-        btn.innerHTML = highlightMode ? '<i class="fas fa-highlighter"></i>' : '<i class="fas fa-mouse-pointer"></i>';
-        console.log('Button updated, active:', highlightMode);
-    } else {
-        console.error('Highlight mode button not found!');
-    }
-    
-    // Clear any existing selection when exiting highlight mode
-    if (!highlightMode) {
-        window.getSelection().removeAllRanges();
-    }
+    // New system doesn't need manual mode - highlights work automatically
+    console.log('Highlight mode is now automatic - just select text!');
 };
 
 window.toggleHighlights = function() {
-    highlightsVisible = !highlightsVisible;
-    document.body.classList.toggle('hide-highlights', !highlightsVisible);
+    const body = document.body;
+    const isHidden = body.classList.contains('hide-highlights');
+    
+    if (isHidden) {
+        body.classList.remove('hide-highlights');
+        renderAllHighlights();
+    } else {
+        body.classList.add('hide-highlights');
+        clearAllHighlights();
+    }
     
     const btn = document.getElementById('toggleHighlightsBtn');
     if(btn) {
-        btn.innerHTML = highlightsVisible ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
+        btn.innerHTML = isHidden ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
     }
 };
 
 window.saveHighlight = function() {
-    const selection = window.getSelection();
-    const selectedText = selection.toString().trim();
-    
-    if (!selection || selectedText.length === 0) return;
-    
-    const note = document.getElementById('highlightNote').value.trim();
-    const color = document.getElementById('highlightColorPicker').value;
-    
-    // Create unique ID for this highlight
-    const highlightId = `user-highlight-${++highlightCounter}`;
-    
-    // Store highlight data
-    const highlightData = {
-        text: selectedText,
-        color: color,
-        note: note,
-        chapter: state.chapter,
-        timestamp: new Date().toISOString()
-    };
-    
-    // Apply highlight using DOM method (works everywhere)
-    applyHighlightWithDOM(highlightId, highlightData, selection.getRangeAt(0));
-    
-    // Save to state
-    state.comments[highlightId] = highlightData;
-    saveState();
-    
-    // Close panel and reset
-    window.togglePanel(null);
-    selection.removeAllRanges();
-    document.getElementById('highlightNote').value = '';
+    // Old function - replaced by new offset-based system
+    console.log('Old saveHighlight called - use new text selection system');
 };
 
-function applyHighlightWithDOM(highlightId, data, range) {
-    // Create highlight span
-    const span = document.createElement('span');
-    span.className = 'user-highlight';
-    span.setAttribute('data-highlight-id', highlightId);
-    span.style.backgroundColor = data.color;
-    span.style.padding = '2px 0';
-    span.style.borderRadius = '2px';
-    span.style.cursor = 'pointer';
-    span.style.position = 'relative';
-    span.style.transition = 'all 0.2s ease';
-    
-    try {
-        // Try to surround the range
-        range.surroundContents(span);
-    } catch(e) {
-        // If that fails, extract contents and wrap
-        const contents = range.extractContents();
-        span.appendChild(contents);
-        range.insertNode(span);
-    }
-    
-    // Add note tooltip if exists
-    if (data.note) {
-        addTooltipToElement(span, data.note);
-    }
-    
-    // Add click handler to edit
-    span.addEventListener('click', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        const existingData = state.comments[highlightId];
-        if (existingData) {
-            document.getElementById('highlightColorPicker').value = existingData.color;
-            document.getElementById('highlightNote').value = existingData.note || '';
-            window.togglePanel('highlightPickerPanel');
-        }
-    });
-    
-    // Add hover effects
-    span.addEventListener('mouseenter', () => {
-        span.style.filter = 'brightness(1.2)';
-        span.style.transform = 'translateY(-1px)';
-    });
-    
-    span.addEventListener('mouseleave', () => {
-        span.style.filter = 'brightness(1)';
-        span.style.transform = 'translateY(0)';
-    });
-}
-
-function addTooltipToElement(element, note) {
-    const tooltip = document.createElement('span');
-    tooltip.className = 'note-tooltip';
-    tooltip.textContent = note;
-    tooltip.style.cssText = `
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.9);
-        color: white;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-size: 0.75rem;
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.3s ease;
-        z-index: 1000;
-        margin-bottom: 5px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    `;
-    
-    element.appendChild(tooltip);
-    
-    element.addEventListener('mouseenter', () => {
-        tooltip.style.opacity = '1';
-    });
-    
-    element.addEventListener('mouseleave', () => {
-        tooltip.style.opacity = '0';
-    });
-}
-
-function loadHighlights() {
-    // This will be implemented to restore highlights from state
-    // For now, highlights are stored but not restored on page load
-}
+// Old DOM-based functions removed - replaced by offset-based system
 
 window.downloadEbook = function(format) {
     const bookContent = document.getElementById('bookContent');
@@ -562,6 +822,11 @@ window.switchChapter = function(num, autoScroll = true) {
             window.scrollTo(0, savedScroll);
         }
     }
+    
+    // Clear existing highlights and render new chapter highlights
+    clearAllHighlights();
+    renderAllHighlights();
+    
     applySettings();
 };
 
@@ -752,146 +1017,62 @@ function setupEventListeners() {
         };
     }
 
-    // Highlight system - professional drag selection
-    const area = document.getElementById('readingArea');
-    if(area) {
-        let selectionTimer = null;
-        
-        // Track selection changes
-        document.addEventListener('selectionchange', () => {
-            if (!highlightMode) return;
-            
-            const selection = window.getSelection();
-            const selectedText = selection.toString().trim();
-            
-            console.log('Selection changed:', selectedText.length, 'characters:', selectedText.substring(0, 50));
-            
-            if (selectedText.length > 1 && selectionTimer === null) {
-                console.log('Showing highlight indicator');
-                // Show highlight indicator after selection
-                const range = selection.getRangeAt(0);
-                const rect = range.getBoundingClientRect();
-                
-                // Create highlight indicator
-                const indicator = document.createElement('div');
-                indicator.id = 'highlight-indicator';
-                indicator.style.cssText = `
-                    position: fixed;
-                    left: ${rect.right + 8}px;
-                    top: ${rect.top}px;
-                    width: 24px;
-                    height: 24px;
-                    background: ${currentHighlightColor};
-                    border: 2px solid rgba(0,0,0,0.3);
-                    border-radius: 50%;
-                    cursor: pointer;
-                    z-index: 10000;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    animation: highlightPulse 1.5s infinite;
-                    box-shadow: 0 3px 12px rgba(0,0,0,0.2);
-                    transition: transform 0.2s ease;
-                `;
-                indicator.innerHTML = '<i class="fas fa-palette" style="color: white; font-size: 12px;"></i>';
-                document.body.appendChild(indicator);
-                
-                // Auto-open color picker after delay
-                selectionTimer = setTimeout(() => {
-                    const existingIndicator = document.getElementById('highlight-indicator');
-                    if (existingIndicator) {
-                        existingIndicator.remove();
-                    }
-                    window.togglePanel('highlightPickerPanel');
-                    selectionTimer = null;
-                }, 2000);
-                
-                // Click to open immediately
-                indicator.addEventListener('click', () => {
-                    if (selectionTimer) {
-                        clearTimeout(selectionTimer);
-                        selectionTimer = null;
-                    }
-                    indicator.remove();
-                    window.togglePanel('highlightPickerPanel');
-                });
-                
-                // Hover effect
-                indicator.addEventListener('mouseenter', () => {
-                    indicator.style.transform = 'scale(1.1)';
-                });
-                
-                indicator.addEventListener('mouseleave', () => {
-                    indicator.style.transform = 'scale(1)';
-                });
-            } else if (selectedText.length === 0) {
-                console.log('Clearing highlight indicator');
-                // Clear indicator if selection is cleared
-                const existingIndicator = document.getElementById('highlight-indicator');
-                if (existingIndicator) {
-                    existingIndicator.remove();
-                }
-                if (selectionTimer) {
-                    clearTimeout(selectionTimer);
-                    selectionTimer = null;
-                }
-            }
-        });
-        
-        // Prevent selection when not in highlight mode
-        area.addEventListener('mousedown', (e) => {
-            if (!highlightMode) {
-                e.preventDefault();
-                return;
-            }
-        });
-        
-        area.addEventListener('selectstart', (e) => {
-            if (!highlightMode) {
-                e.preventDefault();
-                return;
-            }
-        });
-        
-        // Touch support for mobile
-        area.addEventListener('touchstart', (e) => {
-            if (!highlightMode) {
-                e.preventDefault();
-                return;
-            }
-        });
-    }
-
-    // Color picker handlers
-    const colorPicker = document.getElementById('highlightColorPicker');
-    if (colorPicker) {
-        colorPicker.onchange = (e) => {
-            currentHighlightColor = e.target.value;
-        };
-    }
-
-    // Color preset buttons
-    document.querySelectorAll('.color-preset').forEach(btn => {
-        btn.onclick = () => {
+    // New Text-Offset-Based Highlight System
+    document.addEventListener('selectionchange', handleSelectionChange);
+    
+    // Highlight toolbar event listeners
+    document.querySelectorAll('.toolbar-color-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
             const color = btn.dataset.color;
-            document.getElementById('highlightColorPicker').value = color;
-            currentHighlightColor = color;
-            
-            // Update active state
-            document.querySelectorAll('.color-preset').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        };
+            createHighlightWithColor(color);
+        });
     });
-
-    click('saveHighlightBtn', saveHighlight);
-    click('closeComment', () => { window.togglePanel(null); });
-
-    document.querySelectorAll('.color-pick').forEach(b => {
-        b.onclick = () => {
-            state.selectedColor = b.dataset.color || b.style.backgroundColor;
-            document.querySelectorAll('.color-pick').forEach(el => el.classList.remove('active'));
-            b.classList.add('active');
-        };
+    
+    const toolbarNoteBtn = document.getElementById('toolbarNoteBtn');
+    if (toolbarNoteBtn) {
+        toolbarNoteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showNoteModal();
+        });
+    }
+    
+    const toolbarCloseBtn = document.getElementById('toolbarCloseBtn');
+    if (toolbarCloseBtn) {
+        toolbarCloseBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hideHighlightToolbar();
+        });
+    }
+    
+    // Note modal event listeners
+    const noteSaveBtn = document.getElementById('noteSaveBtn');
+    if (noteSaveBtn) {
+        noteSaveBtn.addEventListener('click', saveNote);
+    }
+    
+    const noteCancelBtn = document.getElementById('noteCancelBtn');
+    if (noteCancelBtn) {
+        noteCancelBtn.addEventListener('click', hideNoteModal);
+    }
+    
+    // Close note modal on background click
+    const noteModal = document.getElementById('noteModal');
+    if (noteModal) {
+        noteModal.addEventListener('click', (e) => {
+            if (e.target === noteModal) {
+                hideNoteModal();
+            }
+        });
+    }
+    
+    // Hide toolbar when clicking outside
+    document.addEventListener('click', (e) => {
+        if (highlightToolbar && 
+            highlightToolbar.style.display === 'block' && 
+            !highlightToolbar.contains(e.target)) {
+            hideHighlightToolbar();
+        }
     });
 
 
@@ -934,70 +1115,7 @@ function setupEventListeners() {
     });
 }
 
-function handleManualHighlight(e, span) {
-    if (!state.highlightStart) {
-        state.highlightStart = span.id;
-        span.classList.add('highlight-start-marker');
-        const ind = document.createElement('div');
-        ind.className = 'tap-indicator';
-        ind.style.left = `${e.pageX}px`; ind.style.top = `${e.pageY - 12}px`;
-        document.body.appendChild(ind);
-    } else {
-        const start = document.getElementById(state.highlightStart);
-        if (!start) { state.highlightStart = null; return; }
-        const range = document.createRange();
-        range.setStartBefore(start);
-        range.setEndAfter(span);
-        state.tempRange = range;
-        window.togglePanel('commentPanel');
-    }
-}
-
-function saveManualHighlight() {
-    const input = document.getElementById('commentInput');
-    const note = input ? input.value : "";
-    const id = "h-" + Date.now();
-    const wrap = document.createElement('span');
-    wrap.className = 'user-highlight';
-    wrap.style.backgroundColor = state.selectedColor;
-    wrap.dataset.id = id;
-    if (note) {
-        const tip = document.createElement('span');
-        tip.className = 'note-tooltip'; tip.innerText = note;
-        wrap.appendChild(tip);
-        state.comments[id] = note;
-    }
-    try { state.tempRange.surroundContents(wrap); } catch(e) {}
-    state.highlightMode = false; state.highlightStart = null;
-    document.querySelectorAll('.tap-indicator, .highlight-start-marker').forEach(el => {
-        if(el.classList.contains('tap-indicator')) el.remove();
-        else el.classList.remove('highlight-start-marker');
-    });
-    saveState(); applySettings(); window.togglePanel(null);
-    window.getSelection().removeAllRanges();
-}
-
-function handleNoteTap(e) {
-    const h = e.target.closest('.user-highlight');
-    if (h) {
-        // Remove active class from all highlights
-        document.querySelectorAll('.user-highlight').forEach(el => el.classList.remove('active-note'));
-        
-        // Add active class to clicked highlight
-        h.classList.add('active-note');
-        
-        // Auto-hide after clicking elsewhere
-        setTimeout(() => {
-            const clear = (ev) => { 
-                if (!h.contains(ev.target)) { 
-                    h.classList.remove('active-note'); 
-                    window.removeEventListener('click', clear); 
-                } 
-            };
-            window.addEventListener('click', clear);
-        }, 10);
-    }
-}
+// Old manual highlight functions removed - replaced by new offset-based system
 
 function setupLoreLinks() {
     document.querySelectorAll('.lore-link').forEach(link => {
