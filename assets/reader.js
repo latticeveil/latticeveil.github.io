@@ -121,6 +121,49 @@ window.togglePanel = function(id) {
     }
 };
 
+window.masterResetAll = function() {
+    if(confirm("Reset ALL settings to defaults? This will restore the black theme and reset everything as if the site was new.")) {
+        // Clear all localStorage
+        localStorage.clear();
+        
+        // Reset state to defaults
+        Object.assign(state, { 
+            theme: 'theme-oled', 
+            font: 'font-serif', 
+            size: 18,
+            zoom: 1.0, 
+            lineHeight: 1.6, 
+            letterSpacing: 0, 
+            paraSpacing: 1.5, 
+            pageWidth: 700, 
+            textAlign: 'justify', 
+            highContrast: false, 
+            focusMode: false, 
+            tempo: 250, 
+            showLore: true, 
+            showHighlight: true, 
+            showUserHighlights: true,
+            zoomLocked: false,
+            selectedColor: 'rgba(242, 193, 78, 0.4)',
+            wakeLock: false,
+            readAlongActive: false,
+            ttsPaused: false,
+            ttsSpanId: '',
+            voiceName: '',
+            comments: {}
+        });
+        
+        // Apply settings and close panel
+        applySettings();
+        window.togglePanel(null);
+        
+        // Reload page to ensure clean state
+        setTimeout(() => {
+            window.location.reload();
+        }, 100);
+    }
+};
+
 window.switchChapter = function(num, autoScroll = true) {
     state.chapter = num;
     try {
@@ -268,39 +311,6 @@ function setupEventListeners() {
 
     click('zoomReset', () => { state.zoom = 1.0; saveState(); applySettings(); });
     click('tempoReset', () => { state.tempo = 250; saveState(); applySettings(); });
-    click('typoReset', () => {
-        if(confirm("Reset all typography settings to defaults?")) {
-            Object.assign(state, { font: 'font-serif', zoom: 1.0, lineHeight: 1.6, letterSpacing: 0, pageWidth: 700, textAlign: 'justify' });
-            saveState(); applySettings();
-        }
-    });
-    click('resetAllBtn', () => {
-        if(confirm("Reset ALL settings to defaults? This will restore the black theme and reset everything.")) {
-            Object.assign(state, { 
-                theme: 'theme-oled', 
-                font: 'font-serif', 
-                zoom: 1.0, 
-                lineHeight: 1.6, 
-                letterSpacing: 0, 
-                paraSpacing: 1.5, 
-                pageWidth: 700, 
-                textAlign: 'justify', 
-                highContrast: false, 
-                focusMode: false, 
-                tempo: 250, 
-                showLore: true, 
-                showHighlight: true, 
-                showUserHighlights: true,
-                zoomLocked: false,
-                selectedColor: 'rgba(242, 193, 78, 0.4)',
-                wakeLock: false,
-                readAlongActive: false,
-                ttsPaused: false,
-                ttsSpanId: ''
-            });
-            saveState(); applySettings();
-        }
-    });
 
     // Tab Logic
     document.querySelectorAll('.tab-btn').forEach(btn => {
