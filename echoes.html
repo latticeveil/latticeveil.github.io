@@ -367,6 +367,34 @@
         </div>
     </div>
 
+    <!-- Floating Highlight Toolbar -->
+    <div id="highlightToolbar" class="highlight-toolbar" style="display: none;">
+        <div class="toolbar-colors">
+            <button class="toolbar-color-btn" data-color="rgba(242, 193, 78, 0.4)" style="background: #f2c14e;" title="Yellow"></button>
+            <button class="toolbar-color-btn" data-color="rgba(77, 255, 136, 0.4)" style="background: #4dff88;" title="Green"></button>
+            <button class="toolbar-color-btn" data-color="rgba(56, 225, 255, 0.4)" style="background: #38e1ff;" title="Blue"></button>
+            <button class="toolbar-color-btn" data-color="rgba(255, 107, 107, 0.4)" style="background: #ff6b6b;" title="Pink"></button>
+        </div>
+        <button class="toolbar-note-btn" id="toolbarNoteBtn" title="Add Note">
+            <i class="fas fa-sticky-note"></i>
+        </button>
+        <button class="toolbar-close-btn" id="toolbarCloseBtn" title="Cancel">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
+    <!-- Note Input Modal -->
+    <div id="noteModal" class="note-modal" style="display: none;">
+        <div class="note-modal-content">
+            <h3>Add Note</h3>
+            <textarea id="noteInput" placeholder="Enter your note here..." rows="4"></textarea>
+            <div class="note-modal-buttons">
+                <button id="noteSaveBtn" class="btn-toggle">Save</button>
+                <button id="noteCancelBtn" class="btn-toggle">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <script src="assets/reader.js"></script>
 </body>
 </html>

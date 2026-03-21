@@ -629,6 +629,190 @@ body.highlight-mode-active .reader-container {
     user-select: none;
 }
 
+/* New Highlight System Styles */
+.highlight {
+    background-color: inherit !important;
+    padding: 2px 0;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.highlight:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+}
+
+.highlight.has-note::after {
+    content: '📝';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+/* Floating Highlight Toolbar */
+.highlight-toolbar {
+    position: fixed;
+    background: var(--reader-bg);
+    border: 2px solid var(--reader-accent);
+    border-radius: 8px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 10000;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    backdrop-filter: blur(10px);
+}
+
+.toolbar-colors {
+    display: flex;
+    gap: 4px;
+}
+
+.toolbar-color-btn {
+    width: 28px;
+    height: 28px;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toolbar-color-btn:hover {
+    transform: scale(1.1);
+    border-color: var(--reader-accent);
+}
+
+.toolbar-color-btn:active {
+    transform: scale(0.95);
+}
+
+.toolbar-note-btn,
+.toolbar-close-btn {
+    background: none;
+    border: 1px solid var(--reader-accent);
+    color: var(--reader-text);
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.toolbar-note-btn:hover,
+.toolbar-close-btn:hover {
+    background: var(--reader-accent);
+    color: var(--reader-bg);
+}
+
+.toolbar-note-btn {
+    font-size: 14px;
+}
+
+.toolbar-close-btn {
+    font-size: 12px;
+}
+
+/* Note Modal */
+.note-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    backdrop-filter: blur(5px);
+}
+
+.note-modal-content {
+    background: var(--reader-bg);
+    border: 2px solid var(--reader-accent);
+    border-radius: 12px;
+    padding: 24px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+.note-modal-content h3 {
+    margin: 0 0 16px 0;
+    color: var(--reader-text);
+    font-size: 1.2rem;
+}
+
+.note-modal-content textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    color: var(--reader-text);
+    border: 1px solid var(--reader-accent);
+    border-radius: 6px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 80px;
+    box-sizing: border-box;
+}
+
+.note-modal-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    justify-content: flex-end;
+}
+
+/* Note Tooltip */
+.note-tooltip {
+    position: fixed;
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    max-width: 300px;
+    z-index: 10002;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    pointer-events: auto;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+/* Mobile-friendly adjustments */
+@media (max-width: 768px) {
+    .highlight-toolbar {
+        padding: 6px;
+        gap: 6px;
+    }
+    
+    .toolbar-color-btn {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .toolbar-note-btn,
+    .toolbar-close-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .note-modal-content {
+        padding: 20px;
+        margin: 20px;
+    }
+}
+
 @keyframes pulse {
     0%, 100% { opacity: 0.6; }
     50% { opacity: 1; }
