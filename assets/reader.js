@@ -278,7 +278,6 @@ function setupEventListeners() {
 
     click('settingsBtn', () => window.togglePanel('settingsPanel'));
     click('helpBtn', () => window.togglePanel('helpPanel'));
-    click('settingsCloseBtn', () => window.togglePanel(null));
     document.querySelectorAll('.close-btn').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
     document.querySelectorAll('.settings-close').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
 
