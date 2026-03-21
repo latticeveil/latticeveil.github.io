@@ -180,6 +180,59 @@ body {
     overflow-y: auto;
 }
 
+.download-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.download-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--reader-accent);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(255,255,255,0.02);
+}
+
+.download-option:hover {
+    background: rgba(56, 225, 255, 0.1);
+    border-color: rgba(56, 225, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.download-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(56, 225, 255, 0.1);
+    border: 1px solid var(--reader-accent);
+    border-radius: 8px;
+    color: var(--reader-accent);
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.download-info h4 {
+    margin: 0 0 8px 0;
+    color: var(--reader-accent);
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.download-info p {
+    margin: 0;
+    color: var(--reader-text);
+    font-size: 0.85rem;
+    opacity: 0.8;
+    line-height: 1.4;
+}
+
 .settings-tab-bar {
     display: flex;
     background: rgba(255,255,255,0.05);
