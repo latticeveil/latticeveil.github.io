@@ -288,10 +288,41 @@ body.hide-highlights .note-tooltip {
     100% { transform: scale(1); opacity: 1; }
 }
 
-@keyframes markerPulse {
-    0% { transform: rotate(-45deg) scale(1); opacity: 1; }
-    50% { transform: rotate(-45deg) scale(1.1); opacity: 0.8; }
-    100% { transform: rotate(-45deg) scale(1); opacity: 1; }
+@keyframes highlightPulse {
+    0% { transform: scale(1); opacity: 1; box-shadow: 0 3px 12px rgba(0,0,0,0.2); }
+    50% { transform: scale(1.15); opacity: 0.8; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
+    100% { transform: scale(1); opacity: 1; box-shadow: 0 3px 12px rgba(0,0,0,0.2); }
+}
+
+/* Professional highlight styles */
+.user-highlight {
+    background-color: inherit !important;
+    padding: 2px 0;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s ease;
+    box-shadow: inset 0 -2px 0 0 rgba(0,0,0,0.1);
+}
+
+.user-highlight:hover {
+    filter: brightness(1.2);
+    transform: translateY(-1px);
+    box-shadow: inset 0 -2px 0 0 rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Highlight mode visual feedback */
+body.highlight-mode-active #readingArea {
+    cursor: text !important;
+}
+
+body.highlight-mode-active #readingArea * {
+    cursor: text !important;
+}
+
+body.highlight-mode-active #readingArea p:hover {
+    background-color: rgba(56, 225, 255, 0.03);
+    transition: background-color 0.2s ease;
 }
 
 /* CSS Custom Highlight API styles */

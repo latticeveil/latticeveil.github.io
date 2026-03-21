@@ -101,12 +101,11 @@ let wakeLockObj = null;
 // Highlight System Variables
 let highlightMode = false;
 let highlightsVisible = true;
-let userHighlights = new Map(); // Store user highlights
 let currentHighlightColor = '#f2c14e';
 let highlightCounter = 0;
-
-// Check for CSS Custom Highlight API support
-const supportsCustomHighlight = CSS.highlights && typeof Highlight === 'function';
+let isSelecting = false;
+let selectionStartX = 0;
+let selectionStartY = 0;
 
 // GLOBAL FUNCTIONS
 window.togglePanel = function(id) {
@@ -180,18 +179,11 @@ window.saveHighlight = function() {
         color: color,
         note: note,
         chapter: state.chapter,
-        timestamp: new Date().toISOString(),
-        range: selection.getRangeAt(0).cloneRange()
+        timestamp: new Date().toISOString()
     };
     
-    userHighlights.set(highlightId, highlightData);
-    
-    // Apply highlight using appropriate method
-    if (supportsCustomHighlight) {
-        applyHighlightWithAPI(highlightId, highlightData);
-    } else {
-        applyHighlightWithDOM(highlightId, highlightData);
-    }
+    // Apply highlight using DOM method (works everywhere)
+    applyHighlightWithDOM(highlightId, highlightData, selection.getRangeAt(0));
     
     // Save to state
     state.comments[highlightId] = highlightData;
@@ -203,35 +195,25 @@ window.saveHighlight = function() {
     document.getElementById('highlightNote').value = '';
 };
 
-function applyHighlightWithAPI(highlightId, data) {
-    // Use CSS Custom Highlight API
-    const highlight = new Highlight(data.range);
-    CSS.highlights.set(highlightId, highlight);
-    
-    // Add hover tooltip if note exists
-    if (data.note) {
-        addTooltipToHighlight(highlightId, data.note);
-    }
-}
-
-function applyHighlightWithDOM(highlightId, data) {
-    // Fallback: Use DOM manipulation
-    const range = data.range;
+function applyHighlightWithDOM(highlightId, data, range) {
+    // Create highlight span
     const span = document.createElement('span');
     span.className = 'user-highlight';
     span.setAttribute('data-highlight-id', highlightId);
     span.style.backgroundColor = data.color;
     span.style.padding = '2px 0';
-    span.style.borderRadius = '3px';
+    span.style.borderRadius = '2px';
     span.style.cursor = 'pointer';
     span.style.position = 'relative';
+    span.style.transition = 'all 0.2s ease';
     
     try {
+        // Try to surround the range
         range.surroundContents(span);
     } catch(e) {
-        // If range can't be applied, clone the contents
-        span.appendChild(range.cloneContents());
-        range.deleteContents();
+        // If that fails, extract contents and wrap
+        const contents = range.extractContents();
+        span.appendChild(contents);
         range.insertNode(span);
     }
     
@@ -243,55 +225,25 @@ function applyHighlightWithDOM(highlightId, data) {
     // Add click handler to edit
     span.addEventListener('click', (e) => {
         e.stopPropagation();
-        const existingData = userHighlights.get(highlightId);
+        e.preventDefault();
+        const existingData = state.comments[highlightId];
         if (existingData) {
             document.getElementById('highlightColorPicker').value = existingData.color;
             document.getElementById('highlightNote').value = existingData.note || '';
             window.togglePanel('highlightPickerPanel');
         }
     });
-}
-
-function addTooltipToHighlight(highlightId, note) {
-    // Create a floating tooltip that follows the highlight
-    const tooltip = document.createElement('div');
-    tooltip.className = 'highlight-tooltip';
-    tooltip.textContent = note;
-    tooltip.style.cssText = `
-        position: absolute;
-        background: rgba(0,0,0,0.9);
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.7rem;
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.2s;
-        z-index: 10000;
-    `;
     
-    document.body.appendChild(tooltip);
+    // Add hover effects
+    span.addEventListener('mouseenter', () => {
+        span.style.filter = 'brightness(1.2)';
+        span.style.transform = 'translateY(-1px)';
+    });
     
-    // Position tooltip on hover (implementation depends on API support)
-    if (supportsCustomHighlight) {
-        // For Custom Highlight API, we need to track mouse position
-        document.addEventListener('mousemove', (e) => {
-            // Check if mouse is over highlighted text
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-                const highlight = userHighlights.get(highlightId);
-                if (highlight && range.intersectsNode(highlight.range.commonAncestorContainer)) {
-                    tooltip.style.left = e.pageX + 10 + 'px';
-                    tooltip.style.top = e.pageY - 30 + 'px';
-                    tooltip.style.opacity = '1';
-                } else {
-                    tooltip.style.opacity = '0';
-                }
-            }
-        });
-    }
+    span.addEventListener('mouseleave', () => {
+        span.style.filter = 'brightness(1)';
+        span.style.transform = 'translateY(0)';
+    });
 }
 
 function addTooltipToElement(element, note) {
@@ -305,14 +257,16 @@ function addTooltipToElement(element, note) {
         transform: translateX(-50%);
         background: rgba(0,0,0,0.9);
         color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.7rem;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
         white-space: nowrap;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.2s;
+        transition: opacity 0.3s ease;
         z-index: 1000;
+        margin-bottom: 5px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     `;
     
     element.appendChild(tooltip);
@@ -327,21 +281,8 @@ function addTooltipToElement(element, note) {
 }
 
 function loadHighlights() {
-    Object.entries(state.comments).forEach(([id, data]) => {
-        if (data.chapter !== state.chapter) return;
-        
-        // Restore highlight data
-        userHighlights.set(id, data);
-        
-        // Re-apply highlight
-        if (data.range) {
-            if (supportsCustomHighlight) {
-                applyHighlightWithAPI(id, data);
-            } else {
-                applyHighlightWithDOM(id, data);
-            }
-        }
-    });
+    // This will be implemented to restore highlights from state
+    // For now, highlights are stored but not restored on page load
 }
 
 window.downloadEbook = function(format) {
@@ -807,95 +748,139 @@ function setupEventListeners() {
         };
     }
 
-    // Highlight system - use normal text selection with marker-like behavior
+    // Highlight system - professional drag selection
     const area = document.getElementById('readingArea');
     if(area) {
-        let selectionTimeout = null;
+        let selectionTimer = null;
         
-        // Handle mouseup for selection
-        area.addEventListener('mouseup', (e) => {
-            if (!highlightMode) return;
+        // Enable text selection only in highlight mode
+        area.addEventListener('mousedown', (e) => {
+            if (!highlightMode) {
+                e.preventDefault();
+                return;
+            }
             
-            const selection = window.getSelection();
-            const selectedText = selection.toString().trim();
+            isSelecting = true;
+            selectionStartX = e.clientX;
+            selectionStartY = e.clientY;
             
-            if (selectedText.length > 2) {
-                // Clear previous timeout
-                if (selectionTimeout) clearTimeout(selectionTimeout);
-                
-                // Show highlight indicator briefly, then open color picker
-                const range = selection.getRangeAt(0);
-                const rect = range.getBoundingClientRect();
-                
-                // Create temporary indicator that looks like a marker tip
-                const indicator = document.createElement('div');
-                indicator.style.cssText = `
-                    position: fixed;
-                    left: ${rect.right + 5}px;
-                    top: ${rect.top}px;
-                    width: 20px;
-                    height: 20px;
-                    background: linear-gradient(45deg, ${currentHighlightColor}, ${currentHighlightColor}dd);
-                    border: 2px solid rgba(0,0,0,0.3);
-                    border-radius: 50% 50% 50% 0;
-                    transform: rotate(-45deg);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 10000;
-                    cursor: pointer;
-                    animation: markerPulse 1s infinite;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-                `;
-                document.body.appendChild(indicator);
-                
-                // Auto-open color picker after short delay
-                selectionTimeout = setTimeout(() => {
-                    indicator.remove();
-                    window.togglePanel('highlightPickerPanel');
-                }, 1000);
-                
-                // Click indicator to open immediately
-                indicator.addEventListener('click', () => {
-                    clearTimeout(selectionTimeout);
-                    indicator.remove();
-                    window.togglePanel('highlightPickerPanel');
-                });
+            // Clear any existing selection
+            window.getSelection().removeAllRanges();
+            
+            // Clear any pending color picker
+            if (selectionTimer) {
+                clearTimeout(selectionTimer);
+                selectionTimer = null;
             }
         });
         
-        // Handle touch events for mobile
-        area.addEventListener('touchend', (e) => {
+        area.addEventListener('mouseup', (e) => {
+            if (!highlightMode || !isSelecting) return;
+            
+            isSelecting = false;
+            
+            // Check if we have a meaningful selection
+            const selection = window.getSelection();
+            const selectedText = selection.toString().trim();
+            
+            if (selectedText.length > 1) {
+                // Show highlight indicator
+                const range = selection.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                
+                // Create highlight indicator
+                const indicator = document.createElement('div');
+                indicator.style.cssText = `
+                    position: fixed;
+                    left: ${rect.right + 8}px;
+                    top: ${rect.top}px;
+                    width: 24px;
+                    height: 24px;
+                    background: ${currentHighlightColor};
+                    border: 2px solid rgba(0,0,0,0.3);
+                    border-radius: 50%;
+                    cursor: pointer;
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    animation: highlightPulse 1.5s infinite;
+                    box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+                    transition: transform 0.2s ease;
+                `;
+                indicator.innerHTML = '<i class="fas fa-palette" style="color: white; font-size: 12px;"></i>';
+                document.body.appendChild(indicator);
+                
+                // Auto-open color picker after delay
+                selectionTimer = setTimeout(() => {
+                    indicator.remove();
+                    window.togglePanel('highlightPickerPanel');
+                }, 2000);
+                
+                // Click to open immediately
+                indicator.addEventListener('click', () => {
+                    if (selectionTimer) {
+                        clearTimeout(selectionTimer);
+                        selectionTimer = null;
+                    }
+                    indicator.remove();
+                    window.togglePanel('highlightPickerPanel');
+                });
+                
+                // Hover effect
+                indicator.addEventListener('mouseenter', () => {
+                    indicator.style.transform = 'scale(1.1)';
+                });
+                
+                indicator.addEventListener('mouseleave', () => {
+                    indicator.style.transform = 'scale(1)';
+                });
+            } else {
+                // Clear selection if too short
+                window.getSelection().removeAllRanges();
+            }
+        });
+        
+        // Handle text selection during drag
+        area.addEventListener('selectstart', (e) => {
+            if (!highlightMode) {
+                e.preventDefault();
+                return;
+            }
+        });
+        
+        // Prevent selection from being lost
+        area.addEventListener('dragstart', (e) => {
+            if (highlightMode) {
+                e.preventDefault();
+            }
+        });
+        
+        // Touch support for mobile
+        area.addEventListener('touchstart', (e) => {
             if (!highlightMode) return;
+            
+            isSelecting = true;
+            const touch = e.touches[0];
+            selectionStartX = touch.clientX;
+            selectionStartY = touch.clientY;
+            
+            window.getSelection().removeAllRanges();
+        });
+        
+        area.addEventListener('touchend', (e) => {
+            if (!highlightMode || !isSelecting) return;
+            
+            isSelecting = false;
             
             setTimeout(() => {
                 const selection = window.getSelection();
                 const selectedText = selection.toString().trim();
                 
-                if (selectedText.length > 2) {
+                if (selectedText.length > 1) {
                     window.togglePanel('highlightPickerPanel');
                 }
             }, 100);
-        });
-        
-        // Prevent selection when not in highlight mode
-        area.addEventListener('selectstart', (e) => {
-            if (!highlightMode) {
-                e.preventDefault();
-            }
-        });
-        
-        // Add visual feedback for highlight mode
-        area.addEventListener('mousemove', (e) => {
-            if (!highlightMode) return;
-            
-            const target = e.target;
-            if (target.nodeType === Node.TEXT_NODE && target.textContent.trim().length > 0) {
-                target.parentElement.style.backgroundColor = 'rgba(56, 225, 255, 0.05)';
-                setTimeout(() => {
-                    target.parentElement.style.backgroundColor = '';
-                }, 100);
-            }
         });
     }
 
