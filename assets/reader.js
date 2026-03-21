@@ -44,7 +44,8 @@ const storageMap = {
     tempo: 'reader_tempo',
     showLore: 'reader_show_lore',
     showHighlight: 'reader_show_highlight',
-    zoomLocked: 'reader_zoom_locked'
+    zoomLocked: 'reader_zoom_locked',
+    selectedColor: 'reader_selected_color'
 };
 
 function loadPersistentState() {
@@ -218,6 +219,17 @@ function applySettings() {
         hb.classList.toggle('active', state.highlightMode);
         body.classList.toggle('highlight-mode-active', state.highlightMode);
     }
+    
+    // Apply selected color to color picker
+    document.querySelectorAll('.color-pick').forEach(b => {
+        const color = b.dataset.color || b.style.backgroundColor;
+        if (color === state.selectedColor || 
+            (state.selectedColor && color.includes(state.selectedColor.replace(/[^\d,]/g, '').split(',')[0]))) {
+            b.classList.add('active');
+        } else {
+            b.classList.remove('active');
+        }
+    });
 }
 
 function setupEventListeners() {
@@ -281,13 +293,71 @@ function setupEventListeners() {
 
     const area = document.getElementById('readingArea');
     if(area) {
+        let isDragging = false;
+        let dragStartSpan = null;
+        
         area.onclick = (e) => {
+            // Don't handle clicks while dragging
+            if (isDragging) return;
+            
             const span = e.target.closest('.read-span');
-            if (state.highlightMode && span) handleManualHighlight(e, span);
-            else handleNoteTap(e);
+            if (state.highlightMode && span && !state.highlightStart) {
+                handleManualHighlight(e, span);
+            } else if (!state.highlightMode) {
+                handleNoteTap(e);
+            }
         };
-        area.onmouseup = () => {
+        
+        // Mouse events for drag highlighting
+        area.onmousedown = (e) => {
             if (!state.highlightMode) return;
+            isDragging = true;
+            dragStartSpan = e.target.closest('.read-span');
+            if (dragStartSpan && !state.highlightStart) {
+                handleManualHighlight(e, dragStartSpan);
+            }
+        };
+        
+        area.onmouseup = (e) => {
+            if (!state.highlightMode) return;
+            isDragging = false;
+            
+            // Check if we have a selection from dragging
+            const sel = window.getSelection();
+            if (sel.toString().trim().length > 5) {
+                state.tempRange = sel.getRangeAt(0).cloneRange();
+                window.togglePanel('commentPanel');
+            } else if (state.highlightStart && dragStartSpan) {
+                // Handle click-to-select second span
+                const endSpan = e.target.closest('.read-span');
+                if (endSpan && endSpan !== dragStartSpan) {
+                    handleManualHighlight(e, endSpan);
+                }
+            }
+        };
+        
+        area.onmousemove = (e) => {
+            if (!state.highlightMode || !isDragging) return;
+            // Visual feedback for dragging could be added here
+        };
+        
+        // Touch events for mobile
+        area.ontouchstart = (e) => {
+            if (!state.highlightMode) return;
+            isDragging = true;
+            const touch = e.touches[0];
+            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            dragStartSpan = element?.closest('.read-span');
+            if (dragStartSpan && !state.highlightStart) {
+                handleManualHighlight(e, dragStartSpan);
+            }
+        };
+        
+        area.ontouchend = (e) => {
+            if (!state.highlightMode) return;
+            isDragging = false;
+            
+            // Check if we have a selection from touch dragging
             const sel = window.getSelection();
             if (sel.toString().trim().length > 5) {
                 state.tempRange = sel.getRangeAt(0).cloneRange();
@@ -298,7 +368,7 @@ function setupEventListeners() {
 
     document.querySelectorAll('.color-pick').forEach(b => {
         b.onclick = () => {
-            state.selectedColor = b.dataset.color;
+            state.selectedColor = b.dataset.color || b.style.backgroundColor;
             document.querySelectorAll('.color-pick').forEach(el => el.classList.remove('active'));
             b.classList.add('active');
         };
@@ -369,11 +439,21 @@ function saveManualHighlight() {
 
 function handleNoteTap(e) {
     const h = e.target.closest('.user-highlight');
-    if (h && h.querySelector('.note-tooltip')) {
+    if (h) {
+        // Remove active class from all highlights
         document.querySelectorAll('.user-highlight').forEach(el => el.classList.remove('active-note'));
+        
+        // Add active class to clicked highlight
         h.classList.add('active-note');
+        
+        // Auto-hide after clicking elsewhere
         setTimeout(() => {
-            const clear = (ev) => { if (!h.contains(ev.target)) { h.classList.remove('active-note'); window.removeEventListener('click', clear); } };
+            const clear = (ev) => { 
+                if (!h.contains(ev.target)) { 
+                    h.classList.remove('active-note'); 
+                    window.removeEventListener('click', clear); 
+                } 
+            };
             window.addEventListener('click', clear);
         }, 10);
     }
