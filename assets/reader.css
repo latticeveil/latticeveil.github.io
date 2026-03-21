@@ -68,6 +68,24 @@ body {
 .icon-btn:hover { background: rgba(255,255,255,0.1); color: var(--reader-accent); }
 .icon-btn.active { background: var(--gold); color: #000; box-shadow: 0 0 15px rgba(242, 193, 78, 0.4); }
 
+/* Donate button special styling */
+.icon-btn.donate-btn:hover { 
+    background: #ffc439; 
+    color: #000; 
+    box-shadow: 0 0 15px rgba(255, 196, 57, 0.4); 
+    transform: scale(1.05);
+}
+
+.icon-btn.donate-btn:active {
+    transform: scale(0.95);
+}
+
+/* PayPal button hover effect */
+.help-panel a[href*="paypal"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 196, 57, 0.4);
+}
+
 /* POPUP OVERLAYS - THE FIX */
 .panel-overlay {
     position: fixed !important;
