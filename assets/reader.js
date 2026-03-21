@@ -753,43 +753,21 @@ function setupEventListeners() {
     if(area) {
         let selectionTimer = null;
         
-        // Enable text selection only in highlight mode
-        area.addEventListener('mousedown', (e) => {
-            if (!highlightMode) {
-                e.preventDefault();
-                return;
-            }
+        // Track selection changes
+        document.addEventListener('selectionchange', () => {
+            if (!highlightMode) return;
             
-            isSelecting = true;
-            selectionStartX = e.clientX;
-            selectionStartY = e.clientY;
-            
-            // Clear any existing selection
-            window.getSelection().removeAllRanges();
-            
-            // Clear any pending color picker
-            if (selectionTimer) {
-                clearTimeout(selectionTimer);
-                selectionTimer = null;
-            }
-        });
-        
-        area.addEventListener('mouseup', (e) => {
-            if (!highlightMode || !isSelecting) return;
-            
-            isSelecting = false;
-            
-            // Check if we have a meaningful selection
             const selection = window.getSelection();
             const selectedText = selection.toString().trim();
             
-            if (selectedText.length > 1) {
-                // Show highlight indicator
+            if (selectedText.length > 1 && selectionTimer === null) {
+                // Show highlight indicator after selection
                 const range = selection.getRangeAt(0);
                 const rect = range.getBoundingClientRect();
                 
                 // Create highlight indicator
                 const indicator = document.createElement('div');
+                indicator.id = 'highlight-indicator';
                 indicator.style.cssText = `
                     position: fixed;
                     left: ${rect.right + 8}px;
@@ -813,8 +791,12 @@ function setupEventListeners() {
                 
                 // Auto-open color picker after delay
                 selectionTimer = setTimeout(() => {
-                    indicator.remove();
+                    const existingIndicator = document.getElementById('highlight-indicator');
+                    if (existingIndicator) {
+                        existingIndicator.remove();
+                    }
                     window.togglePanel('highlightPickerPanel');
+                    selectionTimer = null;
                 }, 2000);
                 
                 // Click to open immediately
@@ -835,13 +817,27 @@ function setupEventListeners() {
                 indicator.addEventListener('mouseleave', () => {
                     indicator.style.transform = 'scale(1)';
                 });
-            } else {
-                // Clear selection if too short
-                window.getSelection().removeAllRanges();
+            } else if (selectedText.length === 0) {
+                // Clear indicator if selection is cleared
+                const existingIndicator = document.getElementById('highlight-indicator');
+                if (existingIndicator) {
+                    existingIndicator.remove();
+                }
+                if (selectionTimer) {
+                    clearTimeout(selectionTimer);
+                    selectionTimer = null;
+                }
             }
         });
         
-        // Handle text selection during drag
+        // Prevent selection when not in highlight mode
+        area.addEventListener('mousedown', (e) => {
+            if (!highlightMode) {
+                e.preventDefault();
+                return;
+            }
+        });
+        
         area.addEventListener('selectstart', (e) => {
             if (!highlightMode) {
                 e.preventDefault();
@@ -849,38 +845,12 @@ function setupEventListeners() {
             }
         });
         
-        // Prevent selection from being lost
-        area.addEventListener('dragstart', (e) => {
-            if (highlightMode) {
-                e.preventDefault();
-            }
-        });
-        
         // Touch support for mobile
         area.addEventListener('touchstart', (e) => {
-            if (!highlightMode) return;
-            
-            isSelecting = true;
-            const touch = e.touches[0];
-            selectionStartX = touch.clientX;
-            selectionStartY = touch.clientY;
-            
-            window.getSelection().removeAllRanges();
-        });
-        
-        area.addEventListener('touchend', (e) => {
-            if (!highlightMode || !isSelecting) return;
-            
-            isSelecting = false;
-            
-            setTimeout(() => {
-                const selection = window.getSelection();
-                const selectedText = selection.toString().trim();
-                
-                if (selectedText.length > 1) {
-                    window.togglePanel('highlightPickerPanel');
-                }
-            }, 100);
+            if (!highlightMode) {
+                e.preventDefault();
+                return;
+            }
         });
     }
 
