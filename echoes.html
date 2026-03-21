@@ -6,6 +6,7 @@
     <title>Echoes of the Continuist | LatticeVeil Reader</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Merriweather:wght@300;400;700&family=Inter:wght@400;600&family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="stylesheet" href="assets/reader.css">
     <meta name="theme-color" content="#000000">
 </head>
@@ -113,7 +114,58 @@
         </div>
     </div>
 
-    <!-- Modals -->
+    <!-- Download Menu -->
+    <div class="panel-overlay" id="downloadPanel">
+        <div class="settings-panel">
+            <div class="settings-header">
+                <i class="fas fa-download"></i>
+                <span>DOWNLOAD</span>
+                <div class="settings-header-controls">
+                    <button class="settings-close" onclick="window.togglePanel(null)" aria-label="Close download">&times;</button>
+                </div>
+            </div>
+            <div class="panel-body" style="padding:20px; overflow-y:auto;">
+                <div class="setting-item">
+                    <span class="category-label">Choose Format</span>
+                    <p style="font-size:0.9rem; opacity:0.8; margin-bottom:20px;">Select your preferred eBook format for maximum compatibility with your reading device or app.</p>
+                </div>
+                
+                <div class="download-options">
+                    <div class="download-option" onclick="downloadEbook('epub')">
+                        <div class="download-icon"><i class="fas fa-book"></i></div>
+                        <div class="download-info">
+                            <h4>EPUB</h4>
+                            <p>Best for most eReaders, tablets, and phones. Compatible with Apple Books, Google Play Books, Kindle (with conversion), and most reading apps.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="download-option" onclick="downloadEbook('pdf')">
+                        <div class="download-icon"><i class="fas fa-file-pdf"></i></div>
+                        <div class="download-info">
+                            <h4>PDF</h4>
+                            <p>Universal format. Works on all devices but may not reflow text. Best for computers and printing.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="download-option" onclick="downloadEbook('txt')">
+                        <div class="download-icon"><i class="fas fa-file-alt"></i></div>
+                        <div class="download-info">
+                            <h4>Plain Text</h4>
+                            <p>Basic text format. Compatible with everything but no formatting. Smallest file size.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="download-option" onclick="downloadEbook('html')">
+                        <div class="download-icon"><i class="fas fa-code"></i></div>
+                        <div class="download-info">
+                            <h4>HTML</h4>
+                            <p>Web page format. Opens in any browser. Preserves formatting and styling.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Settings panel with external close button and header -->
     <div class="panel-overlay" id="settingsPanel">
         <div class="settings-panel">

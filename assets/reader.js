@@ -121,7 +121,220 @@ window.togglePanel = function(id) {
     }
 };
 
-window.masterResetAll = function() {
+window.downloadEbook = function(format) {
+    const bookContent = document.getElementById('bookContent');
+    if (!bookContent) return;
+    
+    const title = 'Echoes_of_the_Continuist';
+    
+    switch(format) {
+        case 'epub':
+            generateEPUB(title, bookContent);
+            break;
+        case 'pdf':
+            generatePDF(title, bookContent);
+            break;
+        case 'txt':
+            generateTXT(title, bookContent);
+            break;
+        case 'html':
+            generateHTML(title, bookContent);
+            break;
+    }
+};
+
+function generateEPUB(title, content) {
+    // Create EPUB structure
+    const zip = new JSZip();
+    
+    // 1. mimetype (must be first)
+    zip.file('mimetype', 'application/epub+zip');
+    
+    // 2. META-INF/container.xml
+    const containerXml = `<?xml version="1.0"?>
+<container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">
+    <rootfiles>
+        <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+    </rootfiles>
+</container>`;
+    zip.folder('META-INF').file('container.xml', containerXml);
+    
+    // 3. OEBPS/content.opf (manifest)
+    const chapters = content.querySelectorAll('section[data-chapter]');
+    let manifestItems = '';
+    let spineItems = '';
+    
+    chapters.forEach((ch, idx) => {
+        const chId = `chapter${idx + 1}`;
+        manifestItems += `<item id="${chId}" href="${chId}.xhtml" media-type="application/xhtml+xml"/>\n`;
+        spineItems += `<itemref idref="${chId}"/>\n`;
+    });
+    
+    const contentOpf = `<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" version="3.0">
+    <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+        <dc:identifier id="bookid">${title}</dc:identifier>
+        <dc:title>${title.replace(/_/g, ' ')}</dc:title>
+        <dc:creator>LatticeVeil</dc:creator>
+        <dc:language>en</dc:language>
+        <dc:date>${new Date().toISOString().split('T')[0]}</dc:date>
+    </metadata>
+    <manifest>
+        <item id="toc" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+        <item id="css" href="styles.css" media-type="text/css"/>
+        ${manifestItems}
+    </manifest>
+    <spine toc="toc">
+        ${spineItems}
+    </spine>
+</package>`;
+    
+    zip.folder('OEBPS').file('content.opf', contentOpf);
+    
+    // 4. CSS
+    const css = `body {
+        font-family: 'Merriweather', serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    h1 { text-align: center; margin: 2em 0; }
+    p { text-indent: 2em; margin: 1em 0; }
+    .chapter-title { text-align: center; margin: 3em 0 1em 0; }`;
+    
+    zip.folder('OEBPS').file('styles.css', css);
+    
+    // 5. Chapter files
+    chapters.forEach((ch, idx) => {
+        const chContent = ch.innerHTML
+            .replace(/<span[^>]*class="read-span"[^>]*>(.*?)<\/span>/g, '$1')
+            .replace(/<span[^>]*class="user-highlight"[^>]*>(.*?)<\/span>/g, '$1');
+        
+        const xhtml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>Chapter ${idx + 1}</title>
+    <link rel="stylesheet" type="text/css" href="styles.css"/>
+</head>
+<body>
+    ${chContent}
+</body>
+</html>`;
+        
+        zip.folder('OEBPS').file(`chapter${idx + 1}.xhtml`, xhtml);
+    });
+    
+    // 6. Generate and download
+    zip.generateAsync({type: 'blob'}).then(function(content) {
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${title}.epub`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+}
+
+function generatePDF(title, content) {
+    // Simple PDF generation using browser print
+    const printWindow = window.open('', '_blank');
+    const cleanContent = content.innerHTML
+        .replace(/<span[^>]*class="read-span"[^>]*>(.*?)<\/span>/g, '$1')
+        .replace(/<span[^>]*class="user-highlight"[^>]*>(.*?)<\/span>/g, '$1')
+        .replace(/<section[^>]*data-chapter="[^"]*"[^>]*>/g, '<div class="chapter-break">')
+        .replace(/<\/section>/g, '</div>');
+    
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>${title.replace(/_/g, ' ')}</title>
+            <style>
+                body { font-family: 'Merriweather', serif; line-height: 1.6; color: #000; max-width: 700px; margin: 0 auto; padding: 20px; }
+                h1 { text-align: center; margin: 2em 0; }
+                p { text-indent: 2em; margin: 1em 0; }
+                .chapter-break { page-break-before: always; margin-top: 50px; }
+                @media print { body { margin: 0; } }
+            </style>
+        </head>
+        <body>
+            <h1>${title.replace(/_/g, ' ')}</h1>
+            ${cleanContent}
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 100);
+}
+
+function generateTXT(title, content) {
+    const text = content.innerText
+        .replace(/\s+/g, ' ')
+        .replace(/\n\s*\n/g, '\n\n')
+        .trim();
+    
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function generateHTML(title, content) {
+    const cleanContent = content.innerHTML
+        .replace(/<span[^>]*class="read-span"[^>]*>(.*?)<\/span>/g, '$1')
+        .replace(/<span[^>]*class="user-highlight"[^>]*>(.*?)<\/span>/g, '$1');
+    
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title.replace(/_/g, ' ')}</title>
+    <style>
+        body {
+            font-family: 'Merriweather', serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+        }
+        h1 { text-align: center; margin: 2em 0; }
+        p { text-indent: 2em; margin: 1em 0; }
+        .chapter-title { text-align: center; margin: 3em 0 1em 0; }
+    </style>
+</head>
+<body>
+    <h1>${title.replace(/_/g, ' ')}</h1>
+    ${cleanContent}
+</body>
+</html>`;
+    
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+    window.masterResetAll = function() {
     if(confirm("Reset ALL settings to defaults? This will restore the black theme and reset everything as if the site was new.")) {
         // Clear all localStorage
         localStorage.clear();
@@ -343,7 +556,7 @@ function setupEventListeners() {
     click('ttsBtn', toggleReading);
     click('ttsRestartBtn', restartFromTop);
     click('previewVoiceBtn', previewVoice);
-    click('downloadBtn', downloadBook);
+    click('downloadBtn', () => window.togglePanel('downloadPanel'));
     click('lockBtn', () => { state.zoomLocked = !state.zoomLocked; saveState(); applySettings(); });
 
     const chSelect = document.getElementById('chapterSelect');
