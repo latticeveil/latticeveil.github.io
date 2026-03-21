@@ -120,8 +120,11 @@
             <div class="settings-header">
                 <i class="fas fa-cog"></i>
                 <span>SETTINGS</span>
+                <div class="settings-header-controls">
+                    <button class="master-reset-btn" onclick="masterResetAll()" aria-label="Reset all settings" title="Reset ALL settings to defaults"><i class="fas fa-trash"></i></button>
+                    <button class="settings-close" onclick="window.togglePanel(null)" aria-label="Close settings">&times;</button>
+                </div>
             </div>
-            <button class="settings-close" onclick="window.togglePanel(null)" aria-label="Close settings">&times;</button>
             <div class="settings-tab-bar">
                 <button class="tab-btn active" data-tab="st-display">DISPLAY</button>
                 <button class="tab-btn" data-tab="st-typo">TYPO</button>
@@ -174,12 +177,6 @@
                         <p>The quick brown fox jumps over the lazy dog. This is a sample text to preview your typography settings. Pangrams like this contain all letters of the alphabet.</p>
                     </div>
                 </div>
-                <div class="setting-item">
-                    <div style="display:flex; justify-content:space-between;"><span class="setting-item-label">TYPO RESET</span><button class="btn-toggle" id="typoReset" style="padding:2px 8px; font-size:0.5rem; flex:none;">RESET</button></div>
-                </div>
-                <div class="setting-item">
-                    <div style="display:flex; justify-content:space-between;"><span class="setting-item-label">RESET ALL</span><button class="btn-toggle" id="resetAllBtn" style="padding:2px 8px; font-size:0.5rem; flex:none;"><i class="fas fa-trash"></i></button></div>
-                </div>
             </div>
             <div class="tab-content-area" id="st-audio">
                 <span class="category-label">Voice & Tempo</span>
@@ -210,8 +207,11 @@
             <div class="settings-header">
                 <i class="fas fa-question-circle"></i>
                 <span>HOW TO USE</span>
+                <div class="settings-header-controls">
+                    <button class="master-reset-btn" onclick="masterResetAll()" aria-label="Reset all settings" title="Reset ALL settings to defaults"><i class="fas fa-trash"></i></button>
+                    <button class="settings-close" onclick="window.togglePanel(null)" aria-label="Close help">&times;</button>
+                </div>
             </div>
-            <button class="settings-close" onclick="window.togglePanel(null)" aria-label="Close help">&times;</button>
             <div class="panel-body" style="padding:20px; overflow-y:auto;">
                 <div class="help-grid">
                     <div class="help-item">
