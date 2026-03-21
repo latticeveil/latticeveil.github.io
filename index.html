@@ -1813,7 +1813,11 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
                 // Update URL with ?tabName
                 const url = new URL(window.location);
-                url.search = tabName; // Sets query string to ?tabName
+                if (tabName === 'home') {
+                    url.search = '';
+                } else {
+                    url.search = tabName; 
+                }
                 window.history.pushState({}, '', url);
             }
         }
