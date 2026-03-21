@@ -193,14 +193,47 @@ function setupEventListeners() {
         saveState(); applySettings();
     });
 
+    click('tempoReset', () => {
+        state.tempo = 250;
+        saveState(); applySettings();
+    });
+
+    click('defaultAllBtn', () => {
+        state.theme = 'theme-oled';
+        state.font = 'font-serif';
+        state.zoom = 1.0;
+        state.lineHeight = 1.6;
+        state.letterSpacing = 0;
+        state.paraSpacing = 1.5;
+        state.pageWidth = 700;
+        state.textAlign = 'justify';
+        state.highContrast = false;
+        state.focusMode = false;
+        state.tempo = 250;
+        state.showLore = true;
+        state.showHighlight = true;
+        saveState(); applySettings();
+    });
+
     document.querySelectorAll('.align-btn').forEach(btn => {
         btn.onclick = () => { state.textAlign = btn.dataset.align; saveState(); applySettings(); };
     });
 
-    click('chapterSelect', (e) => {
-        const ch = document.getElementById(`ch-${e.target.value}`);
-        if (ch) ch.scrollIntoView({ behavior: 'smooth' });
-    });
+    const chSelect = document.getElementById('chapterSelect');
+    if(chSelect) {
+        chSelect.onchange = (e) => {
+            const ch = document.getElementById(`ch-${e.target.value}`);
+            if (ch) ch.scrollIntoView({ behavior: 'smooth' });
+        };
+    }
+
+    const vSelect = document.getElementById('voiceSelect');
+    if(vSelect) {
+        vSelect.onchange = (e) => {
+            state.voiceName = e.target.value;
+            saveState();
+        };
+    }
 
     click('highlightModeBtn', () => {
         state.highlightMode = !state.highlightMode;
@@ -364,8 +397,21 @@ function populateVoices() {
     const vs = document.getElementById('voiceSelect');
     if (!vs) return;
     let voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
-    voices.sort((a, b) => (b.name.includes('Natural') ? 1 : 0) - (a.name.includes('Natural') ? 1 : 0));
+    voices.sort((a, b) => {
+        const getScore = (v) => {
+            if (v.name.includes('Natural')) return 100;
+            if (v.name.includes('Google')) return 80;
+            if (v.name.includes('Premium')) return 60;
+            return 0;
+        };
+        return getScore(b) - getScore(a);
+    });
     vs.innerHTML = voices.map(v => `<option value="${v.name}" ${v.name === state.voiceName ? 'selected' : ''}>${v.name}</option>`).join('');
+    
+    if (!state.voiceName && voices.length > 0) {
+        state.voiceName = voices[0].name;
+        saveState();
+    }
 }
 
 function getSelectedVoice() {
