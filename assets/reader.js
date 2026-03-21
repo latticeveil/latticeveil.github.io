@@ -531,27 +531,55 @@ function populateVoices() {
     if(!window.speechSynthesis) return;
     const vs = document.getElementById('voiceSelect'); if (!vs) return;
     let voices = window.speechSynthesis.getVoices();
-    console.log('All available voices:', voices.map(v => `${v.name} (${v.lang})`));
+    console.log('All available voices:', voices.map(v => `${v.name} (${v.lang}) - Local: ${v.localService}`));
     
     // Filter for English voices but include more options
     voices = voices.filter(v => v.lang.startsWith('en'));
-    console.log('English voices:', voices.map(v => `${v.name} (${v.lang})`));
+    console.log('English voices:', voices.map(v => `${v.name} (${v.lang}) - Local: ${v.localService}`));
     
-    // Sort to put natural voices first, then by name
+    // Sort to put Siri-like voices first, then natural voices, then by name
     voices.sort((a, b) => {
-        const aNatural = a.name.includes('Natural') || a.name.includes('Google') || a.name.includes('Samantha') || a.name.includes('Karen') || a.name.includes('Daniel');
-        const bNatural = b.name.includes('Natural') || b.name.includes('Google') || b.name.includes('Samantha') || b.name.includes('Karen') || b.name.includes('Daniel');
+        // Siri voices (Apple devices)
+        const aSiri = a.name.includes('Samantha') || a.name.includes('Karen') || a.name.includes('Daniel') || a.name.includes('Tessa') || a.name.includes('Moira') || a.name.includes('Ava') || a.name.includes('Eddie');
+        const bSiri = b.name.includes('Samantha') || b.name.includes('Karen') || b.name.includes('Daniel') || b.name.includes('Tessa') || b.name.includes('Moira') || b.name.includes('Ava') || b.name.includes('Eddie');
+        
+        // Google/Chrome voices
+        const aGoogle = a.name.includes('Google');
+        const bGoogle = b.name.includes('Google');
+        
+        // Microsoft voices
+        const aMicrosoft = a.name.includes('Microsoft');
+        const bMicrosoft = b.name.includes('Microsoft');
+        
+        // Priority: Siri > Google > Microsoft > Natural > Others
+        if (aSiri && !bSiri) return -1;
+        if (!aSiri && bSiri) return 1;
+        if (aGoogle && !bGoogle) return -1;
+        if (!aGoogle && bGoogle) return 1;
+        if (aMicrosoft && !bMicrosoft) return -1;
+        if (!aMicrosoft && bMicrosoft) return 1;
+        
+        // Then by natural sounding indicators
+        const aNatural = a.name.includes('Natural') || a.name.includes('Premium') || a.localService;
+        const bNatural = b.name.includes('Natural') || b.name.includes('Premium') || b.localService;
         if (aNatural && !bNatural) return -1;
         if (!aNatural && bNatural) return 1;
+        
+        // Finally by name
         return a.name.localeCompare(b.name);
     });
     
-    vs.innerHTML = voices.map(v => `<option value="${v.name}" ${v.name === state.voiceName ? 'selected' : ''}>${v.name} (${v.lang})</option>`).join('');
+    vs.innerHTML = voices.map(v => {
+        const label = v.localService ? `${v.name} (${v.lang}) 🍎` : `${v.name} (${v.lang})`;
+        return `<option value="${v.name}" ${v.name === state.voiceName ? 'selected' : ''}>${label}</option>`;
+    }).join('');
+    
     if (!state.voiceName && voices.length > 0) { 
         state.voiceName = voices[0].name; 
         saveState(); 
     }
     console.log('Selected voice:', state.voiceName);
+    console.log('Siri-like voices available:', voices.filter(v => v.name.includes('Samantha') || v.name.includes('Karen') || v.name.includes('Daniel')).map(v => v.name));
 }
 
 // Mobile-friendly voice loading with retries
@@ -584,18 +612,33 @@ function getSelectedVoice() {
     if (!voices || voices.length === 0) return null;
     // Always try to get the selected voice, fallback to first available
     const selected = voices.find(v => v.name === state.voiceName);
+    console.log('Getting voice - Selected:', state.voiceName, 'Found:', selected ? selected.name : 'None');
     return selected || voices[0];
 }
 
 function previewVoice() {
     if(!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
+    
+    // Force refresh voices list
+    const voices = window.speechSynthesis.getVoices();
+    console.log('Available voices for preview:', voices.map(v => `${v.name} (${v.lang})`));
+    
     const voice = getSelectedVoice();
-    const utter = new SpeechSynthesisUtterance("Continuist system check. This is a voice preview.");
+    const utter = new SpeechSynthesisUtterance("Continuist system check. This is a voice preview to test the selected voice.");
+    
     if(voice) {
         utter.voice = voice;
-        console.log('Previewing voice:', voice.name);
+        console.log('Previewing with voice:', voice.name, 'Lang:', voice.lang, 'Local:', voice.localService);
+    } else {
+        console.warn('No voice found for preview');
     }
+    
+    // Add event listeners to verify
+    utter.onstart = () => console.log('Preview started with voice:', utter.voice?.name);
+    utter.onend = () => console.log('Preview ended');
+    utter.onerror = (e) => console.error('Preview error:', e);
+    
     window.speechSynthesis.speak(utter);
 }
 
@@ -699,17 +742,27 @@ function speakNext() {
         saveState();
     }
     
+    // Create fresh utterance for each text
     const utter = new SpeechSynthesisUtterance(text);
     const voice = getSelectedVoice();
-    if (voice) utter.voice = voice;
+    
+    if (voice) {
+        utter.voice = voice;
+        console.log('Speaking with voice:', voice.name, 'Lang:', voice.lang);
+    } else {
+        console.warn('No voice available, using default');
+    }
+    
     utter.rate = state.tempo / 200;
     
+    utter.onstart = () => console.log('Started speaking with voice:', utter.voice?.name);
     utter.onend = () => {
+        console.log('Finished speaking, moving to next');
         window.ttsIndex++;
         speakNext();
     };
-    
-    utter.onerror = () => {
+    utter.onerror = (e) => {
+        console.error('Speech error:', e);
         window.ttsIndex++;
         speakNext();
     };
