@@ -4,4 +4,5 @@ supabase/
 .env.*.local
 plans/
 push_site.cmd
+lore/
 
