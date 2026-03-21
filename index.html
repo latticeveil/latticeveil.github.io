@@ -1811,9 +1811,9 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 tab.classList.add("active");
                 localStorage.setItem('activeTab', tabName);
 
-                // Update URL with ?page=
+                // Update URL with ?tabName
                 const url = new URL(window.location);
-                url.searchParams.set('page', tabName);
+                url.search = tabName; // Sets query string to ?tabName
                 window.history.pushState({}, '', url);
             }
         }
@@ -2015,15 +2015,16 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
         // Sync Tabs with URL Params, Hash, or LocalStorage
         function syncTab() {
+            // Get the first query parameter key (e.g. 'assets' from ?assets)
             const urlParams = new URLSearchParams(window.location.search);
-            const pageParam = urlParams.get('page');
+            const queryParam = Array.from(urlParams.keys())[0];
             const hash = window.location.hash.replace('#', '');
             const savedTab = localStorage.getItem('activeTab');
 
             let targetTab = 'home'; // Default
 
-            if (pageParam && document.getElementById(pageParam)) {
-                targetTab = pageParam;
+            if (queryParam && document.getElementById(queryParam)) {
+                targetTab = queryParam;
             } else if (hash && document.getElementById(hash)) {
                 targetTab = hash;
             } else if (savedTab && document.getElementById(savedTab)) {

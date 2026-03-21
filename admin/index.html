@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Veilnet • Admin</title>
+  <link rel="icon" href="../veilnet/assets/Veilnet.png">
+  <link rel="stylesheet" href="../veilnet/assets/veilnet.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <a href="../veilnet/" style="display:flex; align-items:center; gap:12px">
+          <span style="font-weight:1000">LatticeVeil</span>
+          <span class="brand-badge">Veilnet</span>
+        </a>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="../veilnet/">Home</a>
+        <a href="../veilnet/community/">Community</a>
+        <a href="../veilnet/profile/">Profile</a>
+      </nav>
+
+      <div class="right">
+        <div class="pfp-wrap">
+          <div class="avatar" data-veil-avatar title="Profile">
+            <img data-veil-avatar-img src="../veilnet/assets/default_pfp.png" alt="profile">
+            <span id="vnUnreadBadgeProfile" class="vn-badge vn-badge--hidden"></span>
+          </div>
+          <div class="status-ring" data-veil-ring style="--ring: rgba(255,255,255,.25); opacity:.55"></div>
+
+          <div class="dropdown" data-veil-dropdown>
+            <div class="dd-head">
+              <img data-veil-dd-img src="../veilnet/assets/default_pfp.png" alt="">
+              <div>
+                <div class="dd-title" data-veil-dd-title>Not signed in</div>
+                <div class="dd-sub" data-veil-dd-sub>Login to access Veilnet features</div>
+              </div>
+            </div>
+
+            <div class="dd-item" onclick="location.href='../veilnet/'">
+              <span>Go to Veilnet</span><small>Home</small>
+            </div>
+
+            <div class="dd-item" data-veil-myprofile style="display:none">
+              <span>My Profile</span><small>/profile</small>
+            </div>
+
+            <div class="dd-item" data-veil-settings style="display:none">
+              <span>Settings</span><small>About me + theme</small>
+            </div>
+
+            <div class="dd-divider"></div>
+
+            <div class="dd-item" data-veil-login>
+              <span>Login with Google</span><small>Veilnet</small>
+            </div>
+
+            <div class="dd-item" data-veil-logout style="display:none">
+              <span>Log Out</span><small>Veilnet</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding: 20px 0 40px">
+    <div class="breadcrumbs"><a href="../veilnet/index.html">Veilnet</a> / Admin</div>
+
+    <section class="panel" style="margin-top:14px;">
+      <h3>Official Build Hash Admin</h3>
+      <div class="inner" style="display:flex; flex-direction:column; gap:12px">
+        <div class="notice" style="margin:0;">
+          <b style="color:var(--text)">Warning:</b> Hashes control official online builds. Keep secure.
+        </div>
+
+        <div id="adminAuthState" class="small"></div>
+        <div id="adminStatus" class="small" aria-live="polite"></div>
+
+        <div id="adminLoginBox" style="display:none;">
+          <button id="adminLoginBtn" class="btn" type="button">Login with Google</button>
+        </div>
+
+        <div id="adminUnauthorizedBox" style="display:none;">
+          <div class="small">Not authorized for hash updates on this account.</div>
+        </div>
+
+        <div id="adminMain" style="display:none; gap:16px; flex-direction:column;">
+          <div class="small" style="display:flex; align-items:center; gap:8px;">
+            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+              <input id="hashAutoSubmitToggle" type="checkbox">
+              Auto-submit after compute
+            </label>
+          </div>
+
+          <div class="panel" style="padding:12px;">
+            <div style="font-weight:900;">DEV (Active)</div>
+            <div class="small" style="margin-top:6px;">Hash: <code id="devCurrentHash">-</code></div>
+            <div class="small">Updated: <span id="devCurrentUpdated">-</span></div>
+            <div style="margin-top:8px;">
+              <button id="devCopyBtn" class="btn ghost" type="button">Copy DEV Hash</button>
+            </div>
+          </div>
+
+          <div class="panel" style="padding:12px;">
+            <div style="font-weight:900;">RELEASE (Active)</div>
+            <div class="small" style="margin-top:6px;">Hash: <code id="releaseCurrentHash">-</code></div>
+            <div class="small">Updated: <span id="releaseCurrentUpdated">-</span></div>
+            <div style="margin-top:8px;">
+              <button id="releaseCopyBtn" class="btn ghost" type="button">Copy RELEASE Hash</button>
+            </div>
+          </div>
+
+          <div class="panel" style="padding:12px;">
+            <div style="font-weight:900;">Update DEV Hash</div>
+            <input id="devHashInput" type="text" placeholder="64-char sha256 hex" spellcheck="false" style="margin-top:8px;">
+            <div
+              id="devDropZone"
+              data-hash-dropzone="dev"
+              role="button"
+              tabindex="0"
+              style="
+                margin-top:10px;
+                border:1px dashed rgba(255,255,255,.22);
+                border-radius:12px;
+                padding:14px 12px;
+                text-align:center;
+                background:rgba(255,255,255,.02);
+                cursor:pointer;
+                user-select:none;
+              "
+            >
+              <div style="font-weight:800;">Drop DEV EXE here</div>
+              <div class="small" style="margin-top:4px; opacity:.86;">or click to choose</div>
+            </div>
+            <input id="devExeInput" type="file" accept=".exe,application/x-msdownload" style="display:none;">
+            <div id="devHashComputeStatus" class="small" aria-live="polite" style="margin-top:6px;"></div>
+            <div style="margin-top:10px;">
+              <button id="devUpdateBtn" class="btn" type="button">Update DEV</button>
+            </div>
+          </div>
+
+          <div class="panel" style="padding:12px;">
+            <div style="font-weight:900;">Update RELEASE Hash</div>
+            <input id="releaseHashInput" type="text" placeholder="64-char sha256 hex" spellcheck="false" style="margin-top:8px;">
+            <div
+              id="releaseDropZone"
+              data-hash-dropzone="release"
+              role="button"
+              tabindex="0"
+              style="
+                margin-top:10px;
+                border:1px dashed rgba(255,255,255,.22);
+                border-radius:12px;
+                padding:14px 12px;
+                text-align:center;
+                background:rgba(255,255,255,.02);
+                cursor:pointer;
+                user-select:none;
+              "
+            >
+              <div style="font-weight:800;">Drop RELEASE EXE here</div>
+              <div class="small" style="margin-top:4px; opacity:.86;">or click to choose</div>
+            </div>
+            <input id="releaseExeInput" type="file" accept=".exe,application/x-msdownload" style="display:none;">
+            <div id="releaseHashComputeStatus" class="small" aria-live="polite" style="margin-top:6px;"></div>
+            <div style="margin-top:10px;">
+              <button id="releaseUpdateBtn" class="btn" type="button">Update RELEASE</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">Veilnet admin controls</div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../veilnet/assets/config.js"></script>
+  <script src="../veilnet/assets/auth.js"></script>
+  <script src="../veilnet/assets/veilnet.js"></script>
+  <script src="../veilnet/assets/admin.js"></script>
+</body>
+</html>
