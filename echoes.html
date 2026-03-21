@@ -114,9 +114,13 @@
     </div>
 
     <!-- Modals -->
-    <!-- Settings panel now has close button in tab bar -->
+    <!-- Settings panel with external close button and header -->
     <div class="panel-overlay" id="settingsPanel">
         <div class="settings-panel">
+            <div class="settings-header">
+                <i class="fas fa-cog"></i>
+                <span>SETTINGS</span>
+            </div>
             <button class="settings-close" onclick="window.togglePanel(null)" aria-label="Close settings">&times;</button>
             <div class="settings-tab-bar">
                 <button class="tab-btn active" data-tab="st-display">DISPLAY</button>
@@ -164,6 +168,18 @@
                         <button class="btn-toggle" data-align="center">CENTER</button>
                     </div>
                 </div>
+                <div class="setting-item">
+                    <span class="setting-item-label">PREVIEW</span>
+                    <div class="text-preview" id="textPreview">
+                        <p>The quick brown fox jumps over the lazy dog. This is a sample text to preview your typography settings. Pangrams like this contain all letters of the alphabet.</p>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <div style="display:flex; justify-content:space-between;"><span class="setting-item-label">TYPO RESET</span><button class="btn-toggle" id="typoReset" style="padding:2px 8px; font-size:0.5rem; flex:none;">RESET</button></div>
+                </div>
+                <div class="setting-item">
+                    <div style="display:flex; justify-content:space-between;"><span class="setting-item-label">RESET ALL</span><button class="btn-toggle" id="resetAllBtn" style="padding:2px 8px; font-size:0.5rem; flex:none;"><i class="fas fa-trash"></i></button></div>
+                </div>
             </div>
             <div class="tab-content-area" id="st-audio">
                 <span class="category-label">Voice & Tempo</span>
@@ -191,10 +207,11 @@
 
     <div class="panel-overlay" id="helpPanel">
         <div class="settings-panel">
-            <div class="panel-header" style="background:rgba(255,255,255,0.05); border-bottom:1px solid rgba(255,255,255,0.1); padding:15px 20px;">
-                <span class="panel-title">HOW TO USE</span>
-                <button class="close-btn" onclick="window.togglePanel(null)" style="background:none; border:none; color:var(--reader-accent); cursor:pointer; font-size:1.2rem;">&times;</button>
+            <div class="settings-header">
+                <i class="fas fa-question-circle"></i>
+                <span>HOW TO USE</span>
             </div>
+            <button class="settings-close" onclick="window.togglePanel(null)" aria-label="Close help">&times;</button>
             <div class="panel-body" style="padding:20px; overflow-y:auto;">
                 <div class="help-grid">
                     <div class="help-item">
