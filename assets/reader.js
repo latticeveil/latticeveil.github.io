@@ -1,23 +1,23 @@
-// Reader Configuration & State
+// Reader Configuration & State - Initialized with safe defaults
 const state = {
-    theme: localStorage.getItem('reader_theme') || 'theme-oled',
-    font: localStorage.getItem('reader_font') || 'font-serif',
-    size: parseInt(localStorage.getItem('reader_size')) || 18,
-    zoom: parseFloat(localStorage.getItem('reader_zoom')) || 1.0,
-    lineHeight: parseFloat(localStorage.getItem('reader_lh')) || 1.6,
-    letterSpacing: parseFloat(localStorage.getItem('reader_ls')) || 0,
-    paraSpacing: parseFloat(localStorage.getItem('reader_ps')) || 1.5,
-    pageWidth: parseInt(localStorage.getItem('reader_pw')) || 700,
-    textAlign: localStorage.getItem('reader_align') || 'justify',
-    scroll: 0, 
+    theme: 'theme-oled',
+    font: 'font-serif',
+    size: 18,
+    zoom: 1.0,
+    lineHeight: 1.6,
+    letterSpacing: 0,
+    paraSpacing: 1.5,
+    pageWidth: 700,
+    textAlign: 'justify',
+    scroll: 0,
     chapter: 1,
-    highContrast: localStorage.getItem('reader_high_contrast') === 'true',
-    focusMode: localStorage.getItem('reader_focus') === 'true',
-    voiceName: localStorage.getItem('reader_voice') || '',
-    tempo: parseInt(localStorage.getItem('reader_tempo')) || 250,
-    showLore: localStorage.getItem('reader_show_lore') !== 'false',
-    showHighlight: localStorage.getItem('reader_show_highlight') !== 'false',
-    zoomLocked: localStorage.getItem('reader_zoom_locked') === 'true',
+    highContrast: false,
+    focusMode: false,
+    voiceName: '',
+    tempo: 250,
+    showLore: true,
+    showHighlight: true,
+    zoomLocked: false,
     highlightMode: false,
     highlightStart: null,
     selectedColor: 'rgba(242, 193, 78, 0.4)',
@@ -27,11 +27,32 @@ const state = {
     comments: {}
 };
 
-// Safe JSON Parse for Comments
-try {
-    const saved = localStorage.getItem('reader_comments');
-    if (saved) state.comments = JSON.parse(saved);
-} catch(e) { state.comments = {}; }
+// Load state from localStorage safely
+function loadPersistentState() {
+    try {
+        state.theme = localStorage.getItem('reader_theme') || 'theme-oled';
+        state.font = localStorage.getItem('reader_font') || 'font-serif';
+        state.size = parseInt(localStorage.getItem('reader_size')) || 18;
+        state.zoom = parseFloat(localStorage.getItem('reader_zoom')) || 1.0;
+        state.lineHeight = parseFloat(localStorage.getItem('reader_lh')) || 1.6;
+        state.letterSpacing = parseFloat(localStorage.getItem('reader_ls')) || 0;
+        state.paraSpacing = parseFloat(localStorage.getItem('reader_ps')) || 1.5;
+        state.pageWidth = parseInt(localStorage.getItem('reader_pw')) || 700;
+        state.textAlign = localStorage.getItem('reader_align') || 'justify';
+        state.highContrast = localStorage.getItem('reader_high_contrast') === 'true';
+        state.focusMode = localStorage.getItem('reader_focus') === 'true';
+        state.voiceName = localStorage.getItem('reader_voice') || '';
+        state.tempo = parseInt(localStorage.getItem('reader_tempo')) || 250;
+        state.showLore = localStorage.getItem('reader_show_lore') !== 'false';
+        state.showHighlight = localStorage.getItem('reader_show_highlight') !== 'false';
+        state.zoomLocked = localStorage.getItem('reader_zoom_locked') === 'true';
+        
+        const savedComments = localStorage.getItem('reader_comments');
+        if (savedComments) state.comments = JSON.parse(savedComments);
+    } catch (e) {
+        console.warn("Storage load error, using defaults", e);
+    }
+}
 
 // Lore Database
 const loreData = {
@@ -60,16 +81,22 @@ let wakeLockObj = null;
 
 // Initialization
 document.addEventListener('DOMContentLoaded', () => {
+    loadPersistentState();
+    setupEventListeners(); // Bind early
     prepareTextForReading();
     applySettings();
-    setupEventListeners();
     setupLoreLinks();
     
-    // Chapter Sync
+    // Chapter / URL Sync
     const urlParams = new URLSearchParams(window.location.search);
     const chParam = urlParams.get('chapter');
-    if (chParam) switchChapter(parseInt(chParam), false);
-    else restoreProgress();
+    
+    if (chParam) {
+        switchChapter(parseInt(chParam), false);
+    } else {
+        // Force ?chapter=1 by default
+        switchChapter(1, true);
+    }
 
     if (window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = populateVoices;
@@ -133,10 +160,21 @@ function applySettings() {
         hb.classList.toggle('active', state.highlightMode);
         body.classList.toggle('highlight-mode-active', state.highlightMode);
     }
+    
+    const lb = document.getElementById('lockBtn');
+    if(lb) {
+        lb.innerHTML = state.zoomLocked ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>';
+        lb.classList.toggle('active', state.zoomLocked);
+    }
+
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) {
+        if (state.zoomLocked) viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+        else viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
+    }
 }
 
 function setupEventListeners() {
-    // Advanced Sliders
     const bind = (id, key, isFloat = true) => {
         const el = document.getElementById(id);
         if(el) el.oninput = (e) => { state[key] = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value); saveState(); applySettings(); };
@@ -161,7 +199,8 @@ function setupEventListeners() {
         btn.onclick = () => {
             document.querySelectorAll('.tab-btn, .tab-content-area').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById(btn.dataset.tab).classList.add('active');
+            const content = document.getElementById(btn.dataset.tab);
+            if (content) content.classList.add('active');
         };
     });
 
@@ -172,12 +211,18 @@ function setupEventListeners() {
     click('settingsBtn', () => togglePanel('settingsPanel'));
     click('helpBtn', () => togglePanel('helpPanel'));
     click('closeSettings', () => togglePanel(null));
+    // Header Close button
+    document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.onclick = () => togglePanel(null);
+    });
+
     click('ttsBtn', toggleReading);
     click('previewVoiceBtn', previewVoice);
     click('downloadBtn', downloadBook);
     click('lockBtn', () => { state.zoomLocked = !state.zoomLocked; saveState(); applySettings(); });
 
-    click('chapterSelect', (e) => switchChapter(parseInt(e.target.value)));
+    const chSelect = document.getElementById('chapterSelect');
+    if(chSelect) chSelect.onchange = (e) => switchChapter(parseInt(e.target.value));
 
     // Highlight Mode
     click('highlightModeBtn', () => {
@@ -243,7 +288,7 @@ function setupEventListeners() {
     });
 }
 
-function switchChapter(num, scroll = true) {
+function switchChapter(num, autoScroll = true) {
     state.chapter = num;
     const url = new URL(window.location);
     url.searchParams.set('chapter', num);
@@ -253,7 +298,7 @@ function switchChapter(num, scroll = true) {
     const ch = document.querySelector(`section[data-chapter="${num}"]`);
     if (ch) {
         ch.style.display = 'block';
-        if (scroll) {
+        if (autoScroll) {
             const savedScroll = parseInt(localStorage.getItem(`reader_scroll_ch${num}`)) || 0;
             window.scrollTo(0, savedScroll);
         }
@@ -364,6 +409,7 @@ function getSelectedVoice() {
 }
 
 function previewVoice() {
+    if(!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     const voice = getSelectedVoice();
     const utter = new SpeechSynthesisUtterance("Continuist system check.");
@@ -411,13 +457,6 @@ async function toggleWakeLock(e) {
 }
 
 function saveState() {
-    const keys = ['theme', 'font', 'size', 'zoom', 'lh', 'ls', 'ps', 'pw', 'align', 'scroll', 'high_contrast', 'focus', 'voice', 'tempo', 'show_lore', 'show_highlight', 'zoom_locked'];
-    const map = { lh: 'lineHeight', ls: 'letterSpacing', ps: 'paraSpacing', pw: 'pageWidth', align: 'textAlign', focus: 'focusMode', voice: 'voiceName', show_lore: 'showLore', show_highlight: 'showHighlight', zoom_locked: 'zoomLocked', high_contrast: 'highContrast' };
-    keys.forEach(k => {
-        const val = state[map[k] || k];
-        if(val !== undefined) localStorage.setItem(`reader_theme`, state.theme); // Fix key
-    });
-    // Corrected bulk save
     localStorage.setItem('reader_theme', state.theme);
     localStorage.setItem('reader_font', state.font);
     localStorage.setItem('reader_size', state.size);
