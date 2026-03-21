@@ -197,6 +197,12 @@ body {
 .tab-content-area { padding: 25px; overflow-y: auto; flex-grow: 1; display: none; -webkit-overflow-scrolling: touch; }
 .tab-content-area.active { display: block; }
 
+ .reading-highlight {
+     background: rgba(56, 225, 255, 0.18);
+     box-shadow: 0 0 0 1px rgba(56, 225, 255, 0.35);
+     border-radius: 4px;
+ }
+
 /* Main Container */
 .reader-container {
     max-width: var(--reader-max-width);
