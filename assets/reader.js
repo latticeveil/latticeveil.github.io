@@ -90,12 +90,24 @@ const loreData = {
 
 let wakeLockObj = null;
 
-// GLOBAL FUNCTIONS (Exposed to window for HTML access)
+// GLOBAL FUNCTIONS
 window.togglePanel = function(id) {
     document.querySelectorAll('.panel-overlay').forEach(p => p.classList.remove('active'));
     if (id) {
         const p = document.getElementById(id);
         if(p) p.classList.add('active');
+        
+        // Update URL state
+        const url = new URL(window.location);
+        if (id === 'settingsPanel') url.searchParams.set('settings', '1');
+        else if (id === 'helpPanel') url.searchParams.set('help', '1');
+        else { url.searchParams.delete('settings'); url.searchParams.delete('help'); }
+        window.history.pushState({}, '', url);
+    } else {
+        const url = new URL(window.location);
+        url.searchParams.delete('settings');
+        url.searchParams.delete('help');
+        window.history.pushState({}, '', url);
     }
 };
 
@@ -120,7 +132,7 @@ window.switchChapter = function(num, autoScroll = true) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Setup listeners first
+    // 1. Listeners first
     setupEventListeners();
     
     // 2. Load state
@@ -133,11 +145,17 @@ document.addEventListener('DOMContentLoaded', () => {
     applySettings();
     setupLoreLinks();
     
-    // 5. Chapter Sync
+    // 5. URL Sync
     const urlParams = new URLSearchParams(window.location.search);
     const chParam = urlParams.get('chapter');
+    const setParam = urlParams.get('settings');
+    const helpParam = urlParams.get('help');
+    
     if (chParam) switchChapter(parseInt(chParam), false);
     else switchChapter(1, true);
+
+    if (setParam) window.togglePanel('settingsPanel');
+    if (helpParam) window.togglePanel('helpPanel');
 
     if (window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = populateVoices;
@@ -179,7 +197,9 @@ function applySettings() {
     setVal('letterSpacingSlider', state.letterSpacing);
     setVal('pageWidthSlider', state.pageWidth);
     setVal('tempoSlider', state.tempo);
-    setVal('chapterSelect', state.chapter);
+    
+    const chSelect = document.getElementById('chapterSelect');
+    if(chSelect) chSelect.value = state.chapter;
     
     const tl = document.getElementById('tempoLabel'); if(tl) tl.innerText = `TEMPO: ${state.tempo} WPM`;
     
@@ -216,10 +236,13 @@ function setupEventListeners() {
     click('zoomReset', () => { state.zoom = 1.0; saveState(); applySettings(); });
     click('tempoReset', () => { state.tempo = 250; saveState(); applySettings(); });
     click('defaultAllBtn', () => {
-        Object.assign(state, { theme: 'theme-oled', font: 'font-serif', zoom: 1.0, lineHeight: 1.6, letterSpacing: 0, paraSpacing: 1.5, pageWidth: 700, textAlign: 'justify', highContrast: false, focusMode: false, tempo: 250, showLore: true, showHighlight: true });
-        saveState(); applySettings();
+        if(confirm("Restore all reader settings to defaults?")) {
+            Object.assign(state, { theme: 'theme-oled', font: 'font-serif', zoom: 1.0, lineHeight: 1.6, letterSpacing: 0, paraSpacing: 1.5, pageWidth: 700, textAlign: 'justify', highContrast: false, focusMode: false, tempo: 250, showLore: true, showHighlight: true });
+            saveState(); applySettings();
+        }
     });
 
+    // Tab Logic
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.tab-btn, .tab-content-area').forEach(el => el.classList.remove('active'));
@@ -235,18 +258,17 @@ function setupEventListeners() {
 
     click('settingsBtn', () => window.togglePanel('settingsPanel'));
     click('helpBtn', () => window.togglePanel('helpPanel'));
-    
-    document.querySelectorAll('.close-btn').forEach(btn => {
-        btn.onclick = () => window.togglePanel(null);
-    });
+    document.querySelectorAll('.close-btn').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
 
     click('ttsBtn', toggleReading);
     click('previewVoiceBtn', previewVoice);
     click('downloadBtn', downloadBook);
     click('lockBtn', () => { state.zoomLocked = !state.zoomLocked; saveState(); applySettings(); });
 
-    click('chapterSelect', (e) => window.switchChapter(parseInt(e.target.value)));
+    const chSelect = document.getElementById('chapterSelect');
+    if(chSelect) chSelect.onchange = (e) => window.switchChapter(parseInt(e.target.value));
 
+    // Highlight Mode
     click('highlightModeBtn', () => {
         state.highlightMode = !state.highlightMode;
         state.highlightStart = null;
