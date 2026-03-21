@@ -1,4 +1,4 @@
-// Reader Configuration & State - Initialized with hard defaults
+// Reader Configuration & State - Hard Initialized
 const state = {
     theme: 'theme-oled',
     font: 'font-serif',
@@ -62,10 +62,8 @@ function loadPersistentState() {
             }
         });
         const savedComments = localStorage.getItem('reader_comments');
-        if (savedComments) {
-            try { state.comments = JSON.parse(savedComments); } catch(e) { state.comments = {}; }
-        }
-    } catch (e) { console.warn("Storage load error", e); }
+        if (savedComments) state.comments = JSON.parse(savedComments);
+    } catch (e) { console.warn("Storage reset to defaults"); }
 }
 
 const loreData = {
@@ -92,27 +90,54 @@ const loreData = {
 
 let wakeLockObj = null;
 
-// Initialization
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. ATTACH LISTENERS FIRST (Crucial for robustness)
-    try { setupEventListeners(); } catch(e) { console.error("Listener setup failed", e); }
+// GLOBAL FUNCTIONS (Exposed to window for HTML access)
+window.togglePanel = function(id) {
+    document.querySelectorAll('.panel-overlay').forEach(p => p.classList.remove('active'));
+    if (id) {
+        const p = document.getElementById(id);
+        if(p) p.classList.add('active');
+    }
+};
+
+window.switchChapter = function(num, autoScroll = true) {
+    state.chapter = num;
+    try {
+        const url = new URL(window.location);
+        url.searchParams.set('chapter', num);
+        window.history.pushState({}, '', url);
+    } catch(e) {}
     
-    // 2. LOAD DATA
+    document.querySelectorAll('section[data-chapter]').forEach(s => s.style.display = 'none');
+    const ch = document.querySelector(`section[data-chapter="${num}"]`);
+    if (ch) {
+        ch.style.display = 'block';
+        if (autoScroll) {
+            const savedScroll = parseInt(localStorage.getItem(`reader_scroll_ch${num}`)) || 0;
+            window.scrollTo(0, savedScroll);
+        }
+    }
+    applySettings();
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Setup listeners first
+    setupEventListeners();
+    
+    // 2. Load state
     loadPersistentState();
     
-    // 3. PREPARE UI
-    try { prepareTextForReading(); } catch(e) { console.error("Text prep failed", e); }
-    try { applySettings(); } catch(e) { console.error("Initial apply settings failed", e); }
-    try { setupLoreLinks(); } catch(e) { console.error("Lore setup failed", e); }
+    // 3. Prep text
+    prepareTextForReading();
     
-    // 4. CHAPTER SYNC
+    // 4. Initial apply
+    applySettings();
+    setupLoreLinks();
+    
+    // 5. Chapter Sync
     const urlParams = new URLSearchParams(window.location.search);
     const chParam = urlParams.get('chapter');
-    if (chParam) {
-        switchChapter(parseInt(chParam), false);
-    } else {
-        switchChapter(1, true); // Force ?chapter=1
-    }
+    if (chParam) switchChapter(parseInt(chParam), false);
+    else switchChapter(1, true);
 
     if (window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = populateVoices;
@@ -173,18 +198,6 @@ function applySettings() {
         hb.classList.toggle('active', state.highlightMode);
         body.classList.toggle('highlight-mode-active', state.highlightMode);
     }
-    
-    const lb = document.getElementById('lockBtn');
-    if(lb) {
-        lb.innerHTML = state.zoomLocked ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>';
-        lb.classList.toggle('active', state.zoomLocked);
-    }
-
-    const viewport = document.querySelector('meta[name="viewport"]');
-    if (viewport) {
-        if (state.zoomLocked) viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-        else viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes');
-    }
 }
 
 function setupEventListeners() {
@@ -207,7 +220,6 @@ function setupEventListeners() {
         saveState(); applySettings();
     });
 
-    // Tab Logic
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.tab-btn, .tab-content-area').forEach(el => el.classList.remove('active'));
@@ -221,19 +233,20 @@ function setupEventListeners() {
     document.querySelectorAll('.btn-toggle[data-align]').forEach(b => { b.onclick = () => { state.textAlign = b.dataset.align; saveState(); applySettings(); }; });
     document.querySelectorAll('.theme-btn[data-theme]').forEach(b => { b.onclick = () => { state.theme = b.dataset.theme; saveState(); applySettings(); }; });
 
-    click('settingsBtn', () => togglePanel('settingsPanel'));
-    click('helpBtn', () => togglePanel('helpPanel'));
-    click('closeSettings', () => togglePanel(null));
-    document.querySelectorAll('.close-btn').forEach(btn => { btn.onclick = () => togglePanel(null); });
+    click('settingsBtn', () => window.togglePanel('settingsPanel'));
+    click('helpBtn', () => window.togglePanel('helpPanel'));
+    
+    document.querySelectorAll('.close-btn').forEach(btn => {
+        btn.onclick = () => window.togglePanel(null);
+    });
 
     click('ttsBtn', toggleReading);
     click('previewVoiceBtn', previewVoice);
     click('downloadBtn', downloadBook);
     click('lockBtn', () => { state.zoomLocked = !state.zoomLocked; saveState(); applySettings(); });
 
-    click('chapterSelect', (e) => switchChapter(parseInt(e.target.value)));
+    click('chapterSelect', (e) => window.switchChapter(parseInt(e.target.value)));
 
-    // Highlight Mode
     click('highlightModeBtn', () => {
         state.highlightMode = !state.highlightMode;
         state.highlightStart = null;
@@ -256,7 +269,7 @@ function setupEventListeners() {
             const sel = window.getSelection();
             if (sel.toString().trim().length > 5) {
                 state.tempRange = sel.getRangeAt(0).cloneRange();
-                togglePanel('commentPanel');
+                window.togglePanel('commentPanel');
             }
         };
     }
@@ -270,7 +283,7 @@ function setupEventListeners() {
     });
 
     click('saveHighlightBtn', saveManualHighlight);
-    click('closeComment', () => { togglePanel(null); state.highlightStart = null; });
+    click('closeComment', () => { window.togglePanel(null); state.highlightStart = null; });
 
     const toggle = (id, key) => { const el = document.getElementById(id); if(el) el.onchange = (e) => { state[key] = e.target.checked; saveState(); applySettings(); }; };
     toggle('contrastToggle', 'highContrast');
@@ -289,26 +302,6 @@ function setupEventListeners() {
     });
 }
 
-function switchChapter(num, autoScroll = true) {
-    state.chapter = num;
-    try {
-        const url = new URL(window.location);
-        url.searchParams.set('chapter', num);
-        window.history.pushState({}, '', url);
-    } catch(e) {}
-    
-    document.querySelectorAll('section[data-chapter]').forEach(s => s.style.display = 'none');
-    const ch = document.querySelector(`section[data-chapter="${num}"]`);
-    if (ch) {
-        ch.style.display = 'block';
-        if (autoScroll) {
-            const savedScroll = parseInt(localStorage.getItem(`reader_scroll_ch${num}`)) || 0;
-            window.scrollTo(0, savedScroll);
-        }
-    }
-    applySettings();
-}
-
 function handleManualHighlight(e, span) {
     if (!state.highlightStart) {
         state.highlightStart = span.id;
@@ -324,12 +317,13 @@ function handleManualHighlight(e, span) {
         range.setStartBefore(start);
         range.setEndAfter(span);
         state.tempRange = range;
-        togglePanel('commentPanel');
+        window.togglePanel('commentPanel');
     }
 }
 
 function saveManualHighlight() {
-    const note = document.getElementById('commentInput').value;
+    const input = document.getElementById('commentInput');
+    const note = input ? input.value : "";
     const id = "h-" + Date.now();
     const wrap = document.createElement('span');
     wrap.className = 'user-highlight';
@@ -347,7 +341,7 @@ function saveManualHighlight() {
         if(el.classList.contains('tap-indicator')) el.remove();
         else el.classList.remove('highlight-start-marker');
     });
-    saveState(); applySettings(); togglePanel(null);
+    saveState(); applySettings(); window.togglePanel(null);
     window.getSelection().removeAllRanges();
 }
 
@@ -380,12 +374,7 @@ function showLore(title, data) {
     const d = document.getElementById('loreDesc'); if(d) d.innerText = data.desc;
     const img = document.getElementById('loreImg');
     if (img) { if (data.img) { img.src = data.img; img.style.display = 'block'; } else img.style.display = 'none'; }
-    togglePanel('lorePanel');
-}
-
-function togglePanel(id) {
-    document.querySelectorAll('.panel-overlay').forEach(p => p.classList.remove('active'));
-    if (id) { const p = document.getElementById(id); if(p) p.classList.add('active'); }
+    window.togglePanel('lorePanel');
 }
 
 function populateVoices() {
@@ -394,6 +383,7 @@ function populateVoices() {
     let voices = window.speechSynthesis.getVoices().filter(v => v.lang.startsWith('en'));
     voices.sort((a, b) => (b.name.includes('Natural') ? 10 : 0) - (a.name.includes('Natural') ? 10 : 0));
     vs.innerHTML = voices.map(v => `<option value="${v.name}" ${v.name === state.voiceName ? 'selected' : ''}>${v.name}</option>`).join('');
+    if (!state.voiceName && voices.length > 0) { state.voiceName = voices[0].name; saveState(); }
 }
 
 function getSelectedVoice() {
