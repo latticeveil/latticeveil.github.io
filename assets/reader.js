@@ -34,18 +34,56 @@ try {
 
 // Lore Database
 const loreData = {
-    "Avery": { role: "Character", img: "assets/img/hero_bg.png", desc: "A field surveyor who adheres strictly to procedure." },
-    "Eli": { role: "Character", desc: "Avery's companion. He 'hears' the Veil and the Echo." },
-    "Continuist": { role: "Faction", desc: "A faction dedicated to measuring, regulating, and stabilizing reality." },
-    "Veil": { role: "Phenomenon", desc: "The separation between places, states, and routes." },
-    "Echo": { role: "Phenomenon", desc: "Pressure that seeks completion." },
-    "Limiter": { role: "Concept", desc: "The third part of the Rule of Three." },
-    "Timed Limiter": { role: "Item", desc: "A device that enforces a termination condition on a local system." },
-    "Veilglass": { role: "Block", img: "assets/img/veilglass.png", desc: "A material that vibrates in sympathy with the Veil." },
-    "Nullrock": { role: "Block", img: "assets/img/nullrock.png", desc: "The world's bottom layer (Y=0)." },
-    "Runestone": { role: "Block", img: "assets/img/runestone.png", desc: "Continuist carved stone used to anchor rites." },
-    "Artificer Bench": { role: "Item", img: "assets/img/artificer_bench.png", desc: "A specialized station for advanced crafting." },
-    "Embercoal": { role: "Block", img: "assets/img/coal.png", desc: "A fuel source that burns with a memory of heat." }
+    "Avery": { 
+        role: "Character", 
+        img: "assets/img/hero_bg.png", 
+        desc: "Avery Hale, lead Continuist Surveyor. Measured, procedural, and stubbornly humane. He organizes expeditions and believes that strictly following the Rule of Three is the only way to survive the drift. He represents the 'Frame' of his group." 
+    },
+    "Eli": { 
+        role: "Character", 
+        desc: "Eli, known as the 'Listener.' An Echo Faith interpreter and Avery's closest companion. He is sensitive to resonance from 'thin places,' hearing voices and fragments of patterns others miss. He is often found in a slurred, drunken state, using alcohol as a crude, external limiter to dull the constant mental noise of the Echo. While socially unreliable, he snaps into razor-sharp clarity the moment the Veil tightens." 
+    },
+    "Sister Orin": {
+        role: "Character",
+        desc: "A severe and principled Veilkeeper Sealwright. Specialized in the permanent closure of dangerous breaches. She believes that a door left open is a debt unpaid, and her strict adherence to containment protocols has saved countless lives at the cost of potential discovery."
+    },
+    "Kade Rowan": {
+        role: "Character",
+        desc: "A veteran Hearthward Guide and the group's human anchor. Practical and steady, Kade specializes in finding safe routes, maintaining caches, and reinforcing the community discipline required to survive the deep strata."
+    },
+    "Rook": {
+        role: "Character",
+        desc: "Rook Halden, an ambitious Ascendant Breaker. Charismatic and reckless, he views limits as suggestions and is willing to 'run systems hot' for short-term gain. A rival to Avery's procedural methods, Rook often chases the high-pressure depths where the Echo is loudest."
+    },
+    "Continuist": { 
+        role: "Faction", 
+        desc: "A faction built on systems engineering and documentation. They treat the Collapse as a technical failure and believe reality can be stabilized through repeatable procedure and the Rule of Three. They maintain Survey Posts as safe havens for those who value structure." 
+    },
+    "Veilkeepers": {
+        role: "Faction",
+        desc: "A strict order dedicated to closing breaches and reducing repetition. They believe most doors should remain shut and treat curiosity as a hazard. Their motto: 'Containment first, curiosity second.'"
+    },
+    "Hearthward": {
+        role: "Faction",
+        desc: "The only faction to maintain organized settlements (Holds) after the Collapse. They focus on communal discipline, practical survival, and the safety of the group over the discovery of the Veil."
+    },
+    "Echo Faith": {
+        role: "Faction",
+        desc: "A group of 'Listeners' who believe the Echo is trying to speak through patterns. They record anomalies as messages and preserve ancient warnings encoded in repeated phrases."
+    },
+    "Ascendants": {
+        role: "Faction",
+        desc: "Bands of risk-seekers who believe limits are lies. They seek out the highest pressure in the deep places, believing that survival in the face of the Echo is proof of purification."
+    },
+    "Veil": { role: "Phenomenon", desc: "The separation between places, states, and routes. Transit systems stretch it; thin places leak through it." },
+    "Echo": { role: "Phenomenon", desc: "A cosmic pressure that seeks completion. When a system is left unfinished, the Echo supplies a counterfeit completion at a heavy cost to stability and memory." },
+    "Limiter": { role: "Concept", desc: "The third part of the Rule of Three. A termination condition, brake, or seal that prevents a system from looping or running until it breaks." },
+    "Timed Limiter": { role: "Item", desc: "A portable device etched with termination instructions, used to stabilize local reality by forcing a pattern to end." },
+    "Veilglass": { role: "Block", img: "assets/img/veilglass.png", desc: "A material tuned to the frequency of the Veil. Used as a conduit for stable transit or a lure for resonance." },
+    "Nullrock": { role: "Block", img: "assets/img/nullrock.png", desc: "The world's bottom-most law (Y=0). It is not stone, but 'refusal made physical'—the ultimate limiter that cannot be negotiated with or mined." },
+    "Runestone": { role: "Block", img: "assets/img/runestone.png", desc: "Dense stone used by Continuists to anchor rites and record pattern-ledgers, preventing memories from drifting into Echo-noise." },
+    "Artificer Bench": { role: "Item", img: "assets/img/artificer_bench.png", desc: "The canonical workstation for advanced gatecraft and rule regulation. Its geometry visibly incorporates a Frame, Conduit, and Limiter." },
+    "Embercoal": { role: "Block", img: "assets/img/coal.png", desc: "A specialized fuel source that burns with a 'memory of heat,' making it safer for use near thin places where ordinary fire might behave unpredictably." }
 };
 
 let wakeLockObj = null;
