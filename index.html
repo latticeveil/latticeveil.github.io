@@ -1715,6 +1715,12 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
             <p id="modalDesc"></p>
 
+            <button id="modalOpenPage" class="download-btn" style="margin-top: 10px; background: rgba(56,225,255,.12); border-color: rgba(56,225,255,.35);">
+
+                <i class="fas fa-up-right-from-square"></i> OPEN AS PAGE
+
+            </button>
+
             <button id="modalDownload" class="download-btn">
 
                 <i class="fas fa-download"></i> DOWNLOAD TEXTURE
@@ -1787,8 +1793,14 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 if (!container) return;
                 const div = document.createElement('div');
                 div.className = 'block-item';
-                div.onclick = () => openModal(`assets/img/${b.id}.png`, b.name, b.desc);
-                div.innerHTML = `<img src="assets/img/${b.id}.png"><span>${b.name}</span>`;
+                div.onclick = () => openModal(`assets/img/${b.id}.png`, b.name, b.desc, b.id);
+                div.innerHTML = `
+                    <div class="block-thumb">
+                        <img src="assets/img/${b.id}.png" alt="${b.name}">
+                        <span class="fullscreen-badge" aria-hidden="true"><i class="fas fa-expand"></i></span>
+                    </div>
+                    <span>${b.name}</span>
+                `;
                 container.appendChild(div);
             });
         }
@@ -1971,11 +1983,14 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             }
         }
 
-        function openModal(src, name, desc) {
+        let currentAssetId = null;
+
+        function openModal(src, name, desc, assetId = null) {
             document.getElementById('textureModal').style.display = "flex";
             document.getElementById('modalImg').src = src;
             document.getElementById('modalName').innerText = name;
             document.getElementById('modalDesc').innerText = desc;
+            currentAssetId = assetId;
 
             // Extract just the filename relative to assets/img
             const relativePath = src.split('assets/img/')[1]; 
@@ -1986,16 +2001,24 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             const newBtn = dlBtn.cloneNode(true);
             dlBtn.parentNode.replaceChild(newBtn, dlBtn);
 
-            newBtn.onclick = (e) => {
-                e.stopPropagation();
+            newBtn.onclick = () => {
                 const a = document.createElement('a');
                 a.href = absoluteUrl;
                 a.download = filename;
-                a.target = '_blank';
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
             };
+
+            const openBtn = document.getElementById('modalOpenPage');
+            if (openBtn) {
+                const fresh = openBtn.cloneNode(true);
+                openBtn.parentNode.replaceChild(fresh, openBtn);
+                fresh.onclick = () => {
+                    if (!currentAssetId) return;
+                    window.location.href = `/?assets&asset=${encodeURIComponent(currentAssetId)}&texture=1`;
+                };
+            }
 
             // Reset to 2D view on open
             setViewMode('2D');
@@ -2007,7 +2030,25 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             document.getElementById('textureModal').style.display = "none"; 
         }
 
+        function routeFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.has('assets')) {
+                    openTab(null, 'assets');
+                }
+                const asset = params.get('asset');
+                const wantsTexture = params.has('texture') || params.get('texture') === '1';
+                if (asset && wantsTexture) {
+                    const entry = textureData.find(t => t.id === asset);
+                    if (entry) {
+                        openModal(`assets/img/${entry.id}.png`, entry.name, entry.desc, entry.id);
+                    }
+                }
+            } catch (e) {}
+        }
+
         populateGalleries();
+        routeFromUrl();
 
         // WebXR / Quest Detection
         async function checkVR() {

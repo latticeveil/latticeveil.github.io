@@ -285,6 +285,36 @@ pre{
 .block-item img{ width: 128px; height:128px; image-rendering: pixelated; margin-bottom: 12px; }
 .block-item span{ display:block; font-family:'Press Start 2P', cursive; font-size: 0.7rem; color: var(--gold); }
 
+.block-thumb{
+  position: relative;
+  display: inline-block;
+}
+
+.block-thumb img{
+  display: block;
+}
+
+.fullscreen-badge{
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,.55);
+  border: 1px solid rgba(56,225,255,.35);
+  color: var(--cyan);
+  box-shadow: 0 10px 22px rgba(0,0,0,.35);
+  pointer-events: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .block-item:hover .fullscreen-badge{ display:flex; }
+}
+
 /* Dev logs */
 .log-entry{
   background: rgba(15,22,34,.80);
