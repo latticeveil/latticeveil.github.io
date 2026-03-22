@@ -1,0 +1,179 @@
+/* TOS Acceptance Modal Styles */
+.tos-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    backdrop-filter: blur(5px);
+}
+
+.tos-content {
+    background: var(--panel);
+    border: 2px solid var(--cyan);
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(56,225,255,0.3);
+}
+
+.tos-header {
+    padding: 20px;
+    background: linear-gradient(135deg, var(--cyan2), var(--cyan));
+    color: var(--bg);
+    text-align: center;
+    position: relative;
+}
+
+.tos-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-family: 'Press Start 2P', monospace;
+    letter-spacing: 2px;
+}
+
+.tos-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    color: var(--text);
+    font-family: 'VT323', monospace;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.tos-body h3 {
+    color: var(--cyan);
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 1.3rem;
+}
+
+.tos-body ul {
+    margin: 10px 0;
+    padding-left: 20px;
+}
+
+.tos-body li {
+    margin: 5px 0;
+}
+
+.tos-footer {
+    padding: 20px;
+    background: var(--bg2);
+    border-top: 1px solid var(--cyan);
+    text-align: center;
+}
+
+.tos-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    gap: 10px;
+    color: var(--text);
+    font-family: 'VT323', monospace;
+    font-size: 1.1rem;
+}
+
+.tos-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--cyan);
+}
+
+.tos-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.tos-btn {
+    padding: 12px 30px;
+    border: 2px solid var(--cyan);
+    background: transparent;
+    color: var(--cyan);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'VT323', monospace;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.tos-btn:hover {
+    background: var(--cyan);
+    color: var(--bg);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(56,225,255,0.3);
+}
+
+.tos-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.tos-btn.accept {
+    background: var(--cyan);
+    color: var(--bg);
+}
+
+.tos-btn.accept:hover {
+    background: var(--cyan2);
+    border-color: var(--cyan2);
+}
+
+.tos-scroll-indicator {
+    text-align: center;
+    color: var(--muted);
+    font-style: italic;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+/* Download specific styles */
+.download-tos .tos-content {
+    max-width: 700px;
+}
+
+.download-tos .tos-body {
+    max-height: 400px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tos-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .tos-header h2 {
+        font-size: 1.2rem;
+    }
+    
+    .tos-body {
+        font-size: 1rem;
+        padding: 15px;
+    }
+    
+    .tos-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .tos-btn {
+        width: 200px;
+    }
+}
