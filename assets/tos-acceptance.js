@@ -79,10 +79,13 @@ class TOSAcceptance {
                     <h3>9. STARTER PACK FEATURES</h3>
                     <p>Optional starter items may be available for new players, balanced to maintain fair gameplay.</p>
                     
-                    <h3>10. DISCLAIMER</h3>
+                    <h3>10. LAUNCHER UPDATES</h3>
+                    <p>Automatic launcher updates will replace current version and assets without breaking saves.</p>
+                    
+                    <h3>11. DISCLAIMER</h3>
                     <p>The Game is provided "AS-IS" without warranties. We are not liable for damages arising from your use.</p>
                     
-                    <h3>11. AGE REQUIREMENTS</h3>
+                    <h3>12. AGE REQUIREMENTS</h3>
                     <p>You must be at least 13 years old to use LatticeVeil. Users under 18 require parental consent.</p>
                     
                     <h3>📄 FULL POLICIES</h3>
