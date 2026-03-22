@@ -546,6 +546,13 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
 .social-btn.twitch:hover{ border-color: rgba(145,70,255,.55); box-shadow: 0 0 20px rgba(145,70,255,.20), 0 10px 26px rgba(0,0,0,.45); }
 .social-btn.instagram:hover{ border-color: rgba(225,48,108,.55); box-shadow: 0 0 20px rgba(225,48,108,.18), 0 10px 26px rgba(0,0,0,.45); }
 
+/* PayPal donation button hover effect */
+.about a[href*="paypal"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 196, 57, 0.4);
+    border-color: rgba(255, 196, 57, 0.5);
+}
+
 /* Lore / Factions */
 #lore{
   max-width: 900px;

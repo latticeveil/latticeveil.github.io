@@ -982,9 +982,6 @@ function setupEventListeners() {
     click('settingsBtn', () => window.togglePanel('settingsPanel'));
     click('helpBtn', () => window.togglePanel('helpPanel'));
     click('downloadBtn', () => window.togglePanel('downloadPanel'));
-    click('donateBtn', () => {
-        window.open('https://www.paypal.com/donate/?hosted_button_id=FAAV5R3P8YEZJ', '_blank', 'noopener,noreferrer');
-    });
     click('highlightModeBtn', toggleHighlightMode);
     click('toggleHighlightsBtn', toggleHighlights);
     document.querySelectorAll('.close-btn').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
