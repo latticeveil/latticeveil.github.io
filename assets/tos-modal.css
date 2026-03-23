@@ -83,12 +83,27 @@
     color: var(--text);
     font-family: 'VT323', monospace;
     font-size: 1.1rem;
+    padding: 10px;
+    background: rgba(56,225,255,0.1);
+    border-radius: 8px;
+    border: 1px solid var(--cyan);
 }
 
 .tos-checkbox input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     accent-color: var(--cyan);
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tos-checkbox label {
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .tos-buttons {
@@ -110,6 +125,12 @@
     transition: all 0.3s ease;
     text-decoration: none;
     display: inline-block;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    min-height: 44px;
+    min-width: 120px;
 }
 
 .tos-btn:hover {
@@ -157,10 +178,12 @@
     .tos-content {
         width: 95%;
         max-height: 90vh;
+        margin: 10px;
     }
     
     .tos-header h2 {
         font-size: 1.2rem;
+        padding: 10px;
     }
     
     .tos-body {
@@ -168,12 +191,69 @@
         padding: 15px;
     }
     
+    .tos-checkbox {
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    .tos-checkbox input[type="checkbox"] {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .tos-checkbox label {
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+    
     .tos-buttons {
         flex-direction: column;
         align-items: center;
+        gap: 10px;
+        padding: 15px;
     }
     
     .tos-btn {
-        width: 200px;
+        width: 100%;
+        max-width: 280px;
+        padding: 15px 20px;
+        font-size: 1.1rem;
+        min-height: 48px;
+    }
+}
+
+@media (max-width: 480px) {
+    .tos-content {
+        width: 98%;
+        max-height: 95vh;
+        margin: 5px;
+    }
+    
+    .tos-header h2 {
+        font-size: 1rem;
+    }
+    
+    .tos-body {
+        font-size: 0.9rem;
+        padding: 12px;
+    }
+    
+    .tos-checkbox {
+        padding: 12px;
+    }
+    
+    .tos-checkbox input[type="checkbox"] {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .tos-checkbox label {
+        font-size: 0.9rem;
+    }
+    
+    .tos-btn {
+        font-size: 1rem;
+        padding: 12px 15px;
+        min-height: 44px;
     }
 }
