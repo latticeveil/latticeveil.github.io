@@ -202,29 +202,19 @@ class EnhancedUIManager {
                 </div>
                 <div class="donate-body">
                     <p>Your support helps keep LatticeVeil free and actively developed!</p>
-                    <div class="donate-form">
-                        <form action="https://www.paypal.com/donate" method="post" target="_blank">
-                            <input type="hidden" name="hosted_button_id" value="FAAV5R3P8YEZJ">
-                            <input type="hidden" name="business" value="FAAV5R3P8YEZJ">
-                            <input type="hidden" name="item_name" value="LatticeVeil Development">
-                            <input type="hidden" name="currency_code" value="USD">
-                            <input type="hidden" name="cmd" value="_donations">
-                            <div class="donate-amounts">
-                                <button type="submit" name="amount" value="5" class="donate-amount-btn">$5</button>
-                                <button type="submit" name="amount" value="10" class="donate-amount-btn">$10</button>
-                                <button type="submit" name="amount" value="25" class="donate-amount-btn">$25</button>
-                                <button type="submit" name="amount" value="50" class="donate-amount-btn">$50</button>
-                            </div>
-                            <div class="donate-custom">
-                                <input type="number" name="amount" min="1" placeholder="Custom amount" class="donate-custom-input">
-                                <button type="submit" class="donate-custom-btn">Donate</button>
-                            </div>
-                        </form>
+                    <div class="donate-embed">
+                        <iframe 
+                            src="https://www.paypal.com/donate/?hosted_button_id=FAAV5R3P8YEZJ" 
+                            frameborder="0" 
+                            scrolling="no" 
+                            allowtransparency="true"
+                            style="width: 100%; height: 600px; border: none; overflow: hidden;">
+                        </iframe>
                     </div>
                     <div class="donate-alternatives">
-                        <p>Or donate directly:</p>
+                        <p>If the embed doesn't work:</p>
                         <button onclick="window.open('https://www.paypal.com/donate/?hosted_button_id=FAAV5R3P8YEZJ', '_blank')" class="donate-direct-btn">
-                            <i class="fas fa-external-link-alt"></i> Open PayPal
+                            <i class="fas fa-external-link-alt"></i> Open PayPal Directly
                         </button>
                     </div>
                 </div>
