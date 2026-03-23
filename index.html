@@ -57,23 +57,6 @@
         </button>
     </div>
 
-    <div class="clear-data-dropdown">
-        <button id="clearDataIcon" title="Clear Site Data">
-            <i class="fas fa-broom"></i>
-        </button>
-        <div id="clearDataDropdown" class="dropdown-panel">
-            <div class="dropdown-header">Site Data</div>
-            <button onclick="clearSiteData()" class="dropdown-item" style="color: #ff4d4d; width: 100%; text-align: left; background: none; border: none; font-family: inherit; cursor: pointer; padding: 10px 15px;">
-                <i class="fas fa-trash-alt" style="margin-right: 8px;"></i>
-                <span>Clear Site Data</span>
-            </button>
-            <div class="dropdown-divider"></div>
-            <div style="padding: 10px 15px; font-size: 0.8rem; opacity: 0.7;">
-                <small>Note: TOS acceptance will be preserved</small>
-            </div>
-        </div>
-    </div>
-
     <div class="profile-dropdown">
         <button id="profileIcon" title="Veilnet Profile">
             <img src="veilnet/assets/default_pfp.png" alt="Profile">
@@ -103,6 +86,22 @@
                 <span>Log Out</span>
             </a>
             <div class="dropdown-divider"></div>
+            <div class="clear-data-dropdown">
+                <button id="clearDataIcon" title="Clear Site Data">
+                    <i class="fas fa-broom"></i>
+                </button>
+                <div id="clearDataDropdown" class="dropdown-panel">
+                    <div class="dropdown-header">Site Data</div>
+                    <button onclick="clearSiteData()" class="dropdown-item" style="color: #ff4d4d; width: 100%; text-align: left; background: none; border: none; font-family: inherit; cursor: pointer; padding: 10px 15px;">
+                        <i class="fas fa-trash-alt" style="margin-right: 8px;"></i>
+                        <span>Clear Site Data</span>
+                    </button>
+                    <div class="dropdown-divider"></div>
+                    <div style="padding: 10px 15px; font-size: 0.8rem; opacity: 0.7;">
+                        <small>Note: TOS acceptance will be preserved</small>
+                    </div>
+                </div>
+            </div>
             <button onclick="fullResetSite()" class="dropdown-item" style="color: #ff4d4d; width: 100%; text-align: left; background: none; border: none; font-family: inherit; cursor: pointer; padding: 10px 15px;">
                 <i class="fas fa-trash-alt" style="margin-right: 8px;"></i>
                 <span>HARD RESET SITE</span>

@@ -907,20 +907,6 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
   box-shadow: 0 0 20px #ffc439;
 }
 
-.clear-data-dropdown #clearDataIcon {
-  top: 20px;
-  left: 140px;
-  background: var(--red);
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3);
-}
-
-.clear-data-dropdown #clearDataIcon:hover,
-.clear-data-dropdown #clearDataIcon.active {
-  transform: scale(1.1);
-  box-shadow: 0 0 20px var(--red);
-}
-
 .profile-dropdown #profileIcon {
   top: 20px;
   right: 20px;
@@ -936,9 +922,32 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
 }
 
 .profile-dropdown #profileIcon img {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
+}
+
+/* Clear data button inside dropdown */
+.clear-data-dropdown #clearDataIcon {
+  background: var(--red);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 5px 0;
+  transition: all 0.3s;
+  min-height: 36px;
+  width: 100%;
+}
+
+.clear-data-dropdown #clearDataIcon:hover {
+  background: #ff6666;
+  transform: translateY(-1px);
 }
 
 .dropdown-panel {
@@ -1146,15 +1155,6 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
   .donate-dropdown #donateIcon {
     top: 20px !important;
     left: 75px !important;
-    width: 45px !important;
-    height: 45px !important;
-    min-width: 45px !important;
-    min-height: 45px !important;
-  }
-  
-  .clear-data-dropdown #clearDataIcon {
-    top: 20px !important;
-    left: 130px !important;
     width: 45px !important;
     height: 45px !important;
     min-width: 45px !important;

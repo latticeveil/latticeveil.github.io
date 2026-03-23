@@ -24,6 +24,9 @@ class EnhancedUIManager {
             const dropdownEl = document.getElementById(dropdown);
 
             if (triggerBtn && dropdownEl) {
+                // Add dropdown-trigger class for styling
+                triggerBtn.classList.add('dropdown-trigger');
+                
                 // Click to toggle
                 triggerBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -201,11 +204,11 @@ class EnhancedUIManager {
                     <p>Your support helps keep LatticeVeil free and actively developed!</p>
                     <div class="donate-embed">
                         <iframe 
-                            src="https://www.paypal.com/donate/embed?hosted_button_id=FAAV5R3P8YEZJ" 
+                            src="https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=FAAV5R3P8YEZJ&lc=US&item_name=LatticeVeil+Development&currency_code=USD&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted" 
                             frameborder="0" 
                             scrolling="no" 
                             allowtransparency="true"
-                            style="width: 100%; height: 200px; border: none; overflow: hidden;">
+                            style="width: 100%; height: 250px; border: none; overflow: hidden;">
                         </iframe>
                     </div>
                     <div class="donate-alternatives">
