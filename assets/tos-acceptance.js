@@ -153,22 +153,25 @@ class TOSAcceptance {
         checkbox.addEventListener('change', updateAcceptButton);
         checkbox.addEventListener('click', updateAcceptButton);
         
-        // Mobile touch handling with better event management
+        // Improved mobile touch handling - toggle checkbox state reliably
         checkbox.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            checkbox.checked = !checkbox.checked;
-            updateAcceptButton();
+            // Don't prevent default to allow normal checkbox behavior
+            setTimeout(() => {
+                updateAcceptButton();
+            }, 10); // Small delay to ensure checkbox state is updated
         });
         
         checkbox.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            updateAcceptButton();
+            e.preventDefault(); // Prevent zoom/double-tap
+            setTimeout(() => {
+                updateAcceptButton();
+            }, 10);
         });
 
         // Also check checkbox state periodically (fallback for mobile)
         const checkboxInterval = setInterval(() => {
             updateAcceptButton();
-        }, 100);
+        }, 200); // Increased interval for better performance
 
         // Clear interval when modal is removed
         const originalRemove = modal.remove;

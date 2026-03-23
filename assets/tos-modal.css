@@ -90,12 +90,16 @@
 }
 
 .tos-checkbox input[type="checkbox"] {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     accent-color: var(--cyan);
     cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: transparent;
+    position: relative;
+    z-index: 10;
+    margin: 0;
+    padding: 0;
 }
 
 .tos-checkbox label {
@@ -104,6 +108,11 @@
     -webkit-tap-highlight-color: transparent;
     user-select: none;
     -webkit-user-select: none;
+    display: flex;
+    align-items: center;
+    min-height: 44px; /* Apple HIG minimum touch target */
+    padding: 5px;
+    margin: -5px; /* Expand touch area */
 }
 
 .tos-buttons {
