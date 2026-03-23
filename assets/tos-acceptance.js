@@ -113,26 +113,67 @@ class TOSAcceptance {
             </div>
         `;
 
-        // Setup scroll tracking
+        // Setup scroll tracking with mobile support
         const body = modal.querySelector('.tos-body');
         const checkbox = modal.querySelector(`#tos-checkbox-${type}`);
         const acceptBtn = modal.querySelector(`#accept-tos-${type}`);
         
         let hasScrolled = false;
-        body.addEventListener('scroll', () => {
-            if (body.scrollTop + body.clientHeight >= body.scrollHeight - 10) {
+        
+        // Enhanced scroll detection for mobile
+        function checkScrollComplete() {
+            const scrollThreshold = body.scrollHeight - body.clientHeight - 50;
+            if (body.scrollTop >= scrollThreshold) {
                 hasScrolled = true;
                 modal.querySelector('.tos-scroll-indicator').style.display = 'none';
+                updateAcceptButton();
             }
-        });
+        }
+        
+        // Multiple scroll event listeners for better mobile support
+        body.addEventListener('scroll', checkScrollComplete);
+        body.addEventListener('touchmove', checkScrollComplete);
+        body.addEventListener('touchend', checkScrollComplete);
 
         // Enable accept button when both scrolled and checked
         function updateAcceptButton() {
             acceptBtn.disabled = !(hasScrolled && checkbox.checked);
+            if (!acceptBtn.disabled) {
+                acceptBtn.style.opacity = '1';
+                acceptBtn.style.transform = 'scale(1.05)';
+            } else {
+                acceptBtn.style.opacity = '0.5';
+                acceptBtn.style.transform = 'scale(1)';
+            }
         }
 
+        // Enhanced checkbox event listeners for mobile
         checkbox.addEventListener('change', updateAcceptButton);
-        body.addEventListener('scroll', updateAcceptButton);
+        checkbox.addEventListener('click', updateAcceptButton);
+        
+        // Mobile touch handling with better event management
+        checkbox.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            checkbox.checked = !checkbox.checked;
+            updateAcceptButton();
+        });
+        
+        checkbox.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            updateAcceptButton();
+        });
+
+        // Also check checkbox state periodically (fallback for mobile)
+        const checkboxInterval = setInterval(() => {
+            updateAcceptButton();
+        }, 100);
+
+        // Clear interval when modal is removed
+        const originalRemove = modal.remove;
+        modal.remove = function() {
+            clearInterval(checkboxInterval);
+            originalRemove.call(modal);
+        };
 
         // Accept button handler
         acceptBtn.addEventListener('click', () => {
