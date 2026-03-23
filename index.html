@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="assets/tos-modal.css">
 
     <script src="assets/device-detector.js"></script>
+    <script src="assets/enhanced-ui.js"></script>
     <script src="assets/tos-acceptance.js"></script>
 
 </head>
@@ -32,13 +33,46 @@
 
     </button>
 
-    <button id="bookIcon" onclick="window.location.href='./echoes'" title="Read Echoes of the CONTINUIST" style="position: fixed; top: 20px; left: 20px; width: 50px; height: 50px; background: var(--primary); border: none; border-radius: 50%; color: #000; cursor: pointer; z-index: 1000; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: transform 0.3s, box-shadow 0.3s;" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 0 20px var(--primary)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.5)';">
-        <i class="fas fa-book"></i>
-    </button>
+    <div class="book-dropdown">
+        <button id="bookIcon" title="Echoes of the CONTINUIST">
+            <i class="fas fa-book"></i>
+        </button>
+        <div id="bookDropdown" class="dropdown-panel">
+            <div class="dropdown-header">Echoes</div>
+            <a href="./echoes" class="dropdown-item">
+                <i class="fas fa-book-open" style="margin-right: 8px;"></i>
+                <span>Read Book</span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <button onclick="clearBookData()" class="dropdown-item" style="color: #ffc439; width: 100%; text-align: left; background: none; border: none; font-family: inherit; cursor: pointer; padding: 10px 15px;">
+                <i class="fas fa-eraser" style="margin-right: 8px;"></i>
+                <span>Clear Book Data</span>
+            </button>
+        </div>
+    </div>
 
-    <button id="donateIcon" onclick="window.open('https://www.paypal.com/donate/?hosted_button_id=FAAV5R3P8YEZJ', '_blank', 'noopener,noreferrer')" title="Support Development" style="position: fixed; top: 20px; left: 80px; width: 50px; height: 50px; background: #ffc439; border: none; border-radius: 50%; color: #000; cursor: pointer; z-index: 1000; box-shadow: 0 4px 15px rgba(255, 196, 57, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: transform 0.3s, box-shadow 0.3s;" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 0 20px #ffc439';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(255, 196, 57, 0.3)';">
-        <i class="fas fa-heart"></i>
-    </button>
+    <div class="donate-dropdown">
+        <button id="donateIcon" title="Support Development">
+            <i class="fas fa-heart"></i>
+        </button>
+    </div>
+
+    <div class="clear-data-dropdown">
+        <button id="clearDataIcon" title="Clear Site Data">
+            <i class="fas fa-broom"></i>
+        </button>
+        <div id="clearDataDropdown" class="dropdown-panel">
+            <div class="dropdown-header">Site Data</div>
+            <button onclick="clearSiteData()" class="dropdown-item" style="color: #ff4d4d; width: 100%; text-align: left; background: none; border: none; font-family: inherit; cursor: pointer; padding: 10px 15px;">
+                <i class="fas fa-trash-alt" style="margin-right: 8px;"></i>
+                <span>Clear Site Data</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <div style="padding: 10px 15px; font-size: 0.8rem; opacity: 0.7;">
+                <small>Note: TOS acceptance will be preserved</small>
+            </div>
+        </div>
+    </div>
 
     <div class="profile-dropdown">
         <button id="profileIcon" title="Veilnet Profile">

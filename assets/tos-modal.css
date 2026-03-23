@@ -74,19 +74,29 @@
     text-align: center;
 }
 
+.tos-checkbox-container {
+    margin-bottom: 15px;
+}
+
 .tos-checkbox {
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 15px;
-    gap: 10px;
-    color: var(--text);
-    font-family: 'VT323', monospace;
-    font-size: 1.1rem;
-    padding: 10px;
     background: rgba(56,225,255,0.1);
     border-radius: 8px;
     border: 1px solid var(--cyan);
+    padding: 15px;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition: all 0.3s ease;
+    min-height: 60px;
+}
+
+.tos-checkbox:hover {
+    background: rgba(56,225,255,0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(56,225,255,0.3);
 }
 
 .tos-checkbox input[type="checkbox"] {
@@ -100,6 +110,7 @@
     z-index: 10;
     margin: 0;
     padding: 0;
+    pointer-events: auto;
 }
 
 .tos-checkbox label {
@@ -111,8 +122,13 @@
     display: flex;
     align-items: center;
     min-height: 44px; /* Apple HIG minimum touch target */
-    padding: 5px;
-    margin: -5px; /* Expand touch area */
+    padding: 10px;
+    margin: -10px; /* Expand touch area */
+    flex: 1;
+    font-family: 'VT323', monospace;
+    font-size: 1.1rem;
+    color: var(--text);
+    pointer-events: none; /* Let the container handle the click */
 }
 
 .tos-buttons {
