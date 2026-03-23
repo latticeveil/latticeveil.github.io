@@ -1,4 +1,5 @@
 // TOS Acceptance System
+if (typeof TOSAcceptance === 'undefined') {
 class TOSAcceptance {
     constructor() {
         this.accepted = localStorage.getItem('latticeveil_tos_accepted') === 'true';
@@ -288,5 +289,12 @@ class TOSAcceptance {
 
 // Initialize TOS system
 document.addEventListener('DOMContentLoaded', () => {
-    window.tosAcceptance = new TOSAcceptance();
+    if (typeof window.tosAcceptance === 'undefined') {
+        window.tosAcceptance = new TOSAcceptance();
+    }
 });
+
+// Export for use in other scripts
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = TOSAcceptance;
+}

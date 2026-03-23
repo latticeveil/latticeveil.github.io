@@ -35,7 +35,15 @@ class DeviceDetector {
         // VR detection
         const isVR = /Oculus|VR|XR/i.test(ua) || 
                     navigator.xr !== undefined ||
-                    window.isSecureContext && navigator.getVRDisplays;
+                    (window.isSecureContext && navigator.getVRDisplays) ||
+                    /Quest|Meta|Apple Vision Pro/i.test(ua);
+        
+        // More specific VR headset detection
+        const isQuest = /Quest|Meta Quest/i.test(ua);
+        const isQuest2 = /Quest 2/i.test(ua);
+        const isQuest3 = /Quest 3/i.test(ua);
+        const isAppleVision = /Apple Vision Pro/i.test(ua);
+        const isOculus = /Oculus/i.test(ua);
         
         // Screen info
         const screenInfo = {
@@ -88,6 +96,11 @@ class DeviceDetector {
             isTablet,
             isDesktop,
             isVR,
+            isQuest,
+            isQuest2,
+            isQuest3,
+            isAppleVision,
+            isOculus,
             
             // Browser info
             browser: {
@@ -137,7 +150,7 @@ class DeviceDetector {
                 microphone: 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices,
                 notifications: 'Notification' in window,
                 serviceWorker: 'serviceWorker' in navigator,
-                pushManager: 'pushManager' in navigator.serviceWorker?.registration || false
+                pushManager: navigator.serviceWorker && 'pushManager' in navigator.serviceWorker.registration || false
             },
             
             // IP (async)
@@ -180,6 +193,9 @@ class DeviceDetector {
         // Initial display update
         this.updateDeviceInfoDisplay();
         
+        // Setup VR button visibility
+        this.setupVRButton();
+        
         // Setup responsive navigation
         this.setupResponsiveNavigation();
         
@@ -202,6 +218,20 @@ class DeviceDetector {
                 this.updateDeviceInfoDisplay();
             }, 100);
         });
+    }
+    
+    setupVRButton() {
+        const vrButton = document.getElementById('vrIcon');
+        if (vrButton) {
+            // Only show VR button for VR headsets
+            if (this.deviceInfo.isVR) {
+                vrButton.style.display = 'flex';
+                console.log('VR headset detected, showing VR button');
+            } else {
+                vrButton.style.display = 'none';
+                console.log('No VR headset detected, hiding VR button');
+            }
+        }
     }
     
     setupResponsiveNavigation() {
