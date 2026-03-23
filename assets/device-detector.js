@@ -150,7 +150,7 @@ class DeviceDetector {
                 microphone: 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices,
                 notifications: 'Notification' in window,
                 serviceWorker: 'serviceWorker' in navigator,
-                pushManager: navigator.serviceWorker && 'pushManager' in navigator.serviceWorker.registration || false
+                pushManager: !!(navigator.serviceWorker && navigator.serviceWorker.controller)
             },
             
             // IP (async)
