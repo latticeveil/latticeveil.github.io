@@ -97,9 +97,11 @@ class TOSAcceptance {
                 </div>
                 <div class="tos-footer">
                     <div class="tos-scroll-indicator">Please scroll through all terms before accepting</div>
-                    <div class="tos-checkbox">
-                        <input type="checkbox" id="tos-checkbox-${type}">
-                        <label for="tos-checkbox-${type}">I have read and agree to the Terms of Service and Privacy Policy</label>
+                    <div class="tos-checkbox-container">
+                        <div class="tos-checkbox">
+                            <input type="checkbox" id="tos-checkbox-${type}">
+                            <label for="tos-checkbox-${type}">I have read and agree to the Terms of Service and Privacy Policy</label>
+                        </div>
                     </div>
                     <div class="tos-buttons">
                         <button class="tos-btn" id="view-full-terms-${type}" onclick="window.open('terms.html', '_blank')">
@@ -115,6 +117,7 @@ class TOSAcceptance {
 
         // Setup scroll tracking with mobile support
         const body = modal.querySelector('.tos-body');
+        const checkboxContainer = modal.querySelector('.tos-checkbox-container');
         const checkbox = modal.querySelector(`#tos-checkbox-${type}`);
         const acceptBtn = modal.querySelector(`#accept-tos-${type}`);
         
@@ -152,6 +155,14 @@ class TOSAcceptance {
         // Enhanced checkbox event listeners for mobile
         checkbox.addEventListener('change', updateAcceptButton);
         checkbox.addEventListener('click', updateAcceptButton);
+        
+        // Make the entire container clickable
+        checkboxContainer.addEventListener('click', (e) => {
+            if (e.target !== checkbox) {
+                checkbox.checked = !checkbox.checked;
+                updateAcceptButton();
+            }
+        });
         
         // Improved mobile touch handling - toggle checkbox state reliably
         checkbox.addEventListener('touchstart', (e) => {
