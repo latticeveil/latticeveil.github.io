@@ -135,12 +135,14 @@ class TOSAcceptance {
         body.addEventListener('touchmove', checkScrollComplete);
         body.addEventListener('touchend', checkScrollComplete);
 
-        // Enable accept button when both scrolled and checked
+        // Enable accept button when checkbox is checked (scroll requirement removed for better UX)
         function updateAcceptButton() {
-            acceptBtn.disabled = !(hasScrolled && checkbox.checked);
+            acceptBtn.disabled = !checkbox.checked;
             if (!acceptBtn.disabled) {
                 acceptBtn.style.opacity = '1';
                 acceptBtn.style.transform = 'scale(1.05)';
+                // Hide scroll indicator when checkbox is checked
+                modal.querySelector('.tos-scroll-indicator').style.display = 'none';
             } else {
                 acceptBtn.style.opacity = '0.5';
                 acceptBtn.style.transform = 'scale(1)';
