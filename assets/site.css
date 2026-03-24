@@ -614,9 +614,130 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
   width: 512px;
   height: 512px;
   object-fit: contain;
-  display:block;
-  background: transparent;
 }
+
+/* Asset Modal Styles */
+.asset-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.asset-modal .modal-content {
+    background-color: var(--panel);
+    margin: 10% auto;
+    padding: 30px;
+    border: 2px solid var(--primary);
+    border-radius: var(--radius);
+    width: 80%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: var(--shadow);
+    height: auto;
+    object-fit: initial;
+}
+
+.asset-modal .close-modal {
+    color: var(--text);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    right: 20px;
+    top: 15px;
+}
+
+.asset-modal .close-modal:hover {
+    color: var(--primary);
+}
+
+.asset-modal h2 {
+    color: var(--text);
+    margin-bottom: 20px;
+    font-family: 'Press Start 2P', cursive;
+}
+
+.asset-modal .texture-preview {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.asset-modal .large-texture {
+    width: 200px;
+    height: 200px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    border: 2px solid var(--primary);
+    border-radius: 8px;
+    background: var(--bg);
+}
+
+.asset-modal .texture-info {
+    flex: 1;
+}
+
+.asset-modal .texture-info h3 {
+    margin: 0 0 10px 0;
+    color: var(--text);
+    font-size: 1.2rem;
+    font-family: 'Press Start 2P', cursive;
+}
+
+.asset-modal .texture-info p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 1rem;
+}
+
+.asset-modal .asset-actions {
+    text-align: center;
+}
+
+.asset-modal .asset-actions .download-btn {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.asset-modal .asset-actions .download-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 5px 15px rgba(56,225,255,.3);
+}
+
+/* Mobile Modal Adjustments */
+@media (max-width: 768px) {
+    .asset-modal .modal-content {
+        width: 95%;
+        margin: 5% auto;
+        padding: 20px;
+    }
+    
+    .asset-modal .texture-preview {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .asset-modal .large-texture {
+        width: 150px;
+        height: 150px;
+    }
+}
+
 #three-container{
   width: 512px;
   height: 512px;

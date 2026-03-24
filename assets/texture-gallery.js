@@ -6,6 +6,46 @@ class TextureGallery {
 
     init() {
         this.populateGalleries();
+        this.setupURLRouting();
+    }
+
+    setupURLRouting() {
+        // Check if we have asset parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const assetName = urlParams.get('asset');
+
+        console.log('URL Routing - Asset:', assetName);
+
+        if (assetName) {
+            console.log('Switching to assets tab for:', assetName);
+            this.switchToTab('assets');
+        }
+    }
+
+    switchToTab(tabName) {
+        // Hide all tabs
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.style.display = 'none';
+        });
+        
+        // Remove active class from all tab links
+        document.querySelectorAll('.tab-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        
+        // Show selected tab
+        const selectedTab = document.getElementById(tabName);
+        if (selectedTab) {
+            selectedTab.style.display = 'block';
+        }
+        
+        // Add active class to selected tab link
+        const tabLinks = document.querySelectorAll('.tab-link');
+        tabLinks.forEach(link => {
+            if (link.getAttribute('onclick').includes(tabName)) {
+                link.classList.add('active');
+            }
+        });
     }
 
     populateGalleries() {
@@ -96,7 +136,7 @@ class TextureGallery {
             const item = document.createElement('div');
             item.className = 'block-item';
             item.innerHTML = `
-                <img src="${block.image}" alt="${block.name}" class="block-image" onerror="this.src='assets/img/missing.png'">
+                <img src="${block.image}" alt="${block.name}" class="block-image" onerror="this.src='assets/img/missing.png'" onclick="showAssetPopup('${block.name}', '${block.image}')">
                 <div class="block-info">
                     <h4>${block.name}</h4>
                     <button class="download-btn" onclick="downloadTexture('${block.name}', '${block.image}')">
@@ -106,6 +146,47 @@ class TextureGallery {
             `;
             gallery.appendChild(item);
         });
+    }
+}
+
+// Global functions for HTML onclick handlers
+function showAssetPopup(name, image) {
+    // Create or get existing modal
+    let modal = document.getElementById('assetModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'assetModal';
+        modal.className = 'asset-modal';
+        document.body.appendChild(modal);
+    }
+
+    // Populate modal
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeAssetModal()">&times;</span>
+            <h2>${name}</h2>
+            <div class="texture-preview">
+                <img src="${image}" alt="${name}" class="large-texture" onerror="this.src='assets/img/missing.png'">
+                <div class="texture-info">
+                    <h3>Texture Preview</h3>
+                    <p>Click outside to close</p>
+                </div>
+            </div>
+            <div class="asset-actions">
+                <button class="download-btn" onclick="downloadTexture('${name}', '${image}')">
+                    <i class="fas fa-download"></i> Download ${name}
+                </button>
+            </div>
+        </div>
+    `;
+
+    modal.style.display = 'block';
+}
+
+function closeAssetModal() {
+    const modal = document.getElementById('assetModal');
+    if (modal) {
+        modal.style.display = 'none';
     }
 }
 
