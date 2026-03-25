@@ -19,6 +19,9 @@
     <link rel="stylesheet" href="assets/site.css">
     <link rel="stylesheet" href="assets/tos-modal.css">
 
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="veilnet/assets/config.js"></script>
     <script src="assets/device-detector.js"></script>
     <script src="assets/enhanced-ui.js"></script>
     <script src="veilnet/assets/auth.js"></script>
@@ -111,26 +114,6 @@
                 <span id="veilnetAuthBtnLabel">Login</span>
             </button>
             <div class="dropdown-divider"></div>
-            <div class="clear-data-dropdown">
-                <button id="clearDataIcon" title="Clear Site Data">
-                    <i class="fas fa-broom"></i>
-                </button>
-                <div id="clearDataDropdown" class="dropdown-panel">
-                    <div class="dropdown-header">Site Data</div>
-                    <button onclick="clearSiteData()" class="dropdown-item" style="color: #ff4d4d; width: 100%; text-align: left; background: none; border: none; font-family: inherit; cursor: pointer; padding: 10px 15px;">
-                        <i class="fas fa-trash-alt" style="margin-right: 8px;"></i>
-                        <span>Clear Site Data</span>
-                    </button>
-                    <div class="dropdown-divider"></div>
-                    <div style="padding: 10px 15px; font-size: 0.8rem; opacity: 0.7;">
-                        <small>Note: TOS acceptance will be preserved</small>
-                    </div>
-                </div>
-            </div>
-            <button onclick="fullResetSite()" class="dropdown-item" style="color: #ff4d4d; width: 100%; text-align: left; background: none; border: none; font-family: inherit; cursor: pointer; padding: 10px 15px;">
-                <i class="fas fa-trash-alt" style="margin-right: 8px;"></i>
-                <span>HARD RESET SITE</span>
-            </button>
         </div>
     </div>
 
@@ -2265,15 +2248,24 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             } else {
                 label.textContent = 'Login';
                 btn.onclick = async () => {
-                    if (typeof window.openVeilnetLoginModal === 'function') {
-                        await window.openVeilnetLoginModal();
+                    try {
+                        if (typeof window.__openVeilnetLoginModal === 'function') {
+                            await window.__openVeilnetLoginModal();
+                        } else if (window.VeilnetAuth && typeof window.VeilnetAuth.signInWithGoogle === 'function') {
+                            await window.VeilnetAuth.signInWithGoogle();
+                        }
+                    } finally {
                         await updateVeilnetAuthButton();
+                        setTimeout(updateVeilnetAuthButton, 750);
+                        setTimeout(updateVeilnetAuthButton, 2000);
                     }
                 };
             }
         }
 
         updateVeilnetAuthButton();
+        setTimeout(updateVeilnetAuthButton, 750);
+        setTimeout(updateVeilnetAuthButton, 2000);
 
         function toggleVeilnetDropdown() {
             const dropdown = document.getElementById('profileDropdown');
