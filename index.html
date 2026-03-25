@@ -100,20 +100,35 @@
         </button>
         <div id="profileDropdown" class="dropdown-panel">
             <div class="dropdown-header">Veilnet</div>
-            <a href="./veilnet/" class="dropdown-item">
-                <span>Go to Veilnet</span>
-            </a>
-            <a href="./veilnet/profile/" class="dropdown-item">
-                <span>My Profile</span>
-            </a>
-            <a href="./veilnet/settings/" class="dropdown-item">
-                <span>Settings</span>
-            </a>
-            <div class="dropdown-divider"></div>
-            <button id="veilnetAuthBtn" class="dropdown-item">
-                <span id="veilnetAuthBtnLabel">Login</span>
-            </button>
-            <div class="dropdown-divider"></div>
+            <div class="dd-head">
+              <img id="veilnet-avatar" src="veilnet/assets/default_pfp.png" alt="">
+              <div>
+                <div id="veilnet-display-name" class="dd-title">Not signed in</div>
+                <div id="veilnet-display-subtext" class="dd-sub">Login to access Veilnet features</div>
+              </div>
+            </div>
+
+            <div class="dd-item" onclick="location.href='./veilnet/'">
+              <span>Go to Veilnet</span><small>Home</small>
+            </div>
+
+            <div class="dd-item" onclick="location.href='./veilnet/profile/'">
+              <span>My Profile</span><small>/profile</small>
+            </div>
+
+            <div class="dd-item" onclick="location.href='./veilnet/settings/'">
+              <span>Settings</span><small>Link + prefs</small>
+            </div>
+
+            <div class="dd-divider"></div>
+
+            <div id="veilnet-login-item" class="dd-item">
+              <span>Login with Google</span><small>Demo</small>
+            </div>
+
+            <div id="veilnet-logout-item" class="dd-item" style="display:none">
+              <span>Log Out</span><small>Demo</small>
+            </div>
         </div>
     </div>
 
