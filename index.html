@@ -2299,12 +2299,34 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                         }
                     }
                     
-                    // Preload image for snappy update
+                    // Fast image loading with preloading and caching
                     if (avatarSrc !== 'veilnet/assets/default_pfp.png') {
+                        // Check if already cached
+                        if (iconImg.src === avatarSrc) return;
+                        
+                        // Preload with error handling and immediate update
                         const tempImg = new Image();
+                        
+                        // Set crossOrigin for potential CORS issues
+                        tempImg.crossOrigin = 'anonymous';
+                        
+                        // Load with timeout for faster fallback
+                        const loadTimeout = setTimeout(() => {
+                            iconImg.src = avatarSrc; // Set anyway if preload takes too long
+                        }, 300);
+                        
                         tempImg.onload = () => {
+                            clearTimeout(loadTimeout);
                             iconImg.src = avatarSrc;
+                            // Cache for future use
+                            iconImg.setAttribute('data-loaded', 'true');
                         };
+                        
+                        tempImg.onerror = () => {
+                            clearTimeout(loadTimeout);
+                            iconImg.src = 'veilnet/assets/default_pfp.png';
+                        };
+                        
                         tempImg.src = avatarSrc;
                     } else {
                         iconImg.src = avatarSrc;
