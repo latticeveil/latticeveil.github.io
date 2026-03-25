@@ -24,7 +24,8 @@ const state = {
     readAlongActive: false,
     ttsPaused: false,
     ttsSpanId: '',
-    comments: {}
+    comments: {},
+    panelPosition: { x: null, y: null }
 };
 
 // Safe storage mapping
@@ -46,6 +47,7 @@ const storageMap = {
     showHighlight: 'reader_show_highlight',
     showUserHighlights: 'reader_show_user_highlights',
     zoomLocked: 'reader_zoom_locked',
+    panelPosition: 'reader_panel_position',
     ttsPaused: 'reader_tts_paused',
     ttsSpanId: 'reader_tts_span',
     readAlongActive: 'reader_read_along_active'
@@ -159,6 +161,99 @@ function getTextOffsets(range) {
     
     return { start: startOffset, end: endOffset };
 }
+
+// DRAGGABLE SETTINGS PANEL (PC ONLY)
+function initDraggable(panel) {
+    const settingsPanel = panel.querySelector('.settings-panel');
+    if (!settingsPanel) return;
+    
+    // Remove existing drag listeners if any
+    settingsPanel.removeEventListener('mousedown', startDrag);
+    settingsPanel.addEventListener('mousedown', startDrag);
+    
+    function startDrag(e) {
+        // Only drag from header, not from content
+        const header = e.target.closest('.settings-header');
+        if (!header) return;
+        
+        e.preventDefault();
+        
+        const rect = settingsPanel.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const offsetY = e.clientY - rect.top;
+        
+        function drag(e) {
+            const x = e.clientX - offsetX;
+            const y = e.clientY - offsetY;
+            
+            // Constrain to viewport
+            const maxX = window.innerWidth - rect.width;
+            const maxY = window.innerHeight - rect.height;
+            
+            const constrainedX = Math.max(0, Math.min(x, maxX));
+            const constrainedY = Math.max(0, Math.min(y, maxY));
+            
+            settingsPanel.style.position = 'fixed';
+            settingsPanel.style.left = constrainedX + 'px';
+            settingsPanel.style.top = constrainedY + 'px';
+            settingsPanel.style.transform = 'none';
+            settingsPanel.style.margin = '0';
+        }
+        
+        function stopDrag() {
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+            
+            // Save position
+            const rect = settingsPanel.getBoundingClientRect();
+            state.panelPosition = { x: rect.left, y: rect.top };
+            saveState();
+        }
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', stopDrag);
+    }
+}
+
+function restorePanelPosition(panel) {
+    const settingsPanel = panel.querySelector('.settings-panel');
+    if (!settingsPanel || !state.panelPosition.x || !state.panelPosition.y) return;
+    
+    // Check if position is still valid (within viewport)
+    const maxX = window.innerWidth - settingsPanel.offsetWidth;
+    const maxY = window.innerHeight - settingsPanel.offsetHeight;
+    
+    if (state.panelPosition.x <= maxX && state.panelPosition.y <= maxY) {
+        settingsPanel.style.position = 'fixed';
+        settingsPanel.style.left = state.panelPosition.x + 'px';
+        settingsPanel.style.top = state.panelPosition.y + 'px';
+        settingsPanel.style.transform = 'none';
+        settingsPanel.style.margin = '0';
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Load panel position from localStorage
+    const savedPosition = localStorage.getItem('reader_panel_position');
+    if (savedPosition) {
+        try {
+            const parsed = JSON.parse(savedPosition);
+            // Validate that parsed position has x and y properties
+            if (parsed && typeof parsed.x === 'number' && typeof parsed.y === 'number') {
+                state.panelPosition = parsed;
+            } else {
+                // Reset to default if invalid
+                state.panelPosition = { x: null, y: null };
+                localStorage.removeItem('reader_panel_position');
+            }
+        } catch (e) {
+            console.warn('Failed to parse panel position, resetting to default');
+            state.panelPosition = { x: null, y: null };
+            localStorage.removeItem('reader_panel_position');
+        }
+    }
+});
 
 function getTextOffsetInNode(targetNode, offset) {
     let totalOffset = 0;
@@ -497,7 +592,15 @@ window.togglePanel = function(id) {
     document.querySelectorAll('.panel-overlay').forEach(p => p.classList.remove('active'));
     if (id) {
         const p = document.getElementById(id);
-        if(p) p.classList.add('active');
+        if(p) {
+            p.classList.add('active');
+            
+            // Initialize draggable for PC only
+            if (window.matchMedia('(min-width: 768px)').matches && id === 'settingsPanel') {
+                initDraggable(p);
+                restorePanelPosition(p);
+            }
+        }
         
         // Update URL state
         const url = new URL(window.location);
@@ -854,6 +957,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const helpParam = urlParams.get('help');
     const downloadParam = urlParams.get('download');
     const highlightParam = urlParams.get('highlight');
+    
+    // Handle scroll restoration from URL hash
+    if (window.location.hash && window.location.hash.includes('scroll=')) {
+        const scrollPosition = parseInt(window.location.hash.split('scroll=')[1]) || 0;
+        setTimeout(() => {
+            window.scrollTo(0, scrollPosition);
+        }, 100);
+    }
     
     if (chParam) switchChapter(parseInt(chParam), false);
     else switchChapter(1, true);

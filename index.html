@@ -22,7 +22,7 @@
     <script src="assets/device-detector.js"></script>
     <script src="assets/enhanced-ui.js"></script>
     <script src="assets/tos-acceptance.js"></script>
-    <script src="assets/texture-gallery.js"></script>
+    <script src="assets/texture-gallery.js?v=25"></script>
 
 </head>
 
@@ -35,20 +35,51 @@
     </button>
 
     <div class="book-dropdown">
-        <button id="bookIcon" title="Echoes of the CONTINUIST">
+        <button id="bookIcon" title="Echoes of the Continuist" class="dropdown-trigger" onclick="showBookModal()">
             <i class="fas fa-book"></i>
         </button>
-        <div id="bookDropdown" class="dropdown-panel">
-            <div class="dropdown-header">Echoes</div>
-            <a href="./echoes" class="dropdown-item">
-                <i class="fas fa-book-open" style="margin-right: 8px;"></i>
-                <span>Read Book</span>
-            </a>
-            <div class="dropdown-divider"></div>
-            <button onclick="clearBookData()" class="dropdown-item" style="color: #ffc439; width: 100%; text-align: left; background: none; border: none; font-family: inherit; cursor: pointer; padding: 10px 15px;">
-                <i class="fas fa-eraser" style="margin-right: 8px;"></i>
-                <span>Clear Book Data</span>
-            </button>
+    </div>
+
+    <!-- Book Chapters Modal -->
+    <div id="bookModal" class="book-modal-overlay">
+        <div class="book-modal">
+            <div class="book-modal-header">
+                <h2>Echoes of the Continuist</h2>
+                <button class="book-modal-close" onclick="hideBookModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="book-modal-content">
+                <button onclick="continueReading()" class="book-resume-btn">
+                    <i class="fas fa-bookmark"></i>
+                    <span>RETURN TO LATEST PAGE</span>
+                </button>
+                <div class="chapters-list">
+                    <div class="chapters-title">Chapters</div>
+                    <a href="./echoes.html?chapter=1" class="chapter-item">
+                        <div class="chapter-number">FRAME 01</div>
+                        <div class="chapter-name">The First Frame</div>
+                    </a>
+                    <a href="./echoes.html?chapter=2" class="chapter-item">
+                        <div class="chapter-number">FRAME 02</div>
+                        <div class="chapter-name">Survey Post: Unlatched</div>
+                    </a>
+                    <a href="./echoes.html?chapter=3" class="chapter-item">
+                        <div class="chapter-number">FRAME 03</div>
+                        <div class="chapter-name">Locked Design</div>
+                    </a>
+                </div>
+                <div class="modal-actions">
+                    <a href="./echoes.html" class="modal-action-btn">
+                        <i class="fas fa-book-open"></i>
+                        <span>Full Reader</span>
+                    </a>
+                    <button onclick="clearBookData()" class="modal-action-btn clear-btn">
+                        <i class="fas fa-eraser"></i>
+                        <span>Clear Data</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -126,7 +157,7 @@
 
         <button class="tab-link" onclick="openTab(event, 'lore')">LORE</button>
 
-        <button class="tab-link" onclick="openTab(event, 'coding')">DEV LOG</button>
+        <button class="tab-link" onclick="openTab(event, 'devlog')">DEV LOG</button>
 
         <button class="tab-link" onclick="openTab(event, 'gui-docs')">GUI DOCS</button>
 
@@ -296,6 +327,10 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
             <div class="block-gallery" id="ore-gallery"></div>
 
+            <h3 class="category-title" style="border-color: #666; color: #888;">Player Textures</h3>
+
+            <div class="block-gallery" id="player-gallery"></div>
+
             <h3 class="category-title" style="border-color: #666; color: #888;">Legacy Archive: Experimental Designs</h3>
 
             <div class="block-gallery" id="legacy-gallery"></div>
@@ -325,7 +360,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             </div>
 
             <div style="margin-bottom: 40px;">
-                <a href="./echoes" class="btn" style="background: var(--primary); color: #000; font-family: 'Press Start 2P'; font-size: 0.8rem; padding: 15px 30px; border-radius: 0; box-shadow: 4px 4px 0px #000;">
+                <a href="https://latticeveil.github.io/echoes" class="btn" style="background: var(--primary); color: #000; font-family: 'Press Start 2P'; font-size: 0.8rem; padding: 15px 30px; border-radius: 0; box-shadow: 4px 4px 0px #000;">
                     <i class="fas fa-book-open"></i> READ THE BOOK
                 </a>
                 <p style="margin-top: 15px; font-size: 0.7rem; opacity: 0.7;">Official E-Reader: Echoes of the Continuist</p>
@@ -773,7 +808,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
 <!-- DEV LOG TAB -->
 
-        <div id="coding" class="tab-content">
+        <div id="devlog" class="tab-content">
 
             <h2>Developer Logs</h2>
 
@@ -1763,39 +1798,39 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
         <span class="close-modal" onclick="closeModal()">&times;</span>
 
-        
-
+        <!-- View Toggle Above Model -->
         <div class="modal-view-toggle">
-
             <button id="view2D" class="view-btn active" onclick="setViewMode('2D')">2D NET</button>
-
             <button id="view3D" class="view-btn" onclick="setViewMode('3D')">3D MODEL</button>
-
         </div>
 
-        <img class="modal-content" id="modalImg">
+        <!-- Model Container (Centered) -->
+        <div class="modal-model-container">
+            <!-- Simple Arrow Navigation -->
+            <button class="modal-arrow modal-arrow-left" onclick="navigateModal(-1)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            
+            <img class="modal-content" id="modalImg">
+            <div id="three-container"></div>
+            
+            <button class="modal-arrow modal-arrow-right" onclick="navigateModal(1)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
 
-        <div id="three-container"></div>
-
-        <div class="modal-info">
-
+        <!-- Description Below Model -->
+        <div class="modal-description">
             <h3 id="modalName"></h3>
-
-            <p id="modalDesc"></p>
-
-            <button id="modalOpenPage" class="download-btn" style="margin-top: 10px; background: rgba(56,225,255,.12); border-color: rgba(56,225,255,.35);">
-
-                <i class="fas fa-up-right-from-square"></i> OPEN AS PAGE
-
-            </button>
-
-            <button id="modalDownload" class="download-btn">
-
-                <i class="fas fa-download"></i> DOWNLOAD TEXTURE
-
-            </button>
-
+            <div class="modal-description-content">
+                <p id="modalDesc"></p>
+            </div>
         </div>
+
+        <!-- Download Button -->
+        <button id="modalDownload" class="download-btn-icon" onclick="downloadTexture()">
+            <i class="fas fa-download"></i>
+        </button>
 
     </div>
 
@@ -1816,62 +1851,10 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
     </footer>
 
     <script>
-
-        const textureData = [
-            { id: 'grass', name: 'Grass', cat: 'nat', desc: 'Lush greenery for the surface layer.' },
-            { id: 'dirt', name: 'Dirt', cat: 'nat', desc: 'Standard soil found beneath the grass.' },
-            { id: 'stone', name: 'Stone', cat: 'nat', desc: 'Dense rock forming the world\'s crust.' },
-            { id: 'sand', name: 'Sand', cat: 'nat', desc: 'Fine grains found in deserts and beaches.' },
-            { id: 'gravel', name: 'Gravel', cat: 'nat', desc: 'Loose composite of small rocks.' },
-            { id: 'wood', name: 'Wood', cat: 'nat', desc: 'Raw timber harvested from trees.' },
-            { id: 'leaves', name: 'Leaves', cat: 'nat', desc: 'Translucent foliage from the canopy.' },
-            { id: 'water', name: 'Water', cat: 'nat', desc: 'Fluid life-giving substance of the oceans.' },
-            { id: 'nullrock', name: 'Nullrock', cat: 'nat', desc: 'A mysterious, dark stone found in the void.' },
-            { id: 'plank', name: 'Plank', cat: 'util', desc: 'Refined wood for building structures.' },
-            { id: 'glass', name: 'Glass', cat: 'util', desc: 'Smelted sand, perfect for windows.' },
-            { id: 'artificer_bench', name: 'Artificer Bench', cat: 'util', desc: 'A specialized station for advanced crafting.' },
-            { id: 'runestone', name: 'Runestone', cat: 'lore', desc: 'Continuist carved stone used to anchor rites.' },
-            { id: 'veinstone', name: 'Veinstone', cat: 'lore', desc: 'Dense stone laced with Veil resonance.' },
-            { id: 'veilglass', name: 'Veilglass', cat: 'lore', desc: 'A thin, translucent barrier tuned to the Veil.' },
-            { id: 'resonance_core', name: 'Resonance Core', cat: 'lore', desc: 'The calibrated heart of a Waygate network.' },
-            { id: 'waybound_frame', name: 'Waybound Frame', cat: 'lore', desc: 'Reinforced frame that holds a gate open.' },
-            { id: 'transit_regulator', name: 'Transit Regulator', cat: 'lore', desc: 'Controls timing and stability of gate travel.' },
-            { id: 'chest', name: 'Chest', cat: 'util', desc: 'Storage for your blocks and items.' },
-            { id: 'coal', name: 'Coal Ore', cat: 'ore', desc: 'Common ore vein used for early fuel and smelting.' },
-            { id: 'iron', name: 'Iron Ore', cat: 'ore', desc: 'Core mid-tier ore used for durable metal progression.' },
-            { id: 'gold', name: 'Gold Ore', cat: 'ore', desc: 'Richer ore with lower frequency and higher value.' },
-            { id: 'diamond', name: 'Diamond', cat: 'ore', desc: 'The hardest and most precious material.' },
-            { id: 'missing', name: 'Missing Texture', cat: 'legacy', desc: 'The iconic purple and black checkerboard fallback for missing assets.' },
-            { id: 'crafting_table', name: 'Crafting Table', cat: 'legacy', desc: 'The original workstation, now replaced by the Artificer Bench.' },
-            { id: 'legacy/grass_patchy', name: 'Patchy Grass', cat: 'legacy', desc: 'Experimental version with sparse grass coverage.' },
-            { id: 'legacy/v9/glass_gatekeepersfix', name: 'Glass (V9)', cat: 'legacy', desc: 'Pre-v10 glass variant archived from the Gatekeeper era.' },
-            { id: 'legacy/v9/veilglass_gatekeepersfix', name: 'Veilglass (V9)', cat: 'legacy', desc: 'Pre-v10 veilglass variant archived for comparison.' },
-            { id: 'legacy/v9/leaves_gatekeepersfix', name: 'Leaves (V9)', cat: 'legacy', desc: 'Pre-v10 foliage transparency variant.' },
-            { id: 'legacy/v9/coal_gatekeepersfix', name: 'Coal Texture (V9)', cat: 'legacy', desc: 'Legacy ore texture archived before v10 ore naming pass.' },
-            { id: 'legacy/v9/iron_gatekeepersfix', name: 'Iron Texture (V9)', cat: 'legacy', desc: 'Legacy ore texture archived before v10 ore naming pass.' },
-            { id: 'legacy/v9/gold_gatekeepersfix', name: 'Gold Texture (V9)', cat: 'legacy', desc: 'Legacy ore texture archived before v10 ore naming pass.' },
-            { id: 'legacy/hd/grass', name: 'HD Grass', cat: 'hd', desc: 'Original high-resolution grass from V1.' },
-            { id: 'legacy/hd/dirt', name: 'HD Dirt', cat: 'hd', desc: 'Original high-resolution dirt from V1.' },
-            { id: 'legacy/hd/stone', name: 'HD Stone', cat: 'hd', desc: 'Original high-resolution stone from V1.' }
-        ];
-
-        function populateGalleries() {
-            textureData.forEach(b => {
-                const container = document.getElementById(`${b.cat}-gallery`);
-                if (!container) return;
-                const div = document.createElement('div');
-                div.className = 'block-item';
-                div.onclick = () => openModal(`assets/img/${b.id}.png`, b.name, b.desc, b.id);
-                div.innerHTML = `
-                    <div class="block-thumb">
-                        <img src="assets/img/${b.id}.png" alt="${b.name}">
-                        <span class="fullscreen-badge" aria-hidden="true"><i class="fas fa-expand"></i></span>
-                    </div>
-                    <span>${b.name}</span>
-                `;
-                container.appendChild(div);
-            });
-        }
+        // Initialize galleries when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new TextureGallery();
+        });
 
         function openTab(evt, tabName) {
             document.querySelectorAll(".tab-content").forEach(c => {
@@ -1900,6 +1883,12 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 const url = new URL(window.location);
                 if (tabName === 'home') {
                     url.search = '';
+                } else if (tabName === 'assets') {
+                    // Clear devlog parameters when going to assets, preserve view mode
+                    const viewMode = localStorage.getItem('preferredViewMode') || '2D';
+                    url.search = `asset=&type=${viewMode}`;
+                } else if (tabName === 'devlog') {
+                    url.search = 'devlog&type=game'; // Remove = from devlog
                 } else {
                     url.search = tabName; 
                 }
@@ -1916,20 +1905,59 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             document.getElementById(subName).style.display = "block";
             document.getElementById(subName).classList.add("active");
             evt.currentTarget.classList.add("active");
+            
+            // Update URL with devlog type (new format without =)
+            const url = new URL(window.location);
+            const type = subName === 'log-game' ? 'game' : 'site';
+            url.search = `devlog&type=${type}`; // Use new format
+            window.history.pushState({}, '', url);
         }
+
+        function routeFromUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                if (params.has('assets')) {
+                    openTab(null, 'assets');
+                }
+                const asset = params.get('asset');
+                const wantsTexture = params.has('texture') || params.get('texture') === '1';
+                if (asset && wantsTexture) {
+                    // This is handled by the new texture-gallery.js system
+                }
+            } catch (e) {}
+        }
+
+        routeFromUrl();
 
         // --- 3D Viewer Logic ---
         let scene, camera, renderer, cube;
         let is3DInitialized = false;
+        let currentAssetId = null;
+        let animationId = null;
+        let isDragging = false;
+        let prevMouse = { x: 0, y: 0 };
 
         function init3D() {
             const container = document.getElementById('three-container');
+            if (!container) {
+                console.error('3D container not found');
+                return;
+            }
+
+            // Clear any existing content
+            container.innerHTML = '';
+
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(512, 512);
             renderer.setPixelRatio(window.devicePixelRatio);
+            
+            // CRITICAL: Transparent background like your game
+            renderer.setClearColor(0x000000, 0);
+            
             container.appendChild(renderer.domElement);
+            
             const geometry = new THREE.BoxGeometry(1, 1, 1);
 
             // Face order in THREE.BoxGeometry: 
@@ -1980,9 +2008,9 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             }
             cube = new THREE.Mesh(geometry, []);
             scene.add(cube);
+
             camera.position.z = 2;
             is3DInitialized = true;
-            animate();
 
             // Unified Input Handling
             const onStart = (x, y) => { isDragging = true; prevMouse = { x, y }; };
@@ -2010,15 +2038,17 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             window.ontouchmove = (e) => {
                 onMove(e.touches[0].clientX, e.touches[0].clientY);
             };
-        }
 
-        function animate() {
-            requestAnimationFrame(animate);
-            if (cube && !window.isDragging) {
-                // Subtle auto-rotation if not interacting
-                // cube.rotation.y += 0.005;
+            // Start render loop
+            function render() {
+                animationId = requestAnimationFrame(render);
+                if (renderer && scene && camera) {
+                    renderer.render(scene, camera);
+                }
             }
-            renderer.render(scene, camera);
+            render();
+
+            console.log('3D initialized successfully');
         }
 
         function update3DTexture(src) {
@@ -2037,6 +2067,18 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             const three = document.getElementById('three-container');
             const btn2D = document.getElementById('view2D');
             const btn3D = document.getElementById('view3D');
+            
+            // Save view mode to localStorage
+            localStorage.setItem('preferredViewMode', mode);
+            
+            // Update URL with new view type for sharing
+            if (currentAssetId) {
+                const url = new URL(window.location);
+                url.searchParams.set('asset', currentAssetId);
+                url.searchParams.set('type', mode); // Use 'type' for consistency
+                window.history.pushState({}, '', url);
+            }
+            
             if (mode === '3D') {
                 img.style.display = 'none';
                 three.style.display = 'block';
@@ -2049,74 +2091,77 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 btn2D.classList.add('active');
                 btn3D.classList.remove('active');
             }
+            
+            // Update carousel thumbnails to match current view mode
+            if (typeof updateCarouselNavigation === 'function') {
+                updateCarouselNavigation();
+            }
         }
 
-        let currentAssetId = null;
+        // Global navigation function for modal arrows
+        function navigateModal(direction) {
+            if (window.textureGallery) {
+                window.textureGallery.navigateModal(direction);
+            }
+        }
 
         function openModal(src, name, desc, assetId = null) {
+            // Disable body scrolling
+            document.body.style.overflow = 'hidden';
+            
             document.getElementById('textureModal').style.display = "flex";
             document.getElementById('modalImg').src = src;
             document.getElementById('modalName').innerText = name;
             document.getElementById('modalDesc').innerText = desc;
             currentAssetId = assetId;
-
-            // Extract just the filename relative to assets/img
-            const relativePath = src.split('assets/img/')[1]; 
-            const absoluteUrl = 'https://latticeveil.github.io/assets/img/' + relativePath;
-            const filename = name.toLowerCase().replace(/\s+/g, '_') + '.png';
-
-            const dlBtn = document.getElementById('modalDownload');
-            const newBtn = dlBtn.cloneNode(true);
-            dlBtn.parentNode.replaceChild(newBtn, dlBtn);
-
-            newBtn.onclick = () => {
-                const a = document.createElement('a');
-                a.href = absoluteUrl;
-                a.download = filename;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            };
-
-            const openBtn = document.getElementById('modalOpenPage');
-            if (openBtn) {
-                const fresh = openBtn.cloneNode(true);
-                openBtn.parentNode.replaceChild(fresh, openBtn);
-                fresh.onclick = () => {
-                    if (!currentAssetId) return;
-                    window.location.href = `/?assets&asset=${encodeURIComponent(currentAssetId)}&texture=1`;
-                };
+            if (assetId) {
+                // Update download button to use the current texture
+                const downloadBtn = document.getElementById('modalDownload');
+                downloadBtn.onclick = () => downloadTexture(name, src);
             }
 
-            // Reset to 2D view on open
-            setViewMode('2D');
+            // Check for view mode priority: URL > localStorage > default
+            const urlParams = new URLSearchParams(window.location.search);
+            let savedView;
+            
+            // Check if we're in assets context or devlog context
+            if (urlParams.has('devlog')) {
+                // Devlog context - don't apply 2D/3D view mode
+                savedView = '2D'; // Default for assets
+            } else {
+                // Assets context - check for 2D/3D type
+                const typeParam = urlParams.get('type');
+                if (typeParam === '2D' || typeParam === '3D') {
+                    savedView = typeParam;
+                } else {
+                    savedView = localStorage.getItem('preferredViewMode') || '2D';
+                }
+            }
+            setViewMode(savedView);
+            
             // Reset cube rotation
             if (cube) { cube.rotation.set(0.4, 0.4, 0); }
         }
 
-        function closeModal() { 
-            document.getElementById('textureModal').style.display = "none"; 
+        function closeModal() {
+            document.getElementById('textureModal').style.display = "none";
+            
+            // Re-enable body scrolling
+            document.body.style.overflow = '';
+            
+            // Reset carousel state
+            if (typeof isCarouselActive !== 'undefined') {
+                isCarouselActive = false;
+                currentCarouselIndex = -1;
+                carouselBlocks = [];
+            }
+            
+            // Reset URL to blank asset when closing modal, preserve view mode
+            const url = new URL(window.location);
+            url.searchParams.set('asset', '');
+            // Keep 'type' parameter for persistence
+            window.history.pushState({}, '', url);
         }
-
-        function routeFromUrl() {
-            try {
-                const params = new URLSearchParams(window.location.search);
-                if (params.has('assets')) {
-                    openTab(null, 'assets');
-                }
-                const asset = params.get('asset');
-                const wantsTexture = params.has('texture') || params.get('texture') === '1';
-                if (asset && wantsTexture) {
-                    const entry = textureData.find(t => t.id === asset);
-                    if (entry) {
-                        openModal(`assets/img/${entry.id}.png`, entry.name, entry.desc, entry.id);
-                    }
-                }
-            } catch (e) {}
-        }
-
-        populateGalleries();
-        routeFromUrl();
 
         // WebXR / Quest Detection
         async function checkVR() {
@@ -2155,8 +2200,8 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
         window.addEventListener('popstate', syncTab);
         window.addEventListener('hashchange', syncTab);
 
-        // Init on load
-        document.addEventListener('DOMContentLoaded', syncTab);
+        // Init on load - removed syncTab to prevent duplicates
+        // document.addEventListener('DOMContentLoaded', syncTab);
 
         function openFaction(evt, factionId) {
             const container = evt.currentTarget.parentElement.parentElement;
@@ -2208,6 +2253,16 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 window.location.href = window.location.pathname; // Reload without query params
             }
         }
+
+        // ESC key handler to close modal and re-enable scrolling
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const modal = document.getElementById('textureModal');
+                if (modal && modal.style.display === 'flex') {
+                    closeModal();
+                }
+            }
+        });
     </script>
     <script src="assets/tos-acceptance.js"></script>
 

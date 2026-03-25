@@ -9,6 +9,70 @@ class EnhancedUIManager {
         this.setupDataManagement();
         this.setupDonateModal();
         this.setupMobileOptimizations();
+        this.setupContinueReading();
+    }
+
+    setupContinueReading() {
+        // Get last read chapter and scroll position
+        const lastChapter = localStorage.getItem('reader_chapter') || '1';
+        const lastScroll = localStorage.getItem(`reader_scroll_ch${lastChapter}`) || '0';
+        
+        // Make continueReading function globally available
+        window.continueReading = function() {
+            // Navigate to echoes.html with last chapter and scroll
+            window.location.href = `./echoes.html?chapter=${lastChapter}#scroll=${lastScroll}`;
+        };
+        
+        // Make toggleBookDropdown function globally available
+        window.toggleBookDropdown = function() {
+            const dropdown = document.getElementById('bookDropdown');
+            const trigger = document.getElementById('bookIcon');
+            
+            if (dropdown && trigger) {
+                const isOpen = dropdown.style.display === 'block';
+                if (isOpen) {
+                    dropdown.style.display = 'none';
+                    trigger.classList.remove('active');
+                } else {
+                    dropdown.style.display = 'block';
+                    trigger.classList.add('active');
+                }
+            }
+        };
+        
+        // Make modal functions globally available
+        window.showBookModal = function() {
+            const modal = document.getElementById('bookModal');
+            if (modal) {
+                modal.classList.add('active');
+                // Prevent body scroll
+                document.body.style.overflow = 'hidden';
+            }
+        };
+        
+        window.hideBookModal = function() {
+            const modal = document.getElementById('bookModal');
+            if (modal) {
+                modal.classList.remove('active');
+                // Restore body scroll
+                document.body.style.overflow = '';
+            }
+        };
+        
+        // Close modal on background click
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('bookModal');
+            if (modal && modal.classList.contains('active') && e.target === modal) {
+                hideBookModal();
+            }
+        });
+        
+        // Close modal on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideBookModal();
+            }
+        });
     }
 
     setupDropdowns() {
