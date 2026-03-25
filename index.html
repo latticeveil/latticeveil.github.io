@@ -2253,6 +2253,44 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 }
             };
 
+            const updateProfileIcon = async () => {
+                const iconImg = document.querySelector('#profileIcon img');
+                if (!iconImg) return;
+                
+                try {
+                    if (!window.VeilnetAuth || typeof window.VeilnetAuth.getUser !== 'function') {
+                        iconImg.src = 'veilnet/assets/default_pfp.png';
+                        return;
+                    }
+                    
+                    const user = await window.VeilnetAuth.getUser();
+                    if (!user) {
+                        iconImg.src = 'veilnet/assets/default_pfp.png';
+                        return;
+                    }
+                    
+                    // Try to get profile picture from profile or user metadata
+                    let avatarSrc = 'veilnet/assets/default_pfp.png';
+                    try {
+                        const profile = await window.VeilnetAuth.getMyProfile();
+                        if (profile?.picture && !profile.picture.includes('default_pfp.png')) {
+                            avatarSrc = profile.picture;
+                        } else if (user.user_metadata?.picture && !user.user_metadata.picture.includes('default_pfp.png')) {
+                            avatarSrc = user.user_metadata.picture;
+                        }
+                    } catch (e) {
+                        // Fallback to user metadata if profile fails
+                        if (user.user_metadata?.picture && !user.user_metadata.picture.includes('default_pfp.png')) {
+                            avatarSrc = user.user_metadata.picture;
+                        }
+                    }
+                    
+                    iconImg.src = avatarSrc;
+                } catch (e) {
+                    iconImg.src = 'veilnet/assets/default_pfp.png';
+                }
+            };
+
             let user = null;
             try {
                 if (window.VeilnetAuth && typeof window.VeilnetAuth.getUser === 'function') {
@@ -2274,6 +2312,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 };
 
                 await maybePromptUsername();
+                await updateProfileIcon();
             } else {
                 label.textContent = 'Login';
                 btn.onclick = async () => {
@@ -2299,6 +2338,8 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                         }, 1200);
                     }
                 };
+                
+                await updateProfileIcon();
             }
         }
 
