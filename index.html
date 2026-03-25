@@ -21,6 +21,8 @@
 
     <script src="assets/device-detector.js"></script>
     <script src="assets/enhanced-ui.js"></script>
+    <script src="veilnet/assets/auth.js"></script>
+    <script src="veilnet/assets/veilnet.js"></script>
     <script src="assets/tos-acceptance.js"></script>
     <script src="assets/texture-gallery.js?v=25"></script>
 
@@ -111,12 +113,12 @@
                 <span>Settings</span>
             </a>
             <div class="dropdown-divider"></div>
-            <a href="./veilnet/login/" class="dropdown-item">
+            <button onclick="openVeilnetLoginModal()" class="dropdown-item">
                 <span>Login</span>
-            </a>
-            <a href="./veilnet/logout/" class="dropdown-item">
+            </button>
+            <button onclick="VeilnetAuth.logout()" class="dropdown-item">
                 <span>Log Out</span>
-            </a>
+            </button>
             <div class="dropdown-divider"></div>
             <div class="clear-data-dropdown">
                 <button id="clearDataIcon" title="Clear Site Data">
