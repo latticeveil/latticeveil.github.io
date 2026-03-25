@@ -2222,11 +2222,13 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             profileIcon.addEventListener('click', toggleDropdown);
         }
 
-        // Close on outside click
+        // Close on outside click (with delay to prevent immediate closing)
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.profile-dropdown')) {
-                closeDropdown();
-            }
+            setTimeout(() => {
+                if (!e.target.closest('.profile-dropdown')) {
+                    closeDropdown();
+                }
+            }, 10);
         });
 
         // Close on ESC
@@ -2236,10 +2238,10 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             }
         });
 
-        // Close when menu items are clicked
-        document.querySelectorAll('.dropdown-item').forEach(item => {
+        // Close when menu items are clicked (with delay)
+        document.querySelectorAll('.dd-item').forEach(item => {
             item.addEventListener('click', () => {
-                closeDropdown();
+                setTimeout(closeDropdown, 100);
             });
         });
 
