@@ -107,11 +107,8 @@
                 <span>Settings</span>
             </a>
             <div class="dropdown-divider"></div>
-            <button onclick="openVeilnetLoginModal()" class="dropdown-item">
-                <span>Login</span>
-            </button>
-            <button onclick="VeilnetAuth.logout()" class="dropdown-item">
-                <span>Log Out</span>
+            <button id="veilnetAuthBtn" class="dropdown-item">
+                <span id="veilnetAuthBtnLabel">Login</span>
             </button>
             <div class="dropdown-divider"></div>
             <div class="clear-data-dropdown">
@@ -2241,6 +2238,47 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 closeDropdown();
             });
         });
+
+        async function updateVeilnetAuthButton() {
+            const btn = document.getElementById('veilnetAuthBtn');
+            const label = document.getElementById('veilnetAuthBtnLabel');
+            if (!btn || !label) return;
+
+            let user = null;
+            try {
+                if (window.VeilnetAuth && typeof window.VeilnetAuth.getUser === 'function') {
+                    user = await window.VeilnetAuth.getUser();
+                }
+            } catch (e) {
+                user = null;
+            }
+
+            if (user) {
+                label.textContent = 'Log Out';
+                btn.onclick = async () => {
+                    try {
+                        await window.VeilnetAuth.logout();
+                    } finally {
+                        await updateVeilnetAuthButton();
+                    }
+                };
+            } else {
+                label.textContent = 'Login';
+                btn.onclick = async () => {
+                    if (typeof window.openVeilnetLoginModal === 'function') {
+                        await window.openVeilnetLoginModal();
+                        await updateVeilnetAuthButton();
+                    }
+                };
+            }
+        }
+
+        updateVeilnetAuthButton();
+
+        function toggleVeilnetDropdown() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('open');
+        }
 
         function fullResetSite() {
             if (confirm("THIS WILL DELETE ALL SAVED TABS, READER SETTINGS, AND PERSONAL NOTES.\n\nAre you sure you want to perform a FULL RESET?")) {
