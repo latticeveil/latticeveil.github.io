@@ -2207,8 +2207,8 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
         }
 
         // Profile dropdown functionality
-        const profileIcon = document.getElementById('profileIcon');
-        const profileDropdown = document.getElementById('profileDropdown');
+        const profileIcon = document.querySelector('[data-veil-avatar]');
+        const profileDropdown = document.querySelector('[data-veil-dropdown]');
 
         function toggleDropdown() {
             profileDropdown.classList.toggle('open');
@@ -2218,7 +2218,9 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             profileDropdown.classList.remove('open');
         }
 
-        profileIcon.addEventListener('click', toggleDropdown);
+        if (profileIcon) {
+            profileIcon.addEventListener('click', toggleDropdown);
+        }
 
         // Close on outside click
         document.addEventListener('click', (e) => {
