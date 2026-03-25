@@ -2285,11 +2285,29 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                         }
                     }
                     
-                    iconImg.src = avatarSrc;
+                    // Preload image for snappy update
+                    if (avatarSrc !== 'veilnet/assets/default_pfp.png') {
+                        const tempImg = new Image();
+                        tempImg.onload = () => {
+                            iconImg.src = avatarSrc;
+                        };
+                        tempImg.src = avatarSrc;
+                    } else {
+                        iconImg.src = avatarSrc;
+                    }
                 } catch (e) {
                     iconImg.src = 'veilnet/assets/default_pfp.png';
                 }
             };
+
+            // Listen for auth state changes for instant updates
+            if (window.VeilnetAuth && window.VeilnetAuth.onAuthStateChange) {
+                window.VeilnetAuth.onAuthStateChange((event, session) => {
+                    if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                        setTimeout(updateProfileIcon, 100);
+                    }
+                });
+            }
 
             let user = null;
             try {
@@ -2322,6 +2340,9 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                         } else if (window.VeilnetAuth && typeof window.VeilnetAuth.signInWithGoogle === 'function') {
                             await window.VeilnetAuth.signInWithGoogle();
                         }
+                        
+                        // Immediate icon update after login
+                        setTimeout(updateProfileIcon, 200);
                     } finally {
                         await updateVeilnetAuthButton();
                         setTimeout(updateVeilnetAuthButton, 750);
