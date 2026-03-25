@@ -2275,6 +2275,16 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                         await updateVeilnetAuthButton();
                         setTimeout(updateVeilnetAuthButton, 750);
                         setTimeout(updateVeilnetAuthButton, 2000);
+
+                        // If we are now logged in, refresh page so UI reliably shows Log Out
+                        setTimeout(async () => {
+                            try {
+                                if (window.VeilnetAuth && typeof window.VeilnetAuth.getUser === 'function') {
+                                    const u = await window.VeilnetAuth.getUser();
+                                    if (u) window.location.reload();
+                                }
+                            } catch (e) {}
+                        }, 1200);
                     }
                 };
             }
