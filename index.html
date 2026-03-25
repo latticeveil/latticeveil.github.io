@@ -2234,10 +2234,21 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                     if (profile && profile.username) return;
                     if (typeof window.__openVeilnetUsernameModal === 'function') {
                         window.__openVeilnetUsernameModal();
+                        // Hook into username modal close to refresh page if username was set
+                        const observer = new MutationObserver((mutations, obs) => {
+                            const modal = document.getElementById('veilnet-username-modal');
+                            if (!modal || modal.style.display === 'none') {
+                                obs.disconnect();
+                                setTimeout(() => window.location.reload(), 300);
+                            }
+                        });
+                        const modal = document.getElementById('veilnet-username-modal');
+                        if (modal) observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
                     }
                 } catch (e) {
                     if (typeof window.__openVeilnetUsernameModal === 'function') {
                         window.__openVeilnetUsernameModal();
+                        setTimeout(() => window.location.reload(), 300);
                     }
                 }
             };
@@ -2256,6 +2267,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 btn.onclick = async () => {
                     try {
                         await window.VeilnetAuth.logout();
+                        window.location.reload();
                     } finally {
                         await updateVeilnetAuthButton();
                     }
