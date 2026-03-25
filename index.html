@@ -2407,23 +2407,6 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 });
             }
 
-            // Wire login click
-            const loginItem = document.getElementById('veilnet-login-item');
-            if (loginItem) {
-                loginItem.onclick = async () => {
-                    try {
-                        if (typeof window.__openVeilnetLoginModal === 'function') {
-                            await window.__openVeilnetLoginModal();
-                        } else if (window.VeilnetAuth && typeof window.VeilnetAuth.signInWithGoogle === 'function') {
-                            await window.VeilnetAuth.signInWithGoogle();
-                        }
-                        
-                        // Update after login attempt
-                        setTimeout(updateProfileIcon, 200);
-                    } catch (e) {}
-                };
-            }
-
             let user = null;
             try {
                 if (window.VeilnetAuth && typeof window.VeilnetAuth.getUser === 'function') {
@@ -2479,12 +2462,12 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             }
         }
 
-        updateVeilnetAuthButton();
-        setTimeout(updateVeilnetAuthButton, 750);
-        setTimeout(updateVeilnetAuthButton, 2000);
+        updateProfileIcon();
+        setTimeout(updateProfileIcon, 750);
+        setTimeout(updateProfileIcon, 2000);
 
         function toggleVeilnetDropdown() {
-            const dropdown = document.getElementById('profileDropdown');
+            const dropdown = document.querySelector('[data-veil-dropdown]');
             dropdown.classList.toggle('open');
         }
 
