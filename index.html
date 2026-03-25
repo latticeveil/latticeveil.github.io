@@ -95,15 +95,19 @@
     </div>
 
     <div class="profile-dropdown">
-        <button id="profileIcon" title="Veilnet Profile">
-            <img src="veilnet/assets/default_pfp.png" alt="Profile">
-        </button>
-        <div id="profileDropdown" class="dropdown-panel">
-            <div class="dropdown-header">Veilnet</div>
+        <div class="pfp-wrap">
+          <div class="avatar" data-veil-avatar title="Profile">
+            <img data-veil-avatar-img src="veilnet/assets/default_pfp.png" alt="profile">
+            <span id="vnUnreadBadgeProfile" class="vn-badge vn-badge--hidden"></span>
+          </div>
+          <div class="status-ring" data-veil-ring style="--ring: rgba(255,255,255,.25); opacity:.55"></div>
+
+          <div class="dropdown" data-veil-dropdown>
             <div class="dd-head">
+              <img id="veilnet-avatar" data-veil-dd-img src="veilnet/assets/default_pfp.png" alt="">
               <div>
-                <div id="veilnet-display-name" class="dd-title">Not signed in</div>
-                <div id="veilnet-display-subtext" class="dd-sub">Login to access Veilnet features</div>
+                <div id="veilnet-display-name" class="dd-title" data-veil-dd-title>Not signed in</div>
+                <div id="veilnet-display-subtext" class="dd-sub" data-veil-dd-sub>Login to access Veilnet features</div>
               </div>
             </div>
 
@@ -111,23 +115,24 @@
               <span>Go to Veilnet</span><small>Home</small>
             </div>
 
-            <div class="dd-item" onclick="location.href='./veilnet/profile/'">
+            <div class="dd-item" data-veil-myprofile style="display:none">
               <span>My Profile</span><small>/profile</small>
             </div>
 
-            <div class="dd-item" onclick="location.href='./veilnet/settings/'">
+            <div class="dd-item" data-veil-settings style="display:none">
               <span>Settings</span><small>Link + prefs</small>
             </div>
 
             <div class="dd-divider"></div>
 
-            <div id="veilnet-login-item" class="dd-item">
-              <span>Login with Google</span><small>Demo</small>
+            <div id="veilnet-login-item" class="dd-item" data-veil-login>
+              <span>Login</span><small>Google</small>
             </div>
 
-            <div id="veilnet-logout-item" class="dd-item" style="display:none">
-              <span>Log Out</span><small>Demo</small>
+            <div id="veilnet-logout-item" class="dd-item" data-veil-logout style="display:none">
+              <span>Log Out</span><small>Google</small>
             </div>
+          </div>
         </div>
     </div>
 
@@ -2268,41 +2273,75 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             };
 
             const updateProfileIcon = async () => {
-                const iconImg = document.querySelector('#profileIcon img');
-                if (!iconImg) return;
+                const iconImg = document.querySelector('[data-veil-avatar-img]');
+                const dropdownAvatar = document.querySelector('#veilnet-avatar');
+                const displayName = document.getElementById('veilnet-display-name');
+                const subtext = document.getElementById('veilnet-display-subtext');
+                const loginItem = document.getElementById('veilnet-login-item');
+                const logoutItem = document.getElementById('veilnet-logout-item');
+                const profileItem = document.querySelector('[data-veil-myprofile]');
+                const settingsItem = document.querySelector('[data-veil-settings]');
+                
+                if (!iconImg || !dropdownAvatar || !displayName || !subtext) return;
                 
                 try {
                     if (!window.VeilnetAuth || typeof window.VeilnetAuth.getUser !== 'function') {
+                        // Logged out state
                         iconImg.src = 'veilnet/assets/default_pfp.png';
+                        dropdownAvatar.src = 'veilnet/assets/default_pfp.png';
+                        displayName.textContent = 'Not signed in';
+                        subtext.textContent = 'Login to access Veilnet features';
+                        if (loginItem) loginItem.style.display = '';
+                        if (logoutItem) logoutItem.style.display = 'none';
+                        if (profileItem) profileItem.style.display = 'none';
+                        if (settingsItem) settingsItem.style.display = 'none';
                         return;
                     }
                     
                     const user = await window.VeilnetAuth.getUser();
                     if (!user) {
+                        // Logged out state
                         iconImg.src = 'veilnet/assets/default_pfp.png';
+                        dropdownAvatar.src = 'veilnet/assets/default_pfp.png';
+                        displayName.textContent = 'Not signed in';
+                        subtext.textContent = 'Login to access Veilnet features';
+                        if (loginItem) loginItem.style.display = '';
+                        if (logoutItem) logoutItem.style.display = 'none';
+                        if (profileItem) profileItem.style.display = 'none';
+                        if (settingsItem) settingsItem.style.display = 'none';
                         return;
                     }
                     
-                    // Try to get profile picture from profile or user metadata
+                    // Logged in state
+                    let username = user.email || 'User';
+                    let email = user.email || '';
                     let avatarSrc = 'veilnet/assets/default_pfp.png';
+                    
                     try {
                         const profile = await window.VeilnetAuth.getMyProfile();
+                        if (profile?.username) username = profile.username;
                         if (profile?.picture && !profile.picture.includes('default_pfp.png')) {
                             avatarSrc = profile.picture;
-                        } else if (user.user_metadata?.picture && !user.user_metadata.picture.includes('default_pfp.png')) {
-                            avatarSrc = user.user_metadata.picture;
                         }
                     } catch (e) {
-                        // Fallback to user metadata if profile fails
+                        // Fallback to user metadata
                         if (user.user_metadata?.picture && !user.user_metadata.picture.includes('default_pfp.png')) {
                             avatarSrc = user.user_metadata.picture;
                         }
                     }
                     
+                    // Update display
+                    displayName.textContent = username;
+                    subtext.textContent = email;
+                    if (loginItem) loginItem.style.display = 'none';
+                    if (logoutItem) logoutItem.style.display = '';
+                    if (profileItem) profileItem.style.display = '';
+                    if (settingsItem) settingsItem.style.display = '';
+                    
                     // Fast image loading with preloading and caching
                     if (avatarSrc !== 'veilnet/assets/default_pfp.png') {
                         // Check if already cached
-                        if (iconImg.src === avatarSrc) return;
+                        if (iconImg.src === avatarSrc && dropdownAvatar.src === avatarSrc) return;
                         
                         // Preload with error handling and immediate update
                         const tempImg = new Image();
@@ -2312,27 +2351,48 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                         
                         // Load with timeout for faster fallback
                         const loadTimeout = setTimeout(() => {
-                            iconImg.src = avatarSrc; // Set anyway if preload takes too long
+                            iconImg.src = avatarSrc;
+                            dropdownAvatar.src = avatarSrc;
                         }, 300);
                         
                         tempImg.onload = () => {
                             clearTimeout(loadTimeout);
                             iconImg.src = avatarSrc;
-                            // Cache for future use
-                            iconImg.setAttribute('data-loaded', 'true');
+                            dropdownAvatar.src = avatarSrc;
                         };
                         
                         tempImg.onerror = () => {
                             clearTimeout(loadTimeout);
                             iconImg.src = 'veilnet/assets/default_pfp.png';
+                            dropdownAvatar.src = 'veilnet/assets/default_pfp.png';
                         };
                         
                         tempImg.src = avatarSrc;
                     } else {
                         iconImg.src = avatarSrc;
+                        dropdownAvatar.src = avatarSrc;
                     }
+                    
+                    // Wire logout click
+                    if (logoutItem) {
+                        logoutItem.onclick = async () => {
+                            try {
+                                await window.VeilnetAuth.logout();
+                                window.location.reload();
+                            } catch (e) {}
+                        };
+                    }
+                    
                 } catch (e) {
+                    // Error fallback
                     iconImg.src = 'veilnet/assets/default_pfp.png';
+                    dropdownAvatar.src = 'veilnet/assets/default_pfp.png';
+                    displayName.textContent = 'Not signed in';
+                    subtext.textContent = 'Login to access Veilnet features';
+                    if (loginItem) loginItem.style.display = '';
+                    if (logoutItem) logoutItem.style.display = 'none';
+                    if (profileItem) profileItem.style.display = 'none';
+                    if (settingsItem) settingsItem.style.display = 'none';
                 }
             };
 
@@ -2343,6 +2403,23 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                         setTimeout(updateProfileIcon, 100);
                     }
                 });
+            }
+
+            // Wire login click
+            const loginItem = document.getElementById('veilnet-login-item');
+            if (loginItem) {
+                loginItem.onclick = async () => {
+                    try {
+                        if (typeof window.__openVeilnetLoginModal === 'function') {
+                            await window.__openVeilnetLoginModal();
+                        } else if (window.VeilnetAuth && typeof window.VeilnetAuth.signInWithGoogle === 'function') {
+                            await window.VeilnetAuth.signInWithGoogle();
+                        }
+                        
+                        // Update after login attempt
+                        setTimeout(updateProfileIcon, 200);
+                    } catch (e) {}
+                };
             }
 
             let user = null;
