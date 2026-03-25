@@ -2227,6 +2227,21 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             const label = document.getElementById('veilnetAuthBtnLabel');
             if (!btn || !label) return;
 
+            const maybePromptUsername = async () => {
+                try {
+                    if (!window.VeilnetAuth || typeof window.VeilnetAuth.getMyProfile !== 'function') return;
+                    const profile = await window.VeilnetAuth.getMyProfile();
+                    if (profile && profile.username) return;
+                    if (typeof window.__openVeilnetUsernameModal === 'function') {
+                        window.__openVeilnetUsernameModal();
+                    }
+                } catch (e) {
+                    if (typeof window.__openVeilnetUsernameModal === 'function') {
+                        window.__openVeilnetUsernameModal();
+                    }
+                }
+            };
+
             let user = null;
             try {
                 if (window.VeilnetAuth && typeof window.VeilnetAuth.getUser === 'function') {
@@ -2245,6 +2260,8 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                         await updateVeilnetAuthButton();
                     }
                 };
+
+                await maybePromptUsername();
             } else {
                 label.textContent = 'Login';
                 btn.onclick = async () => {
