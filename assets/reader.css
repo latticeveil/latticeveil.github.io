@@ -808,6 +808,31 @@ body.highlight-mode-active .reader-container {
 
 /* Mobile-friendly adjustments */
 @media (max-width: 768px) {
+    .reader-header {
+        padding: 8px 10px;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .reader-title {
+        font-size: 0.45rem;
+        order: 1;
+        flex: 1;
+        min-width: 120px;
+    }
+    
+    .reader-controls {
+        order: 2;
+        gap: 3px;
+    }
+    
+    .icon-btn {
+        font-size: 0.9rem;
+        padding: 6px;
+        min-width: 36px;
+        min-height: 36px;
+    }
+    
     .highlight-toolbar {
         padding: 6px;
         gap: 6px;
@@ -828,6 +853,13 @@ body.highlight-mode-active .reader-container {
     .note-modal-content {
         padding: 20px;
         margin: 20px;
+    }
+    
+    /* Ensure settings button is visible */
+    #settingsBtn {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
     }
 }
 

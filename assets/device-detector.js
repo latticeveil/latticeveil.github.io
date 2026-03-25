@@ -32,18 +32,18 @@ class DeviceDetector {
         const isIOS = /iPhone|iPad|iPod/i.test(ua);
         const isAndroid = /Android/i.test(ua);
         
-        // VR detection
-        const isVR = /Oculus|VR|XR/i.test(ua) || 
-                    navigator.xr !== undefined ||
-                    (window.isSecureContext && navigator.getVRDisplays) ||
-                    /Quest|Meta|Apple Vision Pro/i.test(ua);
+        // VR detection - Only show for actual VR headsets, not PC browsers
+        const isVR = /OculusBrowser|Quest|Meta Quest|Apple Vision Pro/i.test(ua) || 
+                    (navigator.xr !== undefined && window.isSecureContext && 
+                     (/Quest|Meta|Oculus|Apple Vision Pro/i.test(ua) || 
+                      (navigator.userAgent.includes('Mobile') && navigator.xr)));
         
         // More specific VR headset detection
         const isQuest = /Quest|Meta Quest/i.test(ua);
         const isQuest2 = /Quest 2/i.test(ua);
         const isQuest3 = /Quest 3/i.test(ua);
         const isAppleVision = /Apple Vision Pro/i.test(ua);
-        const isOculus = /Oculus/i.test(ua);
+        const isOculus = /OculusBrowser|Oculus/i.test(ua);
         
         // Screen info
         const screenInfo = {
