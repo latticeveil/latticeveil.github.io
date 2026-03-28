@@ -5,14 +5,21 @@ class TextureGallery {
     }
 
     init() {
+        // Prevent duplicate initialization
+        if (window.textureGalleryInitialized) {
+            return;
+        }
+        window.textureGalleryInitialized = true;
+        
         this.populateGalleries();
         this.setupURLRouting();
         // Make instance globally available for navigation
         window.textureGallery = this;
         
-        // Debug: Log all blocks on initialization
+        // Clean summary log
         setTimeout(() => {
-            this.debugAllAssets();
+            const allAssets = this.getAllAssets();
+            console.log(`🎨 LatticeVeil Assets Loaded: ${allAssets.length} blocks available`);
         }, 1000);
     }
 
@@ -23,10 +30,7 @@ class TextureGallery {
         const devlogParam = urlParams.get('devlog');
         const typeParam = urlParams.get('type');
 
-        console.log('URL Routing - Asset:', assetName, 'Devlog:', devlogParam, 'Type:', typeParam);
-
         if (assetName) {
-            console.log('Switching to assets tab for:', assetName);
             this.switchToTab('assets');
             
             // Auto-show popup if we have an asset name
@@ -38,7 +42,6 @@ class TextureGallery {
                 }
             }, 500); // Small delay to ensure tab is loaded
         } else if (devlogParam !== null) {
-            console.log('Switching to devlog tab with type:', typeParam);
             this.switchToTab('devlog');
             
             // Switch to the correct sub-tab based on type
@@ -387,17 +390,10 @@ class TextureGallery {
     
     // Debug function to log all blocks
     debugAllAssets() {
-        const allAssets = this.getAllAssets();
-        console.log('=== ALL BLOCKS IN NAVIGATION ===');
-        allAssets.forEach((asset, index) => {
-            console.log(`${index}: ${asset.name} (${asset.id})`);
-        });
-        console.log(`Total: ${allAssets.length} blocks`);
-        console.log('============================');
+        // Removed - use console summary instead
     }
 
     showAssetPopup(name, image, assetId, viewType = '2D', description = '') {
-        console.log('showAssetPopup called with:', { name, image, assetId, viewType, description });
         // Update URL with asset and type parameters
         const url = new URL(window.location);
         url.searchParams.set('asset', assetId);
@@ -409,7 +405,6 @@ class TextureGallery {
         this.currentAssetIndex = this.getAllAssets().findIndex(asset => asset.id === assetId);
         
         // Use the original modal system with description
-        console.log('Calling openModal with:', image, name, description, assetId);
         openModal(image, name, description, assetId);
         
         // Set the correct view mode immediately (no delay)

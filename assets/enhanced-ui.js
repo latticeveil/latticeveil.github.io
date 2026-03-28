@@ -10,6 +10,7 @@ class EnhancedUIManager {
         this.setupDonateModal();
         this.setupMobileOptimizations();
         this.setupContinueReading();
+        this.setupMobileMenu();
     }
 
     setupContinueReading() {
@@ -231,14 +232,31 @@ class EnhancedUIManager {
     }
 
     setupDonateModal() {
-        const donateBtn = document.getElementById('donateIcon');
+        // Make showDonateModal function globally available
+        window.showDonateModal = function() {
+            const modal = document.getElementById('donateModal');
+            if (modal) {
+                modal.classList.add('active');
+                // Prevent body scroll
+                document.body.style.overflow = 'hidden';
+            } else {
+                // Create modal if it doesn't exist
+                const donateModal = this.createDonateModal();
+                document.body.appendChild(donateModal);
+                donateModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+        }.bind(this);
         
-        if (donateBtn) {
-            donateBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.showDonateModal();
-            });
-        }
+        window.hideDonateModal = function() {
+            const modal = document.getElementById('donateModal');
+            if (modal) {
+                modal.classList.remove('active');
+                modal.style.display = 'none';
+                // Restore body scroll
+                document.body.style.overflow = '';
+            }
+        };
     }
 
     showDonateModal() {
@@ -266,21 +284,14 @@ class EnhancedUIManager {
                 </div>
                 <div class="donate-body">
                     <p>Your support helps keep LatticeVeil free and actively developed!</p>
-                    <div class="donate-embed">
-                        <iframe 
-                            src="https://www.paypal.com/donate/?hosted_button_id=FAAV5R3P8YEZJ" 
-                            frameborder="0" 
-                            scrolling="no" 
-                            allowtransparency="true"
-                            style="width: 100%; height: 600px; border: none; overflow: hidden;">
-                        </iframe>
-                    </div>
-                    <div class="donate-alternatives">
-                        <p>If the embed doesn't work:</p>
-                        <button onclick="window.open('https://www.paypal.com/donate/?hosted_button_id=FAAV5R3P8YEZJ', '_blank')" class="donate-direct-btn">
-                            <i class="fas fa-external-link-alt"></i> Open PayPal Directly
+                    <div style="text-align: center; margin: 30px 0;">
+                        <button onclick="window.open('https://www.paypal.com/donate/?hosted_button_id=FAAV5R3P8YEZJ', '_blank', 'width=600,height=600,scrollbars=yes,resizable=yes')" class="donate-direct-btn">
+                            <i class="fab fa-paypal"></i> DONATE WITH PAYPAL
                         </button>
                     </div>
+                    <p style="font-size: 0.9rem; color: #ccc; text-align: center;">
+                        You'll be redirected to PayPal's secure site to complete your donation.
+                    </p>
                 </div>
             </div>
         `;
@@ -353,6 +364,47 @@ class EnhancedUIManager {
         });
         document.querySelectorAll('.dropdown-trigger').forEach(btn => {
             btn.classList.remove('active');
+        });
+    }
+
+    setupMobileMenu() {
+        // Make toggleMobileMenu function globally available
+        window.toggleMobileMenu = function() {
+            const dropdown = document.getElementById('mobileMenu');
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+            }
+        };
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const mobileMenu = document.getElementById('mobileMenu');
+            const hamburger = document.querySelector('.mobile-hamburger');
+            
+            if (mobileMenu && hamburger && 
+                !mobileMenu.contains(event.target) && 
+                !hamburger.contains(event.target)) {
+                mobileMenu.classList.remove('active');
+            }
+        });
+
+        // Close mobile menu when window is resized to desktop
+        window.addEventListener('resize', function() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (window.innerWidth > 768 && mobileMenu) {
+                mobileMenu.classList.remove('active');
+            }
+        });
+        
+        // Close mobile menu when menu items are clicked
+        document.addEventListener('click', function(event) {
+            const mobileMenu = document.getElementById('mobileMenu');
+            if (mobileMenu && mobileMenu.classList.contains('active')) {
+                const menuItem = event.target.closest('.mobile-menu-item');
+                if (menuItem) {
+                    mobileMenu.classList.remove('active');
+                }
+            }
         });
     }
 }
