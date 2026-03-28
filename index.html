@@ -19,13 +19,652 @@
     <link rel="stylesheet" href="assets/site.css">
     <link rel="stylesheet" href="assets/tos-modal.css">
 
+    <style>
+        .veilnet-button {
+            position: fixed;
+            top: 5px;
+            right: 45px;
+            z-index: 1000;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .veilnet-button {
+                top: 10px; /* Moved closer to the top */
+                right: 5px; /* Moved closer to the right edge */
+                gap: 8px;
+            }
+            .veilnet-logo {
+                width: 60px; /* Slightly smaller logo for mobile */
+                height: 60px;
+            }
+            .veilnet-tooltip {
+                display: none; /* Hide tooltip on mobile */
+            }
+        }
+        
+        .veilnet-logo {
+            width: 85px;
+            height: 85px;
+            object-fit: contain;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 2px 8px rgba(124, 92, 255, 0.3));
+        }
+        
+        .veilnet-button:hover .veilnet-logo {
+            transform: scale(1.1);
+            filter: drop-shadow(0 6px 20px rgba(124, 92, 255, 0.6));
+        }
+        
+        .veilnet-tooltip {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: #7c5cff;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        
+        .veilnet-button:hover .veilnet-tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .veilnet-tooltip::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-bottom: 4px solid #7c5cff;
+        }
+        
+        /* Enhanced Device Info Button */
+        .device-info-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 45px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            z-index: 1001;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+        }
+        
+        .device-info-btn:hover {
+            transform: translateY(-3px) scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
+            background: linear-gradient(135deg, #00e5ff, #00b3cc);
+        }
+        
+        .device-info-tooltip {
+            position: absolute;
+            top: -45px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            min-width: 100px;
+            text-align: center;
+        }
+        
+        .device-info-btn:hover .device-info-tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .device-info-tooltip::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 4px solid #0099cc;
+        }
+        
+        /* Device Info Popup */
+        .device-info-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #00d4ff;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 10000;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 212, 255, 0.3);
+        }
+        
+        .device-info-popup.active {
+            opacity: 1;
+            pointer-events: all;
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .device-info-popup h2 {
+            color: #00d4ff;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+        }
+        
+        .device-info-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+        
+        .device-info-section h3 {
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .device-info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            color: #ffffff;
+            font-family: 'VT323', monospace;
+        }
+        
+        .device-info-label {
+            font-weight: bold;
+            color: #00d4ff;
+        }
+        
+        .device-info-value {
+            color: #ffffff;
+            text-align: right;
+        }
+        
+        .close-popup {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(255, 68, 68, 0.3);
+            z-index: 10001;
+        }
+        
+        .close-popup:hover {
+            background: linear-gradient(135deg, #ff6666, #ff0000);
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 68, 68, 0.5);
+        }
+        
+        .device-info-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        
+        .device-info-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        /* Top Left Action Buttons */
+        .top-left-buttons {
+            position: fixed;
+            top: 5px;
+            left: 30px;
+            z-index: 1001;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .action-btn {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #7c5cff, #6366f1);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(124, 92, 255, 0.3);
+            position: relative;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(124, 92, 255, 0.5);
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+        
+        .btn-tooltip {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: #7c5cff;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn:hover .btn-tooltip {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        .btn-tooltip::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-bottom: 4px solid #7c5cff;
+        }
+        
+        /* Main Logo Dynamic Styling */
+        .site-hero {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: flex-start; /* Default to left-aligned */
+            padding-left: calc(2% + 160px); /* Premium left-alignment with button clearance */
+            text-align: left;
+            transition: all 0.4s ease;
+            height: 30vh;
+            min-height: 250px;
+        }
+        
+        .logo {
+            max-width: 320px;
+            height: auto;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            filter: drop-shadow(0 10px 30px rgba(0, 183, 255, 0.2));
+            margin-bottom: 10px;
+        }
+        
+        .logo:hover {
+            transform: scale(1.05) translateX(5px);
+            filter: drop-shadow(0 15px 40px rgba(0, 183, 255, 0.4));
+        }
+        
+        .site-hero p {
+            margin-left: 5px;
+            opacity: 0.8;
+            letter-spacing: 1px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.8rem;
+        }
+        
+        @media (max-width: 1200px) {
+            .site-hero {
+                padding-left: 150px;
+            }
+            .logo {
+                max-width: 280px;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .site-hero {
+                align-items: flex-start; /* Consistently left-aligned */
+                padding-left: 15px;
+                padding-right: 15px;
+                text-align: left;
+                padding-top: 100px; /* Stronger clearance for mobile buttons */
+            }
+            .logo {
+                max-width: 260px;
+                margin-left: 0;
+            }
+            .logo:hover {
+                transform: scale(1.05);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .site-hero {
+                height: 25vh;
+                min-height: 220px;
+                padding-top: 110px;
+                padding-left: 20px;
+            }
+            .logo {
+                max-width: 210px;
+            }
+        }
+        
+        /* Mobile Elements */
+        .mobile-only { display: none !important; }
+        
+        .mobile-hamburger {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #7c5cff, #6366f1);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(124, 92, 255, 0.3);
+            position: relative;
+        }
+        
+        .mobile-hamburger:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(124, 92, 255, 0.5);
+        }
+        
+        .mobile-dropdown {
+            display: none;
+            position: absolute;
+            top: 55px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: transparent;
+            border-radius: 12px;
+            padding: 10px;
+            min-width: 60px;
+            margin-top: 0;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1002;
+            align-items: center;
+        }
+        
+        .mobile-dropdown.active {
+            display: flex !important;
+        }
+        
+        @media (max-width: 768px) {
+            .desktop-only { display: none !important; }
+            .mobile-only { 
+                display: flex !important;
+                position: fixed;
+                top: 15px;
+                left: 15px;
+                z-index: 1003;
+                flex-direction: column; /* Changed back to column */
+                align-items: flex-start;
+                gap: 12px;
+            }
+            
+            /* Mobile Book and Donate buttons - vertical stack */
+            .mobile-book-btn,
+            .mobile-donate-btn {
+                display: flex !important;
+                align-items: center;
+                gap: 10px;
+                padding: 8px 12px;
+                border-radius: 10px;
+                background: rgba(255,255,255,0.05);
+                font-weight: 500;
+                color: white;
+                text-decoration: none;
+                font-family: 'VT323', monospace;
+                font-size: 1rem;
+                min-height: 40px;
+                border: 1px solid rgba(255,255,255,0.1);
+                transition: all 0.3s ease;
+            }
+            
+            .mobile-book-btn {
+                background: linear-gradient(135deg, #7c5cff, #6366f1);
+            }
+            
+            .mobile-donate-btn {
+                background: linear-gradient(135deg, #ef4444, #dc2626);
+            }
+            
+            .mobile-book-btn:hover,
+            .mobile-donate-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            }
+            
+            /* Mobile Device Info Popup Adjustments */
+            .device-info-popup {
+                width: 92% !important;
+                max-width: 92% !important;
+                padding: 20px !important;
+                max-height: 85vh !important;
+                border-radius: 12px !important;
+            }
+            .device-info-popup h2 {
+                font-size: 1.2rem !important;
+                margin-bottom: 15px !important;
+            }
+            .device-info-section {
+                padding: 12px !important;
+                margin-bottom: 15px !important;
+            }
+            .device-info-row {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 4px !important;
+            }
+            .device-info-label {
+                font-size: 0.9rem !important;
+            }
+            .device-info-value {
+                text-align: left !important;
+                font-size: 0.9rem !important;
+                width: 100% !important;
+                word-break: break-all !important;
+            }
+            .close-popup {
+                width: 40px !important;
+                height: 40px !important;
+                font-size: 20px !important;
+                top: 10px !important;
+                right: 10px !important;
+            }
+            
+            /* Hide the old hamburger and dropdown */
+            .mobile-hamburger {
+                display: none !important;
+            }
+            
+            #mobileMenu {
+                display: none !important;
+            }
+        }
+        
+        /* Donate Modal Styles */
+        .donate-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .donate-modal.active {
+            display: flex;
+        }
+        
+        .donate-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #ef4444;
+            border-radius: 16px;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            margin: 20px;
+            position: relative;
+        }
+        
+        .donate-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .donate-header h2 {
+            color: #ef4444;
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        
+        .close-btn {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .close-btn:hover {
+            background: linear-gradient(135deg, #ff6666, #ff0000);
+            transform: scale(1.1);
+        }
+        
+        .donate-body {
+            padding: 20px;
+        }
+        
+        .donate-body p {
+            color: white;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .donate-embed {
+            margin-bottom: 20px;
+        }
+        
+        .donate-alternatives {
+            text-align: center;
+        }
+        
+        .donate-alternatives p {
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+        
+        .donate-direct-btn {
+            background: linear-gradient(135deg, #00d4ff, #0099cc);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .donate-direct-btn:hover {
+            background: linear-gradient(135deg, #00e5ff, #00b3cc);
+            transform: translateY(-2px);
+        }
+    </style>
+    
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="veilnet/assets/config.js"></script>
-    <script src="assets/device-detector.js"></script>
     <script src="assets/enhanced-ui.js"></script>
-    <script src="veilnet/assets/auth.js"></script>
-    <script src="veilnet/assets/veilnet.js"></script>
     <script src="assets/tos-acceptance.js"></script>
     <script src="assets/texture-gallery.js?v=25"></script>
 
@@ -33,16 +672,241 @@
 
 <body>
 
-    <button id="vrIcon" onclick="window.location.href='./vr/'" title="Enter VR (Quest Only)" style="display:none">
+    <!-- Top Left Action Buttons -->
+    <div class="top-left-buttons">
+        <!-- Desktop Layout -->
+        <button class="action-btn book-btn desktop-only" onclick="showBookModal()">
+            <i class="fas fa-book"></i>
+            <span class="btn-tooltip">READ BOOK</span>
+        </button>
+        <button class="action-btn donate-btn desktop-only" onclick="showDonateModal()">
+            <i class="fas fa-heart"></i>
+            <span class="btn-tooltip">DONATE</span>
+        </button>
+        
+        <!-- Mobile Book and Donate Buttons -->
+        <div class="mobile-only">
+            <button class="mobile-book-btn" onclick="showBookModal()">
+                <i class="fas fa-book"></i>
+                <span>READ BOOK</span>
+            </button>
+            <button class="mobile-donate-btn" onclick="showDonateModal()">
+                <i class="fas fa-heart"></i>
+                <span>DONATE</span>
+            </button>
+        </div>
+        
+        <script>
+            function toggleMenu() {
+                const menu = document.getElementById('mobileMenu');
+                if (menu.style.display === 'none') {
+                    menu.style.display = 'block';
+                } else {
+                    menu.style.display = 'none';
+                }
+            }
+            
+            // Test functions
+            function testBookModal() {
+                alert('Book button clicked!');
+                if (typeof showBookModal === 'function') {
+                    showBookModal();
+                } else {
+                    console.error('showBookModal not found');
+                }
+            }
+            
+            function testDonateModal() {
+                alert('Donate button clicked!');
+                if (typeof showDonateModal === 'function') {
+                    showDonateModal();
+                } else {
+                    console.error('showDonateModal not found');
+                }
+            }
+            
+            // Show hamburger only on mobile
+            function checkMobile() {
+                const hamburger = document.querySelector('.mobile-hamburger');
+                const menu = document.getElementById('mobileMenu');
+                if (window.innerWidth <= 768) {
+                    hamburger.style.display = 'block';
+                } else {
+                    hamburger.style.display = 'none';
+                    menu.style.display = 'none';
+                }
+            }
+            
+            checkMobile();
+            window.addEventListener('resize', () => {
+                checkMobile();
+                // If device info popup is open, update it
+                const devicePopup = document.getElementById('deviceInfoPopup');
+                if (devicePopup && devicePopup.classList.contains('active')) {
+                    detectDeviceInfo();
+                }
+            });
+            window.addEventListener('orientationchange', () => {
+                setTimeout(checkMobile, 100);
+            });
+        </script>
+    </div>
 
-        <i class="fas fa-vr-cardboard"></i>
-
+    <!-- Enhanced Device Info Button -->
+    <button class="device-info-btn" onclick="showDeviceInfoPopup()">
+        📱
+        <div class="device-info-tooltip">DEVICE INFO</div>
     </button>
 
-    <div class="book-dropdown">
-        <button id="bookIcon" title="Echoes of the Continuist" class="dropdown-trigger" onclick="showBookModal()">
-            <i class="fas fa-book"></i>
-        </button>
+    <!-- Device Info Popup -->
+    <div class="device-info-overlay" onclick="hideDeviceInfoPopup()"></div>
+    <div class="device-info-popup" id="deviceInfoPopup">
+        <button class="close-popup" onclick="hideDeviceInfoPopup()">×</button>
+        <h2>🔍 Device Information</h2>
+        
+        <div class="device-info-section">
+            <h3>🖥️ System Info</h3>
+            <div class="device-info-row">
+                <span class="device-info-label">Device Type:</span>
+                <span class="device-info-value" id="deviceType">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Operating System:</span>
+                <span class="device-info-value" id="operatingSystem">Detecting...</span>
+            </div>
+            <div class="device-info-row" id="cpuRow">
+                <span class="device-info-label">CPU Performance:</span>
+                <span class="device-info-value" id="cpuCores">Detecting...</span>
+            </div>
+            <div class="device-info-row" id="ramRow">
+                <span class="device-info-label">Estimated RAM:</span>
+                <span class="device-info-value" id="deviceMemory">Detecting...</span>
+            </div>
+        </div>
+
+        <div class="device-info-section">
+            <h3>🌐 Browser Info</h3>
+            <div class="device-info-row">
+                <span class="device-info-label">Browser:</span>
+                <span class="device-info-value" id="browserName">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Browser Version:</span>
+                <span class="device-info-value" id="browserVersion">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Engine:</span>
+                <span class="device-info-value" id="browserEngine">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">User Agent:</span>
+                <span class="device-info-value" id="userAgent" style="font-size: 0.8rem; word-break: break-all;">Detecting...</span>
+            </div>
+        </div>
+
+        <div class="device-info-section">
+            <h3>📱 Display Info</h3>
+            <div class="device-info-row">
+                <span class="device-info-label">Screen Resolution:</span>
+                <span class="device-info-value" id="screenResolution">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Viewport Size:</span>
+                <span class="device-info-value" id="viewportSize">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Pixel Ratio:</span>
+                <span class="device-info-value" id="pixelRatio">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Color Depth:</span>
+                <span class="device-info-value" id="colorDepth">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Orientation:</span>
+                <span class="device-info-value" id="screenOrientation">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Preferred Theme:</span>
+                <span class="device-info-value" id="preferredTheme">Detecting...</span>
+            </div>
+        </div>
+
+        <div class="device-info-section">
+            <h3>🌍 Network & Location</h3>
+            <div class="device-info-row">
+                <span class="device-info-label">IP Address:</span>
+                <span class="device-info-value" id="ipAddress">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Location:</span>
+                <span class="device-info-value" id="locationInfo">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Connection Type:</span>
+                <span class="device-info-value" id="connectionType">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Online Status:</span>
+                <span class="device-info-value" id="onlineStatus">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">VPN Detected:</span>
+                <span class="device-info-value" id="vpnStatus">Detecting...</span>
+            </div>
+        </div>
+
+        <div class="device-info-section" id="batterySection" style="display: none;">
+            <h3>🔋 Battery Info</h3>
+            <div class="device-info-row">
+                <span class="device-info-label">Level:</span>
+                <span class="device-info-value" id="batteryLevel">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Status:</span>
+                <span class="device-info-value" id="batteryStatus">Detecting...</span>
+            </div>
+        </div>
+
+        <div class="device-info-section">
+            <h3>⚡ Performance Info</h3>
+            <div class="device-info-row">
+                <span class="device-info-label">WebGL Support:</span>
+                <span class="device-info-value" id="webglSupport">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">WebGL Renderer:</span>
+                <span class="device-info-value" id="webglRenderer" style="font-size: 0.8rem;">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Touch Support:</span>
+                <span class="device-info-value" id="touchSupport">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Language:</span>
+                <span class="device-info-value" id="language">Detecting...</span>
+            </div>
+        </div>
+
+        <div class="device-info-section">
+            <h3>🔐 Security Info</h3>
+            <div class="device-info-row">
+                <span class="device-info-label">HTTPS:</span>
+                <span class="device-info-value" id="httpsStatus">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Cookies Enabled:</span>
+                <span class="device-info-value" id="cookiesEnabled">Detecting...</span>
+            </div>
+            <div class="device-info-row">
+                <span class="device-info-label">Do Not Track:</span>
+                <span class="device-info-value" id="doNotTrack">Detecting...</span>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px; font-size: 0.8rem; opacity: 0.7;">
+            Detected: <span id="detectionTime">Detecting...</span>
+        </div>
     </div>
 
     <!-- Book Chapters Modal -->
@@ -88,52 +952,10 @@
         </div>
     </div>
 
-    <div class="donate-dropdown">
-        <button id="donateIcon" title="Support Development">
-            <i class="fas fa-heart"></i>
-        </button>
-    </div>
-
-    <div class="profile-dropdown">
-        <div class="pfp-wrap">
-          <div class="avatar" data-veil-avatar title="Profile">
-            <img data-veil-avatar-img src="veilnet/assets/default_pfp.png" alt="profile">
-            <span id="vnUnreadBadgeProfile" class="vn-badge vn-badge--hidden"></span>
-          </div>
-          <div class="status-ring" data-veil-ring style="--ring: rgba(255,255,255,.25); opacity:.55"></div>
-
-          <div class="dropdown" data-veil-dropdown>
-            <div class="dd-head">
-              <img id="veilnet-avatar" data-veil-dd-img src="veilnet/assets/default_pfp.png" alt="">
-              <div>
-                <div id="veilnet-display-name" class="dd-title" data-veil-dd-title>Not signed in</div>
-                <div id="veilnet-display-subtext" class="dd-sub" data-veil-dd-sub>Login to access Veilnet features</div>
-              </div>
-            </div>
-
-            <div class="dd-item" onclick="location.href='./veilnet/'">
-              <span>Go to Veilnet</span><small>Home</small>
-            </div>
-
-            <div class="dd-item" data-veil-myprofile style="display:none">
-              <span>My Profile</span><small>/profile</small>
-            </div>
-
-            <div class="dd-item" data-veil-settings style="display:none">
-              <span>Settings</span><small>Link + prefs</small>
-            </div>
-
-            <div class="dd-divider"></div>
-
-            <div id="veilnet-login-item" class="dd-item" data-veil-login>
-              <span>Login</span><small>Google</small>
-            </div>
-
-            <div id="veilnet-logout-item" class="dd-item" data-veil-logout style="display:none">
-              <span>Log Out</span><small>Google</small>
-            </div>
-          </div>
-        </div>
+    
+    <div class="veilnet-button" onclick="window.location.href='./veilnet/'">
+        <img src="veilnet/assets/Veilnet.png" alt="Veilnet" class="veilnet-logo">
+        <div class="veilnet-tooltip">GO TO VEILNET</div>
     </div>
 
     <header class="site-hero">
@@ -1481,20 +2303,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
                 <div class="log-entry">
 
-                    <div class="log-header">
-
-                        <h3> WebXR: Immersive VR Portal Launch</h3>
-
-                        <span class="log-date">JAN 12, 2026</span>
-
-                    </div>
-
-                    <div class="log-body">
-
-                        <p>Launched an experimental <strong>WebXR Immersive Kiosk</strong>. Meta Quest 2 and 3 users can now explore a virtual voxel space directly from the developer portal, featuring internal navigation and 3D asset previews.</p>
-
-                    </div>
-
+                    
                 </div>
 
                 <div class="log-entry">
@@ -2158,19 +2967,6 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             window.history.pushState({}, '', url);
         }
 
-        // WebXR / Quest Detection
-        async function checkVR() {
-            // Disabled per user request
-            // const isDebug = window.location.search.includes('debugvr=1');
-            // const isQuest = /OculusBrowser|Quest/i.test(navigator.userAgent);
-            // const vrSupported = navigator.xr && await navigator.xr.isSessionSupported('immersive-vr');
-
-            // if (isDebug || (isQuest && vrSupported)) {
-            //     document.getElementById('vrIcon').style.display = 'block';
-            // }
-        }
-        checkVR();
-
         // Sync Tabs with URL Params, Hash, or LocalStorage
         function syncTab() {
             // Get the first query parameter key (e.g. 'assets' from ?assets)
@@ -2206,281 +3002,6 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             evt.currentTarget.classList.add("active");
         }
 
-        // Profile dropdown functionality
-        const profileIcon = document.querySelector('[data-veil-avatar]');
-        const profileDropdown = document.querySelector('[data-veil-dropdown]');
-
-        function toggleDropdown() {
-            profileDropdown.classList.toggle('open');
-        }
-
-        function closeDropdown() {
-            profileDropdown.classList.remove('open');
-        }
-
-        if (profileIcon) {
-            profileIcon.addEventListener('click', toggleDropdown);
-        }
-
-        // Close on outside click (with delay to prevent immediate closing)
-        document.addEventListener('click', (e) => {
-            setTimeout(() => {
-                if (!e.target.closest('.profile-dropdown')) {
-                    closeDropdown();
-                }
-            }, 10);
-        });
-
-        // Close on ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeDropdown();
-            }
-        });
-
-        // Close when menu items are clicked (with delay)
-        document.querySelectorAll('.dd-item').forEach(item => {
-            item.addEventListener('click', () => {
-                setTimeout(closeDropdown, 100);
-            });
-        });
-
-        async function updateVeilnetAuthButton() {
-            const btn = document.getElementById('veilnetAuthBtn');
-            const label = document.getElementById('veilnetAuthBtnLabel');
-            if (!btn || !label) return;
-
-            const maybePromptUsername = async () => {
-                try {
-                    if (!window.VeilnetAuth || typeof window.VeilnetAuth.getMyProfile !== 'function') return;
-                    const profile = await window.VeilnetAuth.getMyProfile();
-                    if (profile && profile.username) return;
-                    if (typeof window.__openVeilnetUsernameModal === 'function') {
-                        window.__openVeilnetUsernameModal();
-                        // Hook into username modal close to refresh page if username was set
-                        const observer = new MutationObserver((mutations, obs) => {
-                            const modal = document.getElementById('veilnet-username-modal');
-                            if (!modal || modal.style.display === 'none') {
-                                obs.disconnect();
-                                setTimeout(() => window.location.reload(), 300);
-                            }
-                        });
-                        const modal = document.getElementById('veilnet-username-modal');
-                        if (modal) observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
-                    }
-                } catch (e) {
-                    if (typeof window.__openVeilnetUsernameModal === 'function') {
-                        window.__openVeilnetUsernameModal();
-                        setTimeout(() => window.location.reload(), 300);
-                    }
-                }
-            };
-
-            const updateProfileIcon = async () => {
-                const iconImg = document.querySelector('[data-veil-avatar-img]');
-                const dropdownAvatar = document.querySelector('#veilnet-avatar');
-                const displayName = document.getElementById('veilnet-display-name');
-                const subtext = document.getElementById('veilnet-display-subtext');
-                const loginItem = document.getElementById('veilnet-login-item');
-                const logoutItem = document.getElementById('veilnet-logout-item');
-                const profileItem = document.querySelector('[data-veil-myprofile]');
-                const settingsItem = document.querySelector('[data-veil-settings]');
-                
-                if (!iconImg || !dropdownAvatar || !displayName || !subtext) return;
-                
-                try {
-                    if (!window.VeilnetAuth || typeof window.VeilnetAuth.getUser !== 'function') {
-                        // Logged out state
-                        iconImg.src = 'veilnet/assets/default_pfp.png';
-                        dropdownAvatar.src = 'veilnet/assets/default_pfp.png';
-                        displayName.textContent = 'Not signed in';
-                        subtext.textContent = 'Login to access Veilnet features';
-                        if (loginItem) loginItem.style.display = '';
-                        if (logoutItem) logoutItem.style.display = 'none';
-                        if (profileItem) profileItem.style.display = 'none';
-                        if (settingsItem) settingsItem.style.display = 'none';
-                        return;
-                    }
-                    
-                    const user = await window.VeilnetAuth.getUser();
-                    if (!user) {
-                        // Logged out state
-                        iconImg.src = 'veilnet/assets/default_pfp.png';
-                        dropdownAvatar.src = 'veilnet/assets/default_pfp.png';
-                        displayName.textContent = 'Not signed in';
-                        subtext.textContent = 'Login to access Veilnet features';
-                        if (loginItem) loginItem.style.display = '';
-                        if (logoutItem) logoutItem.style.display = 'none';
-                        if (profileItem) profileItem.style.display = 'none';
-                        if (settingsItem) settingsItem.style.display = 'none';
-                        return;
-                    }
-                    
-                    // Logged in state
-                    let username = user.email || 'User';
-                    let email = user.email || '';
-                    let avatarSrc = 'veilnet/assets/default_pfp.png';
-                    
-                    try {
-                        const profile = await window.VeilnetAuth.getMyProfile();
-                        if (profile?.username) username = profile.username;
-                        if (profile?.picture && !profile.picture.includes('default_pfp.png')) {
-                            avatarSrc = profile.picture;
-                        }
-                    } catch (e) {
-                        // Fallback to user metadata
-                        if (user.user_metadata?.picture && !user.user_metadata.picture.includes('default_pfp.png')) {
-                            avatarSrc = user.user_metadata.picture;
-                        }
-                    }
-                    
-                    // Update display
-                    displayName.textContent = username;
-                    subtext.textContent = email;
-                    if (loginItem) loginItem.style.display = 'none';
-                    if (logoutItem) logoutItem.style.display = '';
-                    if (profileItem) profileItem.style.display = '';
-                    if (settingsItem) settingsItem.style.display = '';
-                    
-                    // Fast image loading with preloading and caching
-                    if (avatarSrc !== 'veilnet/assets/default_pfp.png') {
-                        // Check if already cached
-                        if (iconImg.src === avatarSrc && dropdownAvatar.src === avatarSrc) return;
-                        
-                        // Preload with error handling and immediate update
-                        const tempImg = new Image();
-                        
-                        // Set crossOrigin for potential CORS issues
-                        tempImg.crossOrigin = 'anonymous';
-                        
-                        // Load with timeout for faster fallback
-                        const loadTimeout = setTimeout(() => {
-                            iconImg.src = avatarSrc;
-                            dropdownAvatar.src = avatarSrc;
-                        }, 300);
-                        
-                        tempImg.onload = () => {
-                            clearTimeout(loadTimeout);
-                            iconImg.src = avatarSrc;
-                            dropdownAvatar.src = avatarSrc;
-                        };
-                        
-                        tempImg.onerror = () => {
-                            clearTimeout(loadTimeout);
-                            iconImg.src = 'veilnet/assets/default_pfp.png';
-                            dropdownAvatar.src = 'veilnet/assets/default_pfp.png';
-                        };
-                        
-                        tempImg.src = avatarSrc;
-                    } else {
-                        iconImg.src = avatarSrc;
-                        dropdownAvatar.src = avatarSrc;
-                    }
-                    
-                    // Wire logout click
-                    if (logoutItem) {
-                        logoutItem.onclick = async () => {
-                            try {
-                                await window.VeilnetAuth.logout();
-                                window.location.reload();
-                            } catch (e) {}
-                        };
-                    }
-                    
-                } catch (e) {
-                    // Error fallback
-                    iconImg.src = 'veilnet/assets/default_pfp.png';
-                    dropdownAvatar.src = 'veilnet/assets/default_pfp.png';
-                    displayName.textContent = 'Not signed in';
-                    subtext.textContent = 'Login to access Veilnet features';
-                    if (loginItem) loginItem.style.display = '';
-                    if (logoutItem) logoutItem.style.display = 'none';
-                    if (profileItem) profileItem.style.display = 'none';
-                    if (settingsItem) settingsItem.style.display = 'none';
-                }
-            };
-
-            // Listen for auth state changes for instant updates
-            if (window.VeilnetAuth && window.VeilnetAuth.onAuthStateChange) {
-                window.VeilnetAuth.onAuthStateChange((event, session) => {
-                    if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-                        setTimeout(updateProfileIcon, 100);
-                    }
-                });
-            }
-
-            let user = null;
-            try {
-                if (window.VeilnetAuth && typeof window.VeilnetAuth.getUser === 'function') {
-                    user = await window.VeilnetAuth.getUser();
-                }
-            } catch (e) {
-                user = null;
-            }
-
-            if (user) {
-                label.textContent = 'Log Out';
-                btn.onclick = async () => {
-                    try {
-                        await window.VeilnetAuth.logout();
-                        window.location.reload();
-                    } finally {
-                        await updateVeilnetAuthButton();
-                    }
-                };
-
-                await maybePromptUsername();
-                await updateProfileIcon();
-            } else {
-                label.textContent = 'Login';
-                btn.onclick = async () => {
-                    try {
-                        if (typeof window.__openVeilnetLoginModal === 'function') {
-                            await window.__openVeilnetLoginModal();
-                        } else if (window.VeilnetAuth && typeof window.VeilnetAuth.signInWithGoogle === 'function') {
-                            await window.VeilnetAuth.signInWithGoogle();
-                        }
-                        
-                        // Immediate icon update after login
-                        setTimeout(updateProfileIcon, 200);
-                    } finally {
-                        await updateVeilnetAuthButton();
-                        setTimeout(updateVeilnetAuthButton, 750);
-                        setTimeout(updateVeilnetAuthButton, 2000);
-
-                        // If we are now logged in, refresh page so UI reliably shows Log Out
-                        setTimeout(async () => {
-                            try {
-                                if (window.VeilnetAuth && typeof window.VeilnetAuth.getUser === 'function') {
-                                    const u = await window.VeilnetAuth.getUser();
-                                    if (u) window.location.reload();
-                                }
-                            } catch (e) {}
-                        }, 1200);
-                    }
-                };
-                
-                await updateProfileIcon();
-            }
-        }
-
-        updateProfileIcon();
-        setTimeout(updateProfileIcon, 750);
-        setTimeout(updateProfileIcon, 2000);
-
-        function toggleVeilnetDropdown() {
-            const dropdown = document.querySelector('[data-veil-dropdown]');
-            dropdown.classList.toggle('open');
-        }
-
-        function fullResetSite() {
-            if (confirm("THIS WILL DELETE ALL SAVED TABS, READER SETTINGS, AND PERSONAL NOTES.\n\nAre you sure you want to perform a FULL RESET?")) {
-                localStorage.clear();
-                sessionStorage.clear();
-                window.location.href = window.location.pathname; // Reload without query params
-            }
-        }
-
         // ESC key handler to close modal and re-enable scrolling
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
@@ -2488,8 +3009,332 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 if (modal && modal.style.display === 'flex') {
                     closeModal();
                 }
+                const devicePopup = document.getElementById('deviceInfoPopup');
+                if (devicePopup && devicePopup.classList.contains('active')) {
+                    hideDeviceInfoPopup();
+                }
             }
         });
+
+        // Device Info Functions
+        function showDeviceInfoPopup() {
+            document.getElementById('deviceInfoPopup').classList.add('active');
+            document.querySelector('.device-info-overlay').classList.add('active');
+            detectDeviceInfo();
+        }
+
+        function hideDeviceInfoPopup() {
+            document.getElementById('deviceInfoPopup').classList.remove('active');
+            document.querySelector('.device-info-overlay').classList.remove('active');
+        }
+
+        async function detectDeviceInfo() {
+            const updateElement = (id, value) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            };
+
+            // Detect Battery (to distinguish PC vs Desktop)
+            let hasBattery = false;
+            try {
+                if (navigator.getBattery) {
+                    const battery = await navigator.getBattery();
+                    // If the API is present and reports ANYTHING other than a "mocked" 100% full desktop state, it's a laptop.
+                    // Even if it IS 100% full, most desktops don't expose the API at all, so presence is a strong hint.
+                    hasBattery = true; 
+                    
+                    // But if it's the exact "fake" signature, we'll double check with DPI hints later
+                    const isGenericFull = battery.level === 1 && battery.charging && battery.chargingTime === 0 && battery.dischargingTime === Infinity;
+                    if (isGenericFull && window.devicePixelRatio === 1 && window.innerWidth > 1600) {
+                        // This might actually be a desktop with a generic battery driver (like a UPS)
+                        // but we'll let getDeviceType decide.
+                    }
+                }
+            } catch (e) {}
+
+            const deviceType = getDeviceType(hasBattery);
+            const os = getOperatingSystem();
+
+            // System Info
+            updateElement('deviceType', deviceType);
+            updateElement('operatingSystem', os);
+            
+            // Professional Performance Tiering
+            const cores = navigator.hardwareConcurrency || 0;
+            const ram = navigator.deviceMemory || 0;
+            const heapLimit = window.performance && window.performance.memory ? window.performance.memory.jsHeapSizeLimit : 0;
+            const isTVorConsole = deviceType === 'SMART TV' || deviceType === 'GAMING CONSOLE';
+
+            if (isTVorConsole) {
+                if (document.getElementById('cpuRow')) document.getElementById('cpuRow').style.display = 'none';
+                if (document.getElementById('ramRow')) document.getElementById('ramRow').style.display = 'none';
+            } else {
+                if (document.getElementById('cpuRow')) document.getElementById('cpuRow').style.display = 'flex';
+                if (document.getElementById('ramRow')) document.getElementById('ramRow').style.display = 'flex';
+                
+                // CPU Tiering
+                let cpuTier = 'STANDARD';
+                if (cores >= 12) cpuTier = 'HIGH PERFORMANCE (' + cores + ' CORES)';
+                else if (cores >= 8) cpuTier = 'POWER USER (' + cores + ' CORES)';
+                else if (cores >= 4) cpuTier = 'QUAD CORE';
+                else if (cores > 0) cpuTier = 'DUAL CORE';
+                updateElement('cpuCores', cpuTier);
+
+                // RAM Tiering (Hybrid detection)
+                let ramTier = 'UNKNOWN';
+                if (ram >= 8) ramTier = '8GB+ (HIGH)';
+                else if (ram >= 4) ramTier = '4GB (MID)';
+                else if (ram >= 2) ramTier = '2GB (LOW)';
+                else if (heapLimit > 3000000000) ramTier = '16GB+ (ESTIMATED)'; // Large JS heap is a great indicator
+                else if (heapLimit > 1500000000) ramTier = '8GB+ (ESTIMATED)';
+                else if (cores >= 8) ramTier = '8GB+ (ESTIMATED)';
+                else if (cores >= 4) ramTier = '4GB+ (ESTIMATED)';
+                updateElement('deviceMemory', ramTier);
+            }
+
+            // Browser Info
+            const browserInfo = await getBrowserInfo();
+            updateElement('browserName', browserInfo.name);
+            updateElement('browserVersion', browserInfo.version);
+            updateElement('browserEngine', browserInfo.engine);
+            updateElement('userAgent', navigator.userAgent);
+
+            // Display Info
+            updateElement('screenResolution', `${screen.width}x${screen.height}`);
+            updateElement('viewportSize', `${window.innerWidth}x${window.innerHeight}`);
+            updateElement('pixelRatio', window.devicePixelRatio || 1);
+            updateElement('colorDepth', screen.colorDepth);
+            updateElement('screenOrientation', screen.orientation ? screen.orientation.type.toUpperCase() : 'Unknown');
+            updateElement('preferredTheme', window.matchMedia('(prefers-color-scheme: dark)').matches ? 'Dark Mode 🌙' : 'Light Mode ☀️');
+
+            // Network & Location
+            updateElement('onlineStatus', navigator.onLine ? 'Online' : 'Offline');
+            updateElement('connectionType', getConnectionType());
+            
+            // Get IP, Location and VPN detection
+            try {
+                const ipResponse = await fetch('https://ipapi.co/json/');
+                const ipData = await ipResponse.json();
+                updateElement('ipAddress', ipData.ip || 'Unknown');
+                updateElement('locationInfo', ipData.city ? `${ipData.city}, ${ipData.region}, ${ipData.country_name}` : 'Unknown');
+                updateElement('vpnStatus', detectVPN(ipData) ? 'Likely VPN' : 'No VPN detected');
+            } catch (e) {
+                updateElement('ipAddress', 'Detection failed');
+                updateElement('locationInfo', 'Detection failed');
+                updateElement('vpnStatus', 'Unknown');
+            }
+
+            // Battery Info - Only show section if on Mobile/Tablet/PC AND API is supported
+            const batterySection = document.getElementById('batterySection');
+            const isDesktop = deviceType === 'DESKTOP';
+            
+            if (!isDesktop && !isTVorConsole && navigator.getBattery) {
+                navigator.getBattery().then(battery => {
+                    if (batterySection) batterySection.style.display = 'block';
+                    updateElement('batteryLevel', Math.round(battery.level * 100) + '%');
+                    updateElement('batteryStatus', battery.charging ? 'Charging ⚡' : 'Discharging 🔋');
+                    
+                    // Add listeners
+                    battery.addEventListener('levelchange', () => {
+                        updateElement('batteryLevel', Math.round(battery.level * 100) + '%');
+                    });
+                    battery.addEventListener('chargingchange', () => {
+                        updateElement('batteryStatus', battery.charging ? 'Charging ⚡' : 'Discharging 🔋');
+                    });
+                }).catch(() => {
+                    if (batterySection) batterySection.style.display = 'none';
+                });
+            } else {
+                if (batterySection) batterySection.style.display = 'none';
+            }
+
+            // Performance Info
+            updateElement('webglSupport', getWebGLSupport());
+            updateElement('webglRenderer', getWebGLRenderer());
+            updateElement('touchSupport', 'ontouchstart' in window ? 'Yes' : 'No');
+            updateElement('language', navigator.language);
+
+            // Security Info
+            updateElement('httpsStatus', location.protocol === 'https:' ? 'Yes' : 'No');
+            updateElement('cookiesEnabled', navigator.cookieEnabled ? 'Yes' : 'No');
+            updateElement('doNotTrack', navigator.doNotTrack === '1' ? 'Enabled' : 'Disabled');
+
+            // Detection time
+            updateElement('detectionTime', new Date().toLocaleString());
+        }
+
+        function getDeviceType(hasBattery = false) {
+            const ua = navigator.userAgent;
+            const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+            const isSmallScreen = window.innerWidth <= 768;
+
+            // Smart TV Detection
+            if (/smart-tv|smarttv|googletv|appletv|hbbtv|webos|tizen|roku|viera|bravia/i.test(ua)) return 'SMART TV';
+
+            // Console Detection
+            if (/playstation|xbox|nintendo/i.test(ua)) return 'GAMING CONSOLE';
+
+            if (/tablet|ipad|playbook|silk/i.test(ua)) return 'TABLET';
+            if (/mobile|iphone|ipod|android|blackberry|opera|mini|windows\sce|palm|smartphone|iemobile/i.test(ua)) return 'MOBILE';
+
+            // Fallback for modern mobile devices requesting desktop site
+            if (isTouch && isSmallScreen) return 'MOBILE (DESKTOP MODE)';
+            
+            // Distinguish Laptop (PC) vs Desktop
+            if (!isSmallScreen) {
+                // Strong Laptop Indicators
+                const isLaptopOS = /windows|mac/i.test(ua);
+                if ((hasBattery || isTouch) && isLaptopOS) return 'PC';
+                
+                // If it's a large screen but has no battery/touch, it's likely a desktop
+                return 'DESKTOP';
+            }
+
+            if (isTouch) return 'TABLET';
+
+            return 'DESKTOP';
+        }
+
+        function getOperatingSystem() {
+            const ua = navigator.userAgent;
+
+            // Priority checks to avoid false positives (e.g. Android detected as Linux)
+            if (/windows/i.test(ua)) return 'WINDOWS';
+            if (/mac/i.test(ua)) return 'MAC';
+            if (/android/i.test(ua)) return 'ANDROID';
+            if (/ios|iphone|ipad|ipod/i.test(ua)) return 'IOS';
+
+            // Smart TV OS Checks
+            if (/tizen/i.test(ua)) return 'TIZEN';
+            if (/webos/i.test(ua)) return 'WEBOS';
+            if (/roku/i.test(ua)) return 'ROKU OS';
+            if (/googletv|androidtv|bravia/i.test(ua)) return 'ANDROID TV';
+
+            if (/linux/i.test(ua)) return 'LINUX';
+            return 'UNKNOWN';
+        }
+        async function getBrowserInfo() {
+            const ua = navigator.userAgent;
+            let name = 'Unknown', version = 'Unknown', engine = 'Unknown';
+
+            // 1. Try navigator.userAgentData (Modern Client Hints)
+            if (navigator.userAgentData) {
+                const brands = navigator.userAgentData.brands;
+                const braveBrand = brands.find(b => b.brand === 'Brave' || b.brand === 'Brave Browser');
+                if (braveBrand) {
+                    return { name: 'Brave Browser', version: braveBrand.version, engine: 'Blink' };
+                }
+            }
+
+            // 2. Specialized Brave Check (Asynchronous)
+            if (navigator.brave && await navigator.brave.isBrave()) {
+                name = 'Brave Browser';
+                version = ua.match(/(?:chrome|brave)\/(\d+)/)?.[1] || 'Unknown';
+                engine = 'Blink';
+                return { name, version, engine };
+            }
+
+            // 3. Regex-based detection for other browsers
+            if (/opera|opr/i.test(ua)) {
+                name = 'Opera';
+                version = ua.match(/opera|opr\/(\d+)/)?.[1] || 'Unknown';
+                engine = 'Blink';
+            } else if (/edg/i.test(ua)) {
+                name = 'Microsoft Edge';
+                version = ua.match(/edg\/(\d+)/)?.[1] || 'Unknown';
+                engine = 'Blink';
+            } else if (/chrome/i.test(ua) && !/chromium|edg|opera|opr/i.test(ua)) {
+                name = 'Google Chrome';
+                version = ua.match(/chrome\/(\d+)/)?.[1] || 'Unknown';
+                engine = 'Blink';
+            } else if (/chromium/i.test(ua)) {
+                name = 'Chromium';
+                version = ua.match(/chromium\/(\d+)/)?.[1] || 'Unknown';
+                engine = 'Blink';
+            } else if (/firefox/i.test(ua)) {
+                name = 'Mozilla Firefox';
+                version = ua.match(/firefox\/(\d+)/)?.[1] || 'Unknown';
+                engine = 'Gecko';
+            } else if (/safari/i.test(ua) && !/chrome|chromium|edg|opera|opr/i.test(ua)) {
+                name = 'Safari';
+                version = ua.match(/safari\/(\d+)/)?.[1] || 'Unknown';
+                engine = 'WebKit';
+            } else if (/msie|trident/i.test(ua)) {
+                name = 'Internet Explorer';
+                version = ua.match(/msie\s(\d+)|trident.*rv:(\d+)/)?.[1] || ua.match(/trident.*rv:(\d+)/)?.[2] || 'Unknown';
+                engine = 'Trident';
+            } else if (/brave/i.test(ua)) {
+                name = 'Brave Browser';
+                version = ua.match(/brave\/(\d+)/)?.[1] || 'Unknown';
+                engine = 'Blink';
+            } else if (/vivaldi/i.test(ua)) {
+                name = 'Vivaldi';
+                version = ua.match(/vivaldi\/(\d+)/)?.[1] || 'Unknown';
+                engine = 'Blink';
+            }
+
+            return { name, version, engine };
+        }
+
+        function getConnectionType() {
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            if (connection) {
+                return connection.effectiveType || connection.type || 'Unknown';
+            }
+            return 'Unknown';
+        }
+
+        function getWebGLSupport() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                return gl ? 'Yes' : 'No';
+            } catch (e) {
+                return 'No';
+            }
+        }
+
+        function getWebGLRenderer() {
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (debugInfo) {
+                        return gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || 'Unknown';
+                    }
+                }
+                return 'Not available';
+            } catch (e) {
+                return 'Detection failed';
+            }
+        }
+
+        function detectVPN(ipData) {
+            // Basic VPN detection based on common VPN indicators
+            const vpnIndicators = [
+                /vpn/i,
+                /hosting/i,
+                /cloud/i,
+                /server/i,
+                /datacenter/i
+            ];
+            
+            if (ipData.org) {
+                return vpnIndicators.some(indicator => indicator.test(ipData.org));
+            }
+            
+            // Check for common VPN IP ranges (simplified)
+            if (ipData.ip) {
+                const ip = ipData.ip;
+                // Check for private IP ranges that might indicate VPN
+                if (ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('172.')) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
     </script>
     <script src="assets/tos-acceptance.js"></script>
 

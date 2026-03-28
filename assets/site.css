@@ -1113,15 +1113,15 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
   z-index: 1000;
 }
 
-.book-dropdown #bookIcon,
-.donate-dropdown #donateIcon,
-.clear-data-dropdown #clearDataIcon,
-.profile-dropdown #profileIcon {
+#bookIcon,
+#donateIcon,
+#clearDataIcon,
+#profileIcon {
   position: fixed;
-  width: 50px;
-  height: 50px;
-  min-width: 50px;
-  min-height: 50px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -1132,32 +1132,42 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
   transition: transform 0.3s, box-shadow 0.3s;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  transform-origin: center;
 }
 
-.book-dropdown #bookIcon {
-  top: 20px;
-  left: 20px;
+
+#bookIcon {
+  top: 20px !important;
+  left: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
   background: var(--primary);
   color: #000;
   box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
-.book-dropdown #bookIcon:hover,
-.book-dropdown #bookIcon.active {
+#bookIcon:hover,
+#bookIcon.active {
   transform: scale(1.1);
   box-shadow: 0 0 20px var(--primary);
 }
 
-.donate-dropdown #donateIcon {
-  top: 20px;
-  left: 80px;
+#donateIcon {
+  top: 20px !important;
+  left: 45px !important;
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  min-height: 20px !important;
   background: #ffc439;
   color: #000;
   box-shadow: 0 4px 15px rgba(255, 196, 57, 0.3);
 }
 
-.donate-dropdown #donateIcon:hover,
-.donate-dropdown #donateIcon.active {
+#donateIcon:hover,
+#donateIcon.active {
   transform: scale(1.1);
   box-shadow: 0 0 20px #ffc439;
 }
@@ -1710,19 +1720,19 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
   .book-dropdown #bookIcon {
     top: 20px !important;
     left: 20px !important;
-    width: 45px !important;
-    height: 45px !important;
-    min-width: 45px !important;
-    min-height: 45px !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    min-height: 20px !important;
   }
   
   .donate-dropdown #donateIcon {
     top: 20px !important;
-    left: 75px !important;
-    width: 45px !important;
-    height: 45px !important;
-    min-width: 45px !important;
-    min-height: 45px !important;
+    left: 45px !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    min-height: 20px !important;
   }
   
   .profile-dropdown #profileIcon {
@@ -1807,10 +1817,10 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
   
   /* Floating buttons mobile */
   #bookIcon, #donateIcon {
-    width: 45px !important;
-    height: 45px !important;
-    min-width: 45px !important;
-    min-height: 45px !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    min-height: 20px !important;
     font-size: 1rem !important;
   }
   
@@ -1821,7 +1831,7 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
   
   #donateIcon {
     top: 20px !important;
-    left: 75px !important;
+    left: 45px !important;
   }
   
   /* Content mobile */
@@ -1918,15 +1928,15 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
   }
   
   #bookIcon, #donateIcon {
-    width: 40px !important;
-    height: 40px !important;
-    min-width: 40px !important;
-    min-height: 40px !important;
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    min-height: 20px !important;
     font-size: 0.9rem !important;
   }
   
   #donateIcon {
-    left: 70px !important;
+    left: 45px !important;
   }
   
   .hero-section h2 {
