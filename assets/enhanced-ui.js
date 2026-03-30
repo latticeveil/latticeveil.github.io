@@ -11,6 +11,7 @@ class EnhancedUIManager {
         this.setupMobileOptimizations();
         this.setupContinueReading();
         this.setupMobileMenu();
+        this.setupJumpToTop();
     }
 
     setupContinueReading() {
@@ -406,6 +407,45 @@ class EnhancedUIManager {
                 }
             }
         });
+    }
+
+    setupJumpToTop() {
+        // Create jump-to-top button
+        const jumpToTopBtn = document.createElement('a');
+        jumpToTopBtn.href = '#top';
+        jumpToTopBtn.className = 'jump-to-top';
+        jumpToTopBtn.textContent = 'JUMP TO TOP';
+        jumpToTopBtn.setAttribute('aria-label', 'Jump to top of page');
+        
+        // Add to page
+        document.body.appendChild(jumpToTopBtn);
+        
+        // Show/hide button based on scroll position
+        let scrollTimeout;
+        window.addEventListener('scroll', () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                if (window.scrollY > 300) {
+                    jumpToTopBtn.classList.add('visible');
+                } else {
+                    jumpToTopBtn.classList.remove('visible');
+                }
+            }, 16); // Debounce for performance
+        });
+        
+        // Smooth scroll behavior
+        jumpToTopBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+        
+        // Initial check
+        if (window.scrollY > 300) {
+            jumpToTopBtn.classList.add('visible');
+        }
     }
 }
 

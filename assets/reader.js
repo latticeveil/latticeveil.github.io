@@ -234,6 +234,9 @@ function restorePanelPosition(panel) {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Setup jump-to-top button
+    setupJumpToTop();
+    
     // Load panel position from localStorage
     const savedPosition = localStorage.getItem('reader_panel_position');
     if (savedPosition) {
@@ -865,10 +868,53 @@ function generateHTML(title, content) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
-    window.masterResetAll = function() {
+    window.saveAndReturn = function() {
+    // Save current scroll position and chapter
+    const currentScroll = window.scrollY;
+    const currentChapter = state.chapter;
+    
+    console.log(`RETURN button: Saving chapter ${currentChapter}, scroll ${currentScroll}px`);
+    
+    // Ensure scroll position is saved
+    localStorage.setItem(`reader_scroll_ch${currentChapter}`, currentScroll);
+    
+    // Save return context for when user comes back
+    localStorage.setItem('reader_return_context', JSON.stringify({
+        chapter: currentChapter,
+        scroll: currentScroll,
+        timestamp: Date.now()
+    }));
+    
+    console.log('RETURN button: Navigating to main site');
+    // Navigate to main site (no chapter parameter - let return context handle it)
+    window.location.href = './';
+};
+
+window.masterResetAll = function() {
     if(confirm("Reset ALL settings to defaults? This will restore the black theme and reset everything as if the site was new.")) {
+        // Save current scroll position before clearing
+        const currentScroll = window.scrollY;
+        const currentChapter = state.chapter;
+        
+        // Preserve TOS acceptance before clearing
+        const tosKeys = ['latticeveil_tos_accepted', 'latticeveil_download_tos_accepted'];
+        const preservedData = {};
+
+        // Preserve TOS acceptance
+        tosKeys.forEach(key => {
+            const value = localStorage.getItem(key);
+            if (value !== null) {
+                preservedData[key] = value;
+            }
+        });
+
         // Clear all localStorage
         localStorage.clear();
+        
+        // Restore TOS acceptance
+        Object.entries(preservedData).forEach(([key, value]) => {
+            localStorage.setItem(key, value);
+        });
         
         // Reset state to defaults
         Object.assign(state, { 
@@ -897,12 +943,17 @@ function generateHTML(title, content) {
             comments: {}
         });
         
+        // Restore scroll position for current chapter
+        localStorage.setItem(`reader_scroll_ch${currentChapter}`, currentScroll);
+        
         // Apply settings and close panel
         applySettings();
         window.togglePanel(null);
         
-        // Reload page to ensure clean state
+        // Reload page to ensure clean state (clear hash to prevent scroll= parameters)
         setTimeout(() => {
+            // Clear the hash before reload to prevent browser from adding scroll position
+            window.history.replaceState({}, '', window.location.pathname + window.location.search);
             window.location.reload();
         }, 100);
     }
@@ -922,7 +973,13 @@ window.switchChapter = function(num, autoScroll = true) {
         ch.style.display = 'block';
         if (autoScroll) {
             const savedScroll = parseInt(localStorage.getItem(`reader_scroll_ch${num}`)) || 0;
-            window.scrollTo(0, savedScroll);
+            console.log(`Restoring scroll for chapter ${num}: ${savedScroll}px`);
+            // Delay scroll restoration to ensure content is fully rendered
+            setTimeout(() => {
+                console.log(`Actually scrolling to: ${savedScroll}px`);
+                window.scrollTo(0, savedScroll);
+                console.log(`Current scroll after restore: ${window.scrollY}px`);
+            }, 100);
         }
     }
     
@@ -934,6 +991,21 @@ window.switchChapter = function(num, autoScroll = true) {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Clear any hash immediately to prevent scroll parameters
+    if (window.location.hash && window.location.hash.includes('scroll=')) {
+        window.history.replaceState({}, '', window.location.pathname + window.location.search);
+    }
+    
+    // Monitor and remove scroll parameters continuously
+    const clearScrollHash = () => {
+        if (window.location.hash && window.location.hash.includes('scroll=')) {
+            window.history.replaceState({}, '', window.location.pathname + window.location.search);
+        }
+    };
+    
+    // Clear hash on popstate (browser back/forward)
+    window.addEventListener('popstate', clearScrollHash);
+    
     // 1. Listeners first
     setupEventListeners();
     
@@ -958,16 +1030,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadParam = urlParams.get('download');
     const highlightParam = urlParams.get('highlight');
     
-    // Handle scroll restoration from URL hash
-    if (window.location.hash && window.location.hash.includes('scroll=')) {
-        const scrollPosition = parseInt(window.location.hash.split('scroll=')[1]) || 0;
-        setTimeout(() => {
-            window.scrollTo(0, scrollPosition);
-        }, 100);
+    if (chParam) {
+        // Check if user is returning from main site with chapter parameter
+        const returnContext = localStorage.getItem('reader_return_context');
+        console.log('Page load: Checking return context with chapter param:', returnContext);
+        if (returnContext) {
+            const context = JSON.parse(returnContext);
+            console.log('Page load: Found return context with chapter param:', context);
+            // Only restore if it's recent (within 30 minutes)
+            if (Date.now() - context.timestamp < 30 * 60 * 1000) {
+                console.log(`Page load: Prioritizing return context - restoring chapter ${context.chapter} with scroll ${context.scroll}px`);
+                switchChapter(context.chapter, true);
+                // Clear the return context after using it
+                localStorage.removeItem('reader_return_context');
+            } else {
+                console.log('Page load: Return context too old, using chapter parameter');
+                switchChapter(parseInt(chParam), false);
+                localStorage.removeItem('reader_return_context');
+            }
+        } else {
+            console.log('Page load: No return context, using chapter parameter');
+            switchChapter(parseInt(chParam), false);
+        }
     }
-    
-    if (chParam) switchChapter(parseInt(chParam), false);
-    else switchChapter(1, true);
+    else {
+        // Check if user is returning from main site
+        const returnContext = localStorage.getItem('reader_return_context');
+        console.log('Page load: Checking return context:', returnContext);
+        if (returnContext) {
+            const context = JSON.parse(returnContext);
+            console.log('Page load: Found return context:', context);
+            // Only restore if it's recent (within 30 minutes)
+            if (Date.now() - context.timestamp < 30 * 60 * 1000) {
+                console.log(`Page load: Restoring chapter ${context.chapter} with scroll ${context.scroll}px`);
+                switchChapter(context.chapter, true);
+                // Clear the return context after using it
+                localStorage.removeItem('reader_return_context');
+            } else {
+                console.log('Page load: Return context too old, starting at chapter 1');
+                switchChapter(1, true);
+                localStorage.removeItem('reader_return_context');
+            }
+        } else {
+            console.log('Page load: No return context, starting at chapter 1');
+            switchChapter(1, true);
+        }
+    }
 
     if (setParam) window.togglePanel('settingsPanel');
     if (helpParam) window.togglePanel('helpPanel');
@@ -1211,8 +1319,14 @@ function setupEventListeners() {
     window.addEventListener('scroll', () => {
         state.scroll = window.scrollY;
         localStorage.setItem(`reader_scroll_ch${state.chapter}`, state.scroll);
+        console.log(`Saved scroll for chapter ${state.chapter}: ${state.scroll}px`);
         const progress = (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100;
         const bar = document.getElementById('progressBar'); if(bar) bar.style.width = progress + '%';
+        
+        // Clear any scroll hash parameters that might appear
+        if (window.location.hash && window.location.hash.includes('scroll=')) {
+            window.history.replaceState({}, '', window.location.pathname + window.location.search);
+        }
     });
     
     // ESC key to close panels
@@ -1574,4 +1688,43 @@ function downloadBook() {
     const blob = new Blob([document.getElementById('bookContent').innerText], { type: 'text/plain' });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ECHOES_OF_THE_CONTINUIST.txt';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function setupJumpToTop() {
+    // Create jump-to-top button
+    const jumpToTopBtn = document.createElement('a');
+    jumpToTopBtn.href = '#top';
+    jumpToTopBtn.className = 'jump-to-top';
+    jumpToTopBtn.textContent = 'JUMP TO TOP';
+    jumpToTopBtn.setAttribute('aria-label', 'Jump to top of page');
+    
+    // Add to page
+    document.body.appendChild(jumpToTopBtn);
+    
+    // Show/hide button based on scroll position
+    let scrollTimeout;
+    window.addEventListener('scroll', () => {
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            if (window.scrollY > 300) {
+                jumpToTopBtn.classList.add('visible');
+            } else {
+                jumpToTopBtn.classList.remove('visible');
+            }
+        }, 16); // Debounce for performance
+    });
+    
+    // Smooth scroll behavior
+    jumpToTopBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+    
+    // Initial check
+    if (window.scrollY > 300) {
+        jumpToTopBtn.classList.add('visible');
+    }
 }
