@@ -10,6 +10,8 @@
 
     <title>LatticeVeil | Official Website</title>
 
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -24,7 +26,7 @@
             position: fixed;
             top: 5px;
             right: 45px;
-            z-index: 1000;
+            z-index: 1100;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
@@ -48,8 +50,8 @@
         }
         
         .veilnet-logo {
-            width: 85px;
-            height: 85px;
+            width: 110px;
+            height: 110px;
             object-fit: contain;
             transition: all 0.3s ease;
             filter: drop-shadow(0 2px 8px rgba(124, 92, 255, 0.3));
@@ -347,20 +349,19 @@
             position: relative;
             display: flex;
             flex-direction: column;
+            align-items: center;
             justify-content: center;
-            align-items: flex-start; /* Default to left-aligned */
-            padding-left: calc(2% + 160px); /* Premium left-alignment with button clearance */
-            text-align: left;
-            transition: all 0.4s ease;
-            height: 30vh;
+            text-align: center;
+            padding: 60px 20px 40px;
+            height: 34vh;
             min-height: 250px;
         }
         
         .logo {
-            max-width: 320px;
+            max-width: 400px;
             height: auto;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            filter: drop-shadow(0 10px 30px rgba(0, 183, 255, 0.2));
+            filter: drop-shadow(0 18px 40px rgba(0,183,255,.18));
             margin-bottom: 10px;
         }
         
@@ -382,20 +383,17 @@
                 padding-left: 150px;
             }
             .logo {
-                max-width: 280px;
+                max-width: 450px;
             }
         }
         
-        @media (max-width: 1024px) {
+        @media (max-width: 1200px) {
             .site-hero {
-                align-items: flex-start; /* Consistently left-aligned */
-                padding-left: 15px;
-                padding-right: 15px;
                 text-align: left;
                 padding-top: 100px; /* Stronger clearance for mobile buttons */
             }
             .logo {
-                max-width: 260px;
+                max-width: 350px;
                 margin-left: 0;
             }
             .logo:hover {
@@ -405,13 +403,11 @@
         
         @media (max-width: 768px) {
             .site-hero {
-                height: 25vh;
-                min-height: 220px;
                 padding-top: 110px;
                 padding-left: 20px;
             }
             .logo {
-                max-width: 210px;
+                max-width: 300px;
             }
         }
         
@@ -954,7 +950,7 @@
 
     
     <div class="veilnet-button" onclick="window.location.href='./veilnet/'">
-        <img src="veilnet/assets/Veilnet.png" alt="Veilnet" class="veilnet-logo">
+        <img src="veilnet/assets/Veilnet V1.png" alt="Veilnet" class="veilnet-logo">
         <div class="veilnet-tooltip">GO TO VEILNET</div>
     </div>
 
@@ -966,23 +962,19 @@
 
     </header>
 
-    <nav class="tabs-nav">
+    <div class="tabs-nav-wrap">
+        <nav class="tabs-nav">
+            <button class="tab-link active" onclick="openTab(event, 'home')">HOME</button>
+            <button class="tab-link" onclick="openTab(event, 'assets')">TEXTURES & MODELS</button>
+            <button class="tab-link" onclick="openTab(event, 'lore')">LORE</button>
+            <button class="tab-link" onclick="openTab(event, 'devlog')">DEV LOG</button>
+            <button class="tab-link" onclick="openTab(event, 'about')">ABOUT ME</button>
+            <button class="tab-link" onclick="openTab(event, 'gui-docs')">GUI DOCS</button>
+        </nav>
+    </div>
 
-        <button class="tab-link active" onclick="openTab(event, 'home')">HOME</button>
-
-        <button class="tab-link" onclick="openTab(event, 'assets')">TEXTURES & MODELS</button>
-
-        <button class="tab-link" onclick="openTab(event, 'lore')">LORE</button>
-
-        <button class="tab-link" onclick="openTab(event, 'devlog')">DEV LOG</button>
-
-        <button class="tab-link" onclick="openTab(event, 'gui-docs')">GUI DOCS</button>
-
-        <button class="tab-link" onclick="openTab(event, 'about')">ABOUT ME</button>
-
-    </nav>
-
-    <div class="container"> 
+    <div class="tabs-container" style="padding-top: 20px;">
+        <div class="container"> 
 
         
 
@@ -1120,7 +1112,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
         <!-- TEXTURES TAB -->
 
-        <div id="assets" class="tab-content">
+        <div id="assets" class="tab-content" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
 
             <h2>Standard Block Library</h2>
 
@@ -1619,13 +1611,21 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
 </ul>
 
+<div style="height: 100vh; display: flex; align-items: center; justify-content: center;">
+    <p style="font-size: 1.5rem; opacity: 0.7;">Scroll down to see sticky navigation</p>
+</div>
+
+<div style="height: 100vh; display: flex; align-items: center; justify-content: center;">
+    <p style="font-size: 1.5rem; opacity: 0.7;">Navigation should be sticky at top</p>
+</div>
+
             </div>
 
         </div>
 
 <!-- DEV LOG TAB -->
 
-        <div id="devlog" class="tab-content">
+        <div id="devlog" class="tab-content" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
 
             <h2>Developer Logs</h2>
 
@@ -1659,7 +1659,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                     </div>
                 </div>
                 <div class="log-entry">
-                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/fix/jwt-verify/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Worldshaper Reforged">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Worldshaper Reforged">
                     <div class="log-header">
                         <h3>🌍 V10.0.0 "Worldshaper Reforged" - Worldgen, Storage, Rendering, and UX vNext</h3>
                         <span class="log-date">MAR 03, 2026</span>
@@ -1777,7 +1777,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 </div>
 
                 <div class="log-entry">
-                    <img src="https://raw.githubusercontent.com/latticeveil/Assets/main/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="Assets Main Menu">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="Assets Main Menu">
                     <div class="log-header">
                         <h3>ASSETS v6.1.1 — THE LORE & LAUNCHER UPDATE</h3>
                         <span class="log-date">JAN 19, 2026</span>
@@ -1810,7 +1810,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 </div>
 
                 <div class="log-entry">
-                    <img src="https://raw.githubusercontent.com/latticeveil/Assets/main/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="Assets Main Menu">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="Assets Main Menu">
                     <div class="log-header">
                         <h3>📦 ASSETS v6.1 — THE LATTICEVEIL TRANSITION</h3>
                         <span class="log-date">JAN 19, 2026</span>
@@ -2086,6 +2086,24 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             <!-- WEBSITE UPDATES -->
 
             <div id="log-website" class="sub-content">
+                <div class="log-entry">
+                    <div class="log-header">
+                        <h3>Website: V12.0.0 "Portal Weaver" - Unified Docs + Navigation Overhaul</h3>
+                        <span class="log-date">MAR 30, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p>A major website pass to unify documentation, preserve shareable links, and bring consistent navigation + layout behavior across the full portal.</p>
+                        <ul>
+                            <li><strong>GUI Docs Integration:</strong> Merged the full GUI documentation into the main portal as a first-class tab (<code>?gui-docs</code>) while preserving the original internal sub-tabs and styling.</li>
+                            <li><strong>Shareable URLs:</strong> Tab routing now keeps query parameters visible in the address bar (ex: <code>?lore</code>, <code>?devlog</code>, <code>?gui-docs</code>) so links can be copied and shared reliably.</li>
+                            <li><strong>Tab UX:</strong> Switching main tabs now starts you at the top of the page for predictable navigation, regardless of scroll position.</li>
+                            <li><strong>Navigation Bar Redesign:</strong> Rebuilt the top tabs bar as a fixed, centered pill so the border/background fits the buttons instead of stretching edge-to-edge.</li>
+                            <li><strong>Header Layering:</strong> Adjusted top-layer stacking so the Veilnet button stays above the navigation bar.</li>
+                            <li><strong>Dev Log Reliability:</strong> Normalized dev log banner image URLs and added a defensive fallback so broken images no longer appear in release history.</li>
+                            <li><strong>Echoes Reader Isolation:</strong> Restored the standalone Echoes reader page layout (no portal header/tabs chrome) so the book experience stays clean and focused.</li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="log-entry">
                     <div class="log-header">
                         <h3>Website: V11.0.0 "Maintenance Reforged" Release Sync</h3>
@@ -2529,51 +2547,28 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
         </div>
 
         <!-- ABOUT TAB -->
-
-        <div id="about" class="tab-content">
-
+        <div id="about" class="tab-content" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
             <h2>Solo Development</h2>
-
             <p>LatticeVeil is a passion project developed entirely solo. The goal is to build a modern, high-performance foundation for voxel games that respects the retro aesthetic of the past.</p>
-
             
-
             <div class="card" style="margin-top: 30px;">
-
                 <h3>🔗 Connect with Redacted</h3>
-
                 <div class="social-links">
-
                     <a href="https://www.youtube.com/redacted1" class="social-btn youtube" target="_blank">
-
                         <i class="fab fa-youtube"></i> Redacted's YouTube
-
                     </a>
-
                     <a href="https://www.twitch.tv/redactedreal" class="social-btn twitch" target="_blank">
-
                         <i class="fab fa-twitch"></i> Twitch
-
                     </a>
-
                     <a href="https://www.instagram.com/redactedreal/" class="social-btn instagram" target="_blank">
-
                         <i class="fab fa-instagram"></i> Instagram
-
                     </a>
-
                 </div>
-
             </div>
-
             <div class="card" style="margin-top: 30px;">
-
                 <h3>💝 Support Development</h3>
-
                 <p style="margin-bottom: 20px;">Enjoying LatticeVeil? Your support helps me continue developing free tools and content like this. Every donation is greatly appreciated!</p>
-
                 <div style="text-align: center;">
-
                     <a href="https://www.paypal.com/donate/?hosted_button_id=FAAV5R3P8YEZJ" 
                        target="_blank" 
                        rel="noopener noreferrer"
@@ -2587,14 +2582,82 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                         <i class="fab fa-paypal" style="font-size: 24px;"></i>
                         <span>Donate with PayPal</span>
                     </a>
-
                 </div>
-
             </div>
+        </div>
+
+        <!-- GUI DOCS TAB -->
+        <div id="gui-docs" class="tab-content" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <style>
+                #gui-docs h2:first-of-type, #gui-docs p:first-of-type {
+                    text-align: center !important;
+                    margin-left: 0 !important;
+                    margin-right: 0 !important;
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
+                    width: 100% !important;
+                    max-width: 100% !important;
+                    display: block !important;
+                    position: relative !important;
+                    left: 0 !important;
+                    right: 0 !important;
+                }
+                #gui-docs > div:first-child {
+                    text-align: center !important;
+                    padding-left: 0 !important;
+                    padding-right: 0 !important;
+                    margin-left: 0 !important;
+                    margin-right: 0 !important;
+                }
+            </style>
+            <div style="margin-bottom: 40px;">
+                <h2>GUI Tools Documentation</h2>
+                <p>Complete guide for using LatticeVeil development and deployment tools</p>
+            </div>
+            
+            <div style="margin-bottom: 40px;">
+                <h3>Build GUI</h3>
+                <p><strong>Purpose:</strong> Build and package LatticeVeil for distribution. Creates optimized builds for different platforms and configurations.</p>
+                <p><strong>Location:</strong> Tools/BuildGUI.ps1</p>
+            </div>
+
+            <div style="margin-bottom: 40px;">
+                <h4>How to Use:</h4>
+                <ol style="list-style-position: inside;">
+                    <li><strong>Launch the Build GUI</strong> - Navigate to the Tools folder and run: <code>.\BuildGUI.ps1</code></li>
+                    <li><strong>Select Build Configuration</strong> - Choose between DEBUG, RELEASE, or custom builds</li>
+                    <li><strong>Configure Build Options</strong> - Set optimization level, target platform, and output directory</li>
+                    <li><strong>Start Build Process</strong> - Click "Build" to compile and package your LatticeVeil build</li>
+                    <li><strong>Verify Output</strong> - Check the build log for any errors or warnings</li>
+                </ol>
+            </div>
+
+            <div style="margin-bottom: 40px;">
+                <h4>Features:</h4>
+                <ul style="list-style-position: inside;">
+                    <li>Automatic dependency detection and resolution</li>
+                    <li>Incremental builds for faster compilation</li>
+                    <li>Built-in error reporting and troubleshooting</li>
+                    <li>Support for multiple target platforms</li>
+                    <li>Custom build configurations</li>
+                </ul>
+            </div>
+
+            <div style="margin-bottom: 40px;">
+                <h4>Troubleshooting:</h4>
+                <ul style="list-style-position: inside;">
+                    <li><strong>Build Failures:</strong> Check the output window for detailed error messages</li>
+                    <li><strong>Missing Dependencies:</strong> Ensure all required tools and SDKs are installed</li>
+                    <li><strong>Permission Issues:</strong> Run PowerShell as Administrator if needed</li>
+                </ul>
+            </div>
+        </div>
 
         </div>
 
     </div>
+
+    </div> <!-- Close tabs-container -->
 
     <!-- Lightbox -->
 
@@ -2658,6 +2721,14 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
         // Initialize galleries when page loads
         document.addEventListener('DOMContentLoaded', () => {
             new TextureGallery();
+
+            document.querySelectorAll('img.log-image').forEach(img => {
+                img.addEventListener('error', () => {
+                    if (img.dataset.fallbackApplied === '1') return;
+                    img.dataset.fallbackApplied = '1';
+                    img.src = 'assets/logo.png';
+                }, { once: true });
+            });
         });
 
         function openTab(evt, tabName) {
@@ -2683,6 +2754,13 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 tab.classList.add("active");
                 localStorage.setItem('activeTab', tabName);
 
+                window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+
+                // Ensure sticky positioning is recalculated after tab switch
+                setTimeout(() => {
+                    window.dispatchEvent(new Event('scroll'));
+                }, 100);
+
                 // Update URL with ?tabName
                 const url = new URL(window.location);
                 if (tabName === 'home') {
@@ -2693,12 +2771,17 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                     url.search = `asset=&type=${viewMode}`;
                 } else if (tabName === 'devlog') {
                     url.search = 'devlog&type=game'; // Remove = from devlog
+                } else if (tabName === 'gui-docs') {
+                    url.search = 'gui-docs';
                 } else {
-                    url.search = tabName; 
+                    url.search = tabName;
                 }
                 window.history.pushState({}, '', url);
             }
         }
+
+        window.addEventListener('popstate', syncTab);
+        window.addEventListener('hashchange', syncTab);
 
         function openSubTab(evt, subName) {
             document.querySelectorAll(".sub-content").forEach(c => {
@@ -2964,7 +3047,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             const url = new URL(window.location);
             url.searchParams.set('asset', '');
             // Keep 'type' parameter for persistence
-            window.history.pushState({}, '', url);
+            // window.history.pushState({}, '', url);
         }
 
         // Sync Tabs with URL Params, Hash, or LocalStorage
@@ -2991,8 +3074,8 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
         window.addEventListener('popstate', syncTab);
         window.addEventListener('hashchange', syncTab);
 
-        // Init on load - removed syncTab to prevent duplicates
-        // document.addEventListener('DOMContentLoaded', syncTab);
+        // Init on load
+        document.addEventListener('DOMContentLoaded', syncTab);
 
         function openFaction(evt, factionId) {
             const container = evt.currentTarget.parentElement.parentElement;

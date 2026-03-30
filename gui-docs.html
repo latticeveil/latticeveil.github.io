@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LatticeVeil GUI Tools | Documentation</title>
+    <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/site.css">
+    <script src="assets/enhanced-ui.js"></script>
+</head>
+<body class="docs-page">
+    <header class="site-hero">
+        <img src="assets/logo.png" alt="LatticeVeil Logo" class="logo">
+        <p style="font-family: 'Press Start 2P'; font-size: 0.8rem;">Official Developer Portal</p>
+    </header>
+
+    <div class="tabs-container">
+        <nav class="tabs-nav">
+            <button class="tab-link" onclick="window.location.href='./'">HOME</button>
+            <button class="tab-link" onclick="window.location.href='./?assets'">TEXTURES & MODELS</button>
+            <button class="tab-link" onclick="window.location.href='./?lore'">LORE</button>
+            <button class="tab-link" onclick="window.location.href='./?devlog'">DEV LOG</button>
+            <button class="tab-link active" onclick="window.location.href='./?gui-docs'">GUI DOCS</button>
+        </nav>
+
+        <div class="container">
+            <h2 style="text-align: center;">GUI Tools Documentation</h2>
+            <p style="text-align: center;">Complete guide for using LatticeVeil development and deployment tools</p>
+            
+            <h3>Build GUI</h3>
+            <p><strong>Purpose:</strong> Build and package LatticeVeil for distribution. Creates optimized builds for different platforms and configurations.</p>
+            <p><strong>Location:</strong> Tools/BuildGUI.ps1</p>
+
+            <h4>How to Use:</h4>
+            <ol>
+                <li><strong>Launch the Build GUI</strong> - Navigate to the Tools folder and run: <code>.\BuildGUI.ps1</code></li>
+                <li><strong>Select Build Configuration</strong> - Choose between DEBUG, RELEASE, or custom builds</li>
+                <li><strong>Configure Build Options</strong> - Set optimization level, target platform, and output directory</li>
+                <li><strong>Start Build Process</strong> - Click "Build" to compile and package your LatticeVeil build</li>
+                <li><strong>Verify Output</strong> - Check the build log for any errors or warnings</li>
+            </ol>
+
+            <h4>Features:</h4>
+            <ul>
+                <li>Automatic dependency detection and resolution</li>
+                <li>Incremental builds for faster compilation</li>
+                <li>Built-in error reporting and troubleshooting</li>
+                <li>Support for multiple target platforms</li>
+                <li>Custom build configurations</li>
+            </ul>
+
+            <h4>Troubleshooting:</h4>
+            <ul>
+                <li><strong>Build Failures:</strong> Check the output window for detailed error messages</li>
+                <li><strong>Missing Dependencies:</strong> Ensure all required tools and SDKs are installed</li>
+                <li><strong>Permission Issues:</strong> Run PowerShell as Administrator if needed</li>
+            </ul>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="./" class="back-link">← BACK TO MAIN SITE</a>
+        </div>
+    </div> <!-- Close tabs-container -->
+</body>
+</html>
