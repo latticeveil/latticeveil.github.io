@@ -656,6 +656,197 @@
             background: linear-gradient(135deg, #00e5ff, #00b3cc);
             transform: translateY(-2px);
         }
+        
+        /* Book Modal Styles */
+        .book-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .book-modal-overlay.active {
+            display: flex;
+        }
+        
+        .book-modal {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border: 2px solid #7c5cff;
+            border-radius: 16px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 85vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .book-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(124, 92, 255, 0.3);
+        }
+        
+        .book-modal-header h2 {
+            color: #7c5cff;
+            margin: 0;
+            font-size: 1.3rem;
+        }
+        
+        .book-modal-close {
+            background: linear-gradient(135deg, #ff4444, #cc0000);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .book-modal-close:hover {
+            background: linear-gradient(135deg, #ff6666, #ff0000);
+            transform: scale(1.1);
+        }
+        
+        .book-modal-content {
+            padding: 20px;
+            max-height: calc(85vh - 80px);
+            overflow-y: auto;
+        }
+        
+        .book-modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .book-modal-content::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+        
+        .book-modal-content::-webkit-scrollbar-thumb {
+            background: rgba(124, 92, 255, 0.3);
+            border-radius: 4px;
+        }
+        
+        .book-modal-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(124, 92, 255, 0.5);
+        }
+        
+        .book-resume-btn {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #7c5cff, #6366f1);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.7rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .book-resume-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(124, 92, 255, 0.4);
+        }
+        
+        .chapters-list {
+            margin-bottom: 20px;
+        }
+        
+        .chapters-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.8rem;
+            color: var(--cyan);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .chapter-item {
+            display: block;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: rgba(124, 92, 255, 0.1);
+            border: 1px solid rgba(124, 92, 255, 0.2);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+        
+        .chapter-item:hover {
+            background: rgba(124, 92, 255, 0.2);
+            border-color: rgba(124, 92, 255, 0.4);
+            transform: translateX(5px);
+        }
+        
+        .chapter-number {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.65rem;
+            color: #7c5cff;
+            margin-bottom: 5px;
+        }
+        
+        .chapter-name {
+            font-size: 1.1rem;
+            color: var(--text);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .modal-action-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(124, 92, 255, 0.15);
+            border: 1px solid rgba(124, 92, 255, 0.3);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'VT323', monospace;
+            font-size: 1rem;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .modal-action-btn:hover {
+            background: rgba(124, 92, 255, 0.25);
+            border-color: rgba(124, 92, 255, 0.5);
+        }
+        
+        .modal-action-btn.clear-btn {
+            background: rgba(255, 68, 68, 0.15);
+            border-color: rgba(255, 68, 68, 0.3);
+        }
+        
+        .modal-action-btn.clear-btn:hover {
+            background: rgba(255, 68, 68, 0.25);
+            border-color: rgba(255, 68, 68, 0.5);
+        }
     </style>
     
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -673,7 +864,7 @@
         <!-- Desktop Layout -->
         <button class="action-btn book-btn desktop-only" onclick="showBookModal()">
             <i class="fas fa-book"></i>
-            <span class="btn-tooltip">READ BOOK</span>
+            <span class="btn-tooltip">READ NOVEL</span>
         </button>
         <button class="action-btn donate-btn desktop-only" onclick="showDonateModal()">
             <i class="fas fa-heart"></i>
@@ -684,7 +875,7 @@
         <div class="mobile-only">
             <button class="mobile-book-btn" onclick="showBookModal()">
                 <i class="fas fa-book"></i>
-                <span>READ BOOK</span>
+                <span>READ NOVEL</span>
             </button>
             <button class="mobile-donate-btn" onclick="showDonateModal()">
                 <i class="fas fa-heart"></i>
@@ -933,7 +1124,10 @@
                         <div class="chapter-number">FRAME 03</div>
                         <div class="chapter-name">Locked Design</div>
                     </a>
-                </div>
+                    <a href="./echoes.html?chapter=4" class="chapter-item">
+                        <div class="chapter-number">FRAME 04</div>
+                        <div class="chapter-name">Project Chimera: Inbound</div>
+                    </a>
                 <div class="modal-actions">
                     <a href="./echoes.html" class="modal-action-btn">
                         <i class="fas fa-book-open"></i>
@@ -1170,7 +1364,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
             <div style="margin-bottom: 40px;">
                 <a href="https://latticeveil.github.io/echoes" class="btn" style="background: var(--primary); color: #000; font-family: 'Press Start 2P'; font-size: 0.8rem; padding: 15px 30px; border-radius: 0; box-shadow: 4px 4px 0px #000;">
-                    <i class="fas fa-book-open"></i> READ THE BOOK
+                    <i class="fas fa-book-open"></i> READ THE NOVEL
                 </a>
                 <p style="margin-top: 15px; font-size: 0.7rem; opacity: 0.7;">Official E-Reader: Echoes of the Continuist</p>
             </div>
