@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>LatticeVeil | Official Website</title>
+    <title>LatticeVeil: Chrono Weaver | Official Website</title>
 
     <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
 
@@ -1000,9 +1000,9 @@
 
                 </p>
 
-                <a href="https://github.com/latticeveil/LatticeVeil/releases/latest/download/LatticeVeilMonoGame.exe" class="btn" id="main-download-btn">
+                <a href="downloads/LatticeVeilInstaller.exe" class="btn" id="main-download-btn" download>
 
-                    <i class="fas fa-download"></i> DOWNLOAD GAME (LATEST)
+                    <i class="fas fa-download"></i> DOWNLOAD INSTALLER
 
                 </a>
 
@@ -1646,6 +1646,39 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             
             <div id="log-game" class="sub-content active">
                 <div class="log-entry">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Chrono Weaver">
+                    <div class="log-header">
+                        <h3>🌀 V12.0.0 "Chrono Weaver" - Installer & Launcher Revolution</h3>
+                        <span class="log-date">APR 02, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p><strong>Chrono Weaver is the official V12.0.0 release.</strong> This update focuses on installer-first distribution, self-updating launcher, and temporal manipulation branding across all platforms.</p>
+                        <ul>
+                            <li><strong>Launcher Self-Update:</strong> The launcher now checks the latest <code>latticeveil/LatticeVeil</code> release, compares the running EXE hash to the published SHA256, and exposes a dedicated <code>UPDATE</code> action when a newer build exists.</li>
+                            <li><strong>Safe Apply Flow:</strong> Updates download with real progress, validate the new EXE hash, hand off replacement to a temp helper copy, then relaunch the updated launcher after swap.</li>
+                            <li><strong>Metadata Sync:</strong> Live launcher updates now rewrite <code>latticeveil_install_info.txt</code> and refresh uninstall metadata when available so the uninstaller still shows the correct installed release name.</li>
+                            <li><strong>Release Contract:</strong> Official game releases now target <code>LatticeVeilMonoGame.exe</code> plus <code>LatticeVeilMonoGame.exe.sha256</code> for updater integrity.</li>
+                            <li><strong>Installer-First Distribution:</strong> Public downloads now point users at the installer while keeping installer/uninstaller binaries out of the game release payload.</li>
+                        </ul>
+                        <p>Download: <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v12.0.0" style="color: var(--primary);">LatticeVeil V12.0.0</a> | Assets: <a href="https://github.com/latticeveil/Assets/releases/latest" style="color: var(--primary);">Latest Assets</a></p>
+                    </div>
+                </div>
+                <div class="log-entry">
+                    <div class="log-header">
+                        <h3>Website: V12.0.0 "Chrono Weaver" - Branding Evolution & Download Flow Update</h3>
+                        <span class="log-date">APR 02, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p>Major branding update to "Chrono Weaver" theme with installer-first download flow across all platforms.</p>
+                        <ul>
+                            <li><strong>Temporal Branding:</strong> Updated all website titles and meta tags to reflect "Chrono Weaver" identity.</li>
+                            <li><strong>Installer Priority:</strong> Main download button now emphasizes installer distribution for seamless user experience.</li>
+                            <li><strong>Game Integration:</strong> Product name and descriptions updated to match temporal manipulation theme.</li>
+                            <li><strong>Unified Identity:</strong> Consistent "Chrono Weaver" branding across website, game, and documentation.</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="log-entry">
                     <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Maintenance Reforged">
                     <div class="log-header">
                         <h3>🛠️ V11.0.0 "Maintenance Reforged" - Cleanup & Distribution</h3>
@@ -2105,6 +2138,8 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                             <li><strong>Header Layering:</strong> Adjusted top-layer stacking so the Veilnet button stays above the navigation bar.</li>
                             <li><strong>Dev Log Reliability:</strong> Normalized dev log banner image URLs and added a defensive fallback so broken images no longer appear in release history.</li>
                             <li><strong>Echoes Reader Isolation:</strong> Restored the standalone Echoes reader page layout (no portal header/tabs chrome) so the book experience stays clean and focused.</li>
+                            <li><strong>Installer Distribution:</strong> The homepage download button now points directly at the published <code>LatticeVeilInstaller.exe</code> so website delivery stays separate from game release assets.</li>
+                            <li><strong>Release Sync:</strong> Website V12 notes are now aligned with the launcher self-update and installer-first distribution flow shipped in the game release.</li>
                         </ul>
                     </div>
                 </div>
