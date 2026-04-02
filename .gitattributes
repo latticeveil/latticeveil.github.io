@@ -1,3 +1,0 @@
-# Exclude GitHub metadata from source archives (Download ZIP / git archive)
-.github/ export-ignore
-downloads/LatticeVeilInstaller.exe filter=lfs diff=lfs merge=lfs -text
