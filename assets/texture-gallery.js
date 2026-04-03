@@ -209,9 +209,10 @@ class TextureGallery {
             
             // Player Texture
             { 
-                name: 'player_default', 
+                id: 'player_default',
+                name: 'PLAYER', 
                 image: 'assets/img/player_default.png', 
-                description: 'Default AND offline texture for the player model. This is what all players default to if not adding a skin and can be locally changed for LAN/offline play. Represents the Continuist faction and serves as the base identity for all new dimensional travelers entering The Continuum from Parallel Earth.'
+                description: ''
             },
             
             // Legacy Archive: Experimental Designs
@@ -299,14 +300,9 @@ class TextureGallery {
                 image: 'assets/img/legacy/v9/veilglass_V9.png', 
                 description: 'Version 9 iteration of the advanced dimensional glass representing early attempts at creating materials that could exist within dimensional boundaries. This version features V9 dimensional material experiments with early Veil integration attempts that pre-dates current veilglass mechanics. The V9 veilglass experiments were crucial in understanding how materials could exist within the Veil itself, leading to the current veilglass that can phase between dimensions safely.'
             },
-            { 
-                name: 'grass_patchy_V9', 
-                image: 'assets/img/legacy/v9/grass_patchy_V9.png', 
-                description: 'Version 9 iteration of experimental grass patterns refining the patchy grass concept with better dimensional stability. This version features V9 biome variation refinement with improved organic pattern system that pre-dates current grass mechanics. The V9 patchy grass represents the final experiments with variable surface patterns before settling on the stable uniform grass, showing that too much surface variation could interfere with dimensional stability.'
-            }
         ];
 
-        return allAssets.find(asset => asset.name === name);
+        return allAssets.find(asset => asset.id === name || asset.name === name);
     }
 
     getAllAssets() {
@@ -354,7 +350,7 @@ class TextureGallery {
         
         // Player Texture
         allAssets.push(
-            { id: 'player_default', name: 'Player Default', image: 'assets/img/player_default.png', description: 'Default AND offline texture for the player model. This is what all players default to if not adding a skin and can be locally changed for LAN/offline play.' }
+            { id: 'player_default', name: 'PLAYER', image: 'assets/img/player_default.png', description: '' }
         );
         
         // Legacy Archive: Experimental Designs
@@ -387,6 +383,20 @@ class TextureGallery {
         
         return allAssets;
     }
+
+    getCatalogAssets() {
+        const assetsById = new Map(this.getAllAssets().map(asset => [asset.id, asset]));
+        const visualCatalogAssetIds = (window.LATTICEVEIL_ASSET_CATALOG?.sections || [])
+            .flatMap(section => section.assetIds || []);
+
+        return visualCatalogAssetIds
+            .map(assetId => assetsById.get(assetId))
+            .filter(Boolean);
+    }
+
+    getCatalogIndex(assetId) {
+        return this.getCatalogAssets().findIndex(asset => asset.id === assetId);
+    }
     
     // Debug function to log all blocks
     debugAllAssets() {
@@ -396,13 +406,17 @@ class TextureGallery {
     showAssetPopup(name, image, assetId, viewType = '2D', description = '') {
         // Update URL with asset and type parameters
         const url = new URL(window.location);
+        url.searchParams.set('assets', '');
         url.searchParams.set('asset', assetId);
         url.searchParams.set('type', viewType);
         window.history.pushState({}, '', url);
         
         // Store current asset for arrow navigation
         this.currentAssetId = assetId;
-        this.currentAssetIndex = this.getAllAssets().findIndex(asset => asset.id === assetId);
+        this.currentAssetIndex = this.getCatalogIndex(assetId);
+        if (this.currentAssetIndex === -1) {
+            this.currentAssetIndex = 0;
+        }
         
         // Use the original modal system with description
         openModal(image, name, description, assetId);
@@ -419,13 +433,19 @@ class TextureGallery {
     }
 
     navigateModal(direction) {
-        const allAssets = this.getAllAssets();
-        
-        if (this.currentAssetIndex === undefined || this.currentAssetIndex === -1) {
-            this.currentAssetIndex = 0;
+        const allAssets = this.getCatalogAssets();
+        if (allAssets.length === 0) {
+            return;
         }
         
-        // Calculate new index
+        if (this.currentAssetIndex === undefined || this.currentAssetIndex === -1) {
+            this.currentAssetIndex = this.getCatalogIndex(this.currentAssetId);
+            if (this.currentAssetIndex === -1) {
+                this.currentAssetIndex = 0;
+            }
+        }
+        
+        // Move through the catalog in the same left-to-right order shown on the page.
         let newIndex = this.currentAssetIndex + direction;
         if (newIndex < 0) newIndex = allAssets.length - 1;
         if (newIndex >= allAssets.length) newIndex = 0;
@@ -444,20 +464,23 @@ class TextureGallery {
         if (modalImg) modalImg.src = newAsset.image;
         if (modalName) modalName.textContent = newAsset.name;
         if (modalDesc) modalDesc.textContent = newAsset.description || '';
+
+        // Store the new asset id before asking the 3D viewer to rebuild.
+        this.currentAssetId = newAsset.id;
+        currentAssetId = newAsset.id;
         
         // Update 3D texture if in 3D mode
         if (document.getElementById('three-container').style.display !== 'none') {
-            update3DTexture(newAsset.image);
+            update3DTexture(newAsset.image, newAsset.id);
         }
         
         // Update URL
         const url = new URL(window.location);
+        url.searchParams.set('assets', '');
         url.searchParams.set('asset', newAsset.id);
+        const currentView = document.getElementById('three-container').style.display !== 'none' ? '3D' : '2D';
+        url.searchParams.set('type', currentView);
         window.history.pushState({}, '', url);
-        
-        // Store for gallery
-        this.currentAssetId = newAsset.id;
-        currentAssetId = newAsset.id;
         
         // Update arrow visibility
         this.updateArrowVisibility();
@@ -466,31 +489,17 @@ class TextureGallery {
     updateArrowVisibility() {
         const leftArrow = document.querySelector('.modal-arrow-left');
         const rightArrow = document.querySelector('.modal-arrow-right');
-        const allAssets = this.getAllAssets();
+        const allAssets = this.getCatalogAssets();
         
         // Debug logging to verify all blocks
         console.log(`Total blocks: ${allAssets.length}, Current index: ${this.currentAssetIndex}, Current block: ${allAssets[this.currentAssetIndex]?.name}`);
         
-        // NEVER show left arrow at start (index 0) - ALWAYS HIDE
         if (leftArrow) {
-            if (this.currentAssetIndex <= 0) {
-                leftArrow.style.display = 'none';
-                console.log('Left arrow hidden - at start or invalid index');
-            } else {
-                leftArrow.style.display = 'flex';
-                console.log('Left arrow shown - not at start');
-            }
+            leftArrow.style.display = allAssets.length > 1 ? 'flex' : 'none';
         }
         
-        // NEVER show right arrow at end (last index) - ALWAYS HIDE
         if (rightArrow) {
-            if (this.currentAssetIndex >= allAssets.length - 1) {
-                rightArrow.style.display = 'none';
-                console.log('Right arrow hidden - at end or beyond');
-            } else {
-                rightArrow.style.display = 'flex';
-                console.log('Right arrow shown - not at end');
-            }
+            rightArrow.style.display = allAssets.length > 1 ? 'flex' : 'none';
         }
     }
 
@@ -564,7 +573,7 @@ class TextureGallery {
         const playerGallery = document.getElementById('player-gallery');
         if (playerGallery) {
             const playerBlocks = [
-                { name: 'Player Default', image: 'assets/img/player_default.png', description: 'Default AND offline texture for the player model. This is what all players default to if not adding a skin and can be locally changed for LAN/offline play.' }
+                { id: 'player_default', name: 'PLAYER', image: 'assets/img/player_default.png', description: '' }
             ];
             this.createGalleryItems(playerGallery, playerBlocks);
         }
@@ -584,13 +593,13 @@ class TextureGallery {
         const hdGallery = document.getElementById('hd-gallery');
         if (hdGallery) {
             const hdBlocks = [
-                { name: 'HD Dirt', image: 'assets/img/legacy/hd/dirt_HD.png' },
-                { name: 'HD Grass', image: 'assets/img/legacy/hd/grass_HD.png' },
-                { name: 'HD Stone', image: 'assets/img/legacy/hd/stone_HD.png' },
-                { name: 'HD Sand', image: 'assets/img/legacy/hd/sand_HD.png' },
-                { name: 'HD Water', image: 'assets/img/legacy/hd/water_HD.png' },
-                { name: 'HD Wood', image: 'assets/img/legacy/hd/wood_HD.png' },
-                { name: 'HD Leaves', image: 'assets/img/legacy/hd/leaves_HD.png' }
+                { id: 'hd_dirt', name: 'HD Dirt', image: 'assets/img/legacy/hd/dirt_HD.png', description: 'High-definition version of dirt texture from early HD experiments. Features increased detail and resolution.' },
+                { id: 'hd_grass', name: 'HD Grass', image: 'assets/img/legacy/hd/grass_HD.png', description: 'High-definition grass texture with enhanced detail and color depth. Part of early HD texture experiments.' },
+                { id: 'hd_stone', name: 'HD Stone', image: 'assets/img/legacy/hd/stone_HD.png', description: 'High-definition stone texture with increased surface detail and realism. Experimental HD version.' },
+                { id: 'hd_sand', name: 'HD Sand', image: 'assets/img/legacy/hd/sand_HD.png', description: 'High-definition sand texture with enhanced granular detail and color variation. Part of HD texture experiments.' },
+                { id: 'hd_water', name: 'HD Water', image: 'assets/img/legacy/hd/water_HD.png', description: 'High-definition water texture with enhanced fluid dynamics and transparency. Experimental HD water system.' },
+                { id: 'hd_wood', name: 'HD Wood', image: 'assets/img/legacy/hd/wood_HD.png', description: 'High-definition wood texture with enhanced grain detail and wood texture. Part of early HD experiments.' },
+                { id: 'hd_leaves', name: 'HD Leaves', image: 'assets/img/legacy/hd/leaves_HD.png', description: 'High-definition leaves texture with enhanced detail and natural variation. Experimental HD foliage system.' }
             ];
             this.createGalleryItems(hdGallery, hdBlocks);
         }
@@ -604,8 +613,7 @@ class TextureGallery {
                 { name: 'V9 Gold', image: 'assets/img/legacy/v9/gold_V9.png' },
                 { name: 'V9 Iron', image: 'assets/img/legacy/v9/iron_V9.png' },
                 { name: 'V9 Leaves', image: 'assets/img/legacy/v9/leaves_V9.png' },
-                { name: 'V9 Veilglass', image: 'assets/img/legacy/v9/veilglass_V9.png' },
-                { name: 'V9 Patchy Grass', image: 'assets/img/legacy/v9/grass_patchy_V9.png' }
+                { name: 'V9 Veilglass', image: 'assets/img/legacy/v9/veilglass_V9.png' }
             ];
             this.createGalleryItems(v9Gallery, v9Blocks);
         }
@@ -617,10 +625,7 @@ class TextureGallery {
             item.className = 'block-item';
             
             // Create asset ID from name for URL routing
-            const assetId = block.name.toLowerCase().replace(/\s+/g, '_').replace(/[^\w_]/g, '');
-            
-            // Add description if available
-            const description = block.description ? `<p class="block-description">${block.description}</p>` : '';
+            const assetId = block.id || block.name.toLowerCase().replace(/\s+/g, '_').replace(/[^\w_]/g, '');
             
             item.innerHTML = `
                 <img src="${block.image}" alt="${block.name}" class="block-image" onerror="this.src='assets/img/missing.png'" 
@@ -631,7 +636,6 @@ class TextureGallery {
                      onclick="showAssetPopupWithPersistence(this.dataset.name, this.dataset.image, this.dataset.assetId, this.dataset.description)">
                 <div class="block-info">
                     <h4>${block.name}</h4>
-                    ${description}
                     <button class="download-btn" onclick="downloadTexture('${block.name}', '${block.image}')">
                         <i class="fas fa-download"></i> Download
                     </button>
@@ -644,15 +648,15 @@ class TextureGallery {
 
 // Global functions for HTML onclick handlers
 function showAssetPopup(name, image, assetId) {
-    const gallery = new TextureGallery();
+    const gallery = window.textureGallery || new TextureGallery();
     gallery.showAssetPopup(name, image, assetId, '2D'); // Default to 2D view
 }
 
 function showAssetPopupWithPersistence(name, image, assetId, description = '') {
     console.log('showAssetPopupWithPersistence called with:', { name, image, assetId, description });
     // Find the asset by name to get the correct description if not provided
+    const gallery = window.textureGallery || new TextureGallery();
     if (!description || description === '') {
-        const gallery = new TextureGallery();
         const asset = gallery.findAssetByName(name.toLowerCase().replace(/\s+/g, '_'));
         if (asset && asset.description) {
             description = asset.description;
@@ -661,21 +665,14 @@ function showAssetPopupWithPersistence(name, image, assetId, description = '') {
     }
     // Check URL for saved view mode, default to 2D
     const urlParams = new URLSearchParams(window.location.search);
-    const savedView = urlParams.get('type') || '2D';
+    const savedView = urlParams.get('type') || localStorage.getItem('preferredViewMode') || '2D';
     
-    const gallery = new TextureGallery();
     gallery.showAssetPopup(name, image, assetId, savedView, description);
 }
 
 function closeAssetModal() {
     // Use the original modal close function
     closeModal();
-    
-    // Reset URL to ?asset= (blank) for the assets tab, clear type
-    const url = new URL(window.location);
-    url.searchParams.set('asset', '');
-    url.searchParams.delete('type');
-    window.history.pushState({}, '', url);
 }
 
 // Download function
@@ -762,6 +759,11 @@ function updateCarouselNavigation() {
     const prevBtn = document.getElementById('carouselPrev');
     const nextBtn = document.getElementById('carouselNext');
     
+    // Check if elements exist before trying to modify them
+    if (!prevBtn || !nextBtn) {
+        return; // Exit silently if carousel elements don't exist
+    }
+    
     // Clear existing content
     prevBtn.innerHTML = '';
     nextBtn.innerHTML = '';
@@ -817,7 +819,7 @@ function navigateCarousel(direction) {
     }
     
     const block = carouselBlocks[newIndex];
-    const assetId = block.name.toLowerCase().replace(/\s+/g, '_');
+    const assetId = block.id || block.name.toLowerCase().replace(/\s+/g, '_');
     
     console.log('📍 New Block:', block.name);
     console.log('📍 New Asset ID:', assetId);
@@ -850,6 +852,7 @@ function navigateCarousel(direction) {
     
     // Navigate to new block directly without re-initializing carousel
     const url = new URL(window.location);
+    url.searchParams.set('assets', '');
     url.searchParams.set('asset', assetId);
     url.searchParams.set('type', currentView);
     window.history.pushState({}, '', url);
@@ -877,7 +880,7 @@ function navigateCarousel(direction) {
     if (currentView === '3D') {
         console.log('🎮 Updating 3D texture');
         setTimeout(() => {
-            update3DTexture(block.image);
+            update3DTexture(block.image, assetId);
             // Keep 3D model interactive - don't disable controls
         }, 300); // Delay for smooth transition
     }
