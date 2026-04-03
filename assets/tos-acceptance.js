@@ -4,6 +4,7 @@ class TOSAcceptance {
     constructor() {
         this.accepted = localStorage.getItem('latticeveil_tos_accepted') === 'true';
         this.downloadAccepted = localStorage.getItem('latticeveil_download_tos_accepted') === 'true';
+        this.downloadInitiated = false;
         this.init();
     }
 
@@ -122,51 +123,79 @@ class TOSAcceptance {
         const checkbox = modal.querySelector(`#tos-checkbox-${type}`);
         const acceptBtn = modal.querySelector(`#accept-tos-${type}`);
         
-        let hasScrolled = false;
+        let hasScrolledToBottom = false;
         
-        // Enhanced scroll detection for mobile
+        // Initially disable checkbox
+        checkbox.disabled = true;
+        checkbox.style.opacity = '0.5';
+        checkbox.style.cursor = 'not-allowed';
+        
         function checkScrollComplete() {
             const scrollThreshold = body.scrollHeight - body.clientHeight - 50;
             if (body.scrollTop >= scrollThreshold) {
-                hasScrolled = true;
+                hasScrolledToBottom = true;
                 modal.querySelector('.tos-scroll-indicator').style.display = 'none';
+                // Enable checkbox
+                checkbox.disabled = false;
+                checkbox.style.opacity = '1';
+                checkbox.style.cursor = 'pointer';
                 updateAcceptButton();
             }
         }
         
+        // Enable accept button when checkbox is checked AND scroll requirement is met
+        function updateAcceptButton() {
+            const canAccept = checkbox.checked && hasScrolledToBottom;
+            acceptBtn.disabled = !canAccept;
+            if (!acceptBtn.disabled) {
+                acceptBtn.style.opacity = '1';
+                acceptBtn.style.transform = 'scale(1.05)';
+                // Hide scroll indicator when both conditions are met
+                modal.querySelector('.tos-scroll-indicator').style.display = 'none';
+            } else {
+                acceptBtn.style.opacity = '0.5';
+                acceptBtn.style.transform = 'scale(1)';
+                // Show scroll indicator if not scrolled to bottom
+                if (!hasScrolledToBottom) {
+                    modal.querySelector('.tos-scroll-indicator').style.display = 'block';
+                }
+            }
+        }
+
         // Multiple scroll event listeners for better mobile support
         body.addEventListener('scroll', checkScrollComplete);
         body.addEventListener('touchmove', checkScrollComplete);
         body.addEventListener('touchend', checkScrollComplete);
 
-        // Enable accept button when checkbox is checked (scroll requirement removed for better UX)
-        function updateAcceptButton() {
-            acceptBtn.disabled = !checkbox.checked;
-            if (!acceptBtn.disabled) {
-                acceptBtn.style.opacity = '1';
-                acceptBtn.style.transform = 'scale(1.05)';
-                // Hide scroll indicator when checkbox is checked
-                modal.querySelector('.tos-scroll-indicator').style.display = 'none';
-            } else {
-                acceptBtn.style.opacity = '0.5';
-                acceptBtn.style.transform = 'scale(1)';
+        // Enhanced checkbox event listeners for mobile - only work when enabled
+        checkbox.addEventListener('change', (e) => {
+            if (!checkbox.disabled) {
+                updateAcceptButton();
             }
-        }
-
-        // Enhanced checkbox event listeners for mobile
-        checkbox.addEventListener('change', updateAcceptButton);
-        checkbox.addEventListener('click', updateAcceptButton);
+        });
         
-        // Make the entire container clickable
+        checkbox.addEventListener('click', (e) => {
+            if (checkbox.disabled) {
+                e.preventDefault();
+                return;
+            }
+            updateAcceptButton();
+        });
+        
+        // Make the entire container clickable only when checkbox is enabled
         checkboxContainer.addEventListener('click', (e) => {
-            if (e.target !== checkbox) {
+            if (e.target !== checkbox && !checkbox.disabled) {
                 checkbox.checked = !checkbox.checked;
                 updateAcceptButton();
             }
         });
         
-        // Improved mobile touch handling - toggle checkbox state reliably
+        // Improved mobile touch handling - toggle checkbox state reliably only when enabled
         checkbox.addEventListener('touchstart', (e) => {
+            if (checkbox.disabled) {
+                e.preventDefault();
+                return;
+            }
             // Don't prevent default to allow normal checkbox behavior
             setTimeout(() => {
                 updateAcceptButton();
@@ -174,16 +203,21 @@ class TOSAcceptance {
         });
         
         checkbox.addEventListener('touchend', (e) => {
+            if (checkbox.disabled) {
+                e.preventDefault();
+                return;
+            }
             e.preventDefault(); // Prevent zoom/double-tap
             setTimeout(() => {
                 updateAcceptButton();
             }, 10);
         });
 
-        // Also check checkbox state periodically (fallback for mobile)
+        // Also check checkbox state and scroll status periodically (fallback for mobile)
         const checkboxInterval = setInterval(() => {
-            updateAcceptButton();
-        }, 200); // Increased interval for better performance
+            checkScrollComplete(); // Check scroll status
+            updateAcceptButton(); // Update button state
+        }, 200);
 
         // Clear interval when modal is removed
         const originalRemove = modal.remove;
@@ -202,11 +236,19 @@ class TOSAcceptance {
                 localStorage.setItem('latticeveil_tos_accepted', 'true');
             }
             
-            modal.remove();
-            
             if (type === 'download') {
-                // Proceed with download
+                // Proceed with download first
                 this.proceedWithDownload();
+                
+                // Wait longer to ensure download is properly initiated before refresh
+                setTimeout(() => {
+                    if (this.downloadInitiated) {
+                        window.location.reload();
+                    }
+                }, 2000); // Wait 2 seconds to ensure download starts
+            } else {
+                // For site TOS, close immediately
+                modal.remove();
             }
         });
 
@@ -216,20 +258,34 @@ class TOSAcceptance {
     setupDownloadTOS() {
         // Intercept main download button specifically
         const mainDownloadBtn = document.getElementById('main-download-btn');
-        if (mainDownloadBtn) {
+        const usesCustomDownloadHandler = mainDownloadBtn?.getAttribute('onclick')?.includes('handleDownload');
+        if (mainDownloadBtn && !usesCustomDownloadHandler) {
             const originalHref = mainDownloadBtn.href;
             
             mainDownloadBtn.addEventListener('click', (e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 
                 if (!this.downloadAccepted) {
-                    this.pendingDownload = { 
+                    const downloadData = { 
                         button: mainDownloadBtn, 
-                        originalHref: originalHref 
+                        originalHref: originalHref,
+                        url: 'https://github.com/latticeveil/latticeveil.github.io/releases/download/v12.0.0/LatticeVeilInstaller.exe',
+                        filename: 'LatticeVeilInstaller.exe'
                     };
+                    this.pendingDownload = downloadData;
                     this.showDownloadTOS();
                 } else {
-                    window.open(originalHref, '_blank');
+                    // Direct download without TOS if already accepted (though we reset it every time)
+                    const tempLink = document.createElement('a');
+                    tempLink.href = 'https://github.com/latticeveil/latticeveil.github.io/releases/download/v12.0.0/LatticeVeilInstaller.exe';
+                    tempLink.download = 'LatticeVeilInstaller.exe';
+                    tempLink.style.display = 'none';
+                    document.body.appendChild(tempLink);
+                    tempLink.click();
+                    setTimeout(() => {
+                        document.body.removeChild(tempLink);
+                    }, 100);
                 }
             });
         }
@@ -237,20 +293,34 @@ class TOSAcceptance {
         // Also handle any other download links as fallback
         const downloadLinks = document.querySelectorAll('a[href*="download"], a[href*="release"]');
         downloadLinks.forEach(link => {
-            if (link.id !== 'main-download-btn') {
+            const usesCustomDownloadHandler = link.getAttribute('onclick')?.includes('handleDownload');
+            if (link.id !== 'main-download-btn' && !usesCustomDownloadHandler) {
                 const originalHref = link.href;
                 
                 link.addEventListener('click', (e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     
                     if (!this.downloadAccepted) {
-                        this.pendingDownload = { 
+                        const downloadData = { 
                             button: link, 
-                            originalHref: originalHref 
+                            originalHref: originalHref,
+                            url: originalHref,
+                            filename: 'LatticeVeilInstaller.exe'
                         };
+                        this.pendingDownload = downloadData;
                         this.showDownloadTOS();
                     } else {
-                        window.open(originalHref, '_blank');
+                        // Direct download without navigation
+                        const tempLink = document.createElement('a');
+                        tempLink.href = originalHref;
+                        tempLink.download = 'LatticeVeilInstaller.exe';
+                        tempLink.style.display = 'none';
+                        document.body.appendChild(tempLink);
+                        tempLink.click();
+                        setTimeout(() => {
+                            document.body.removeChild(tempLink);
+                        }, 100);
                     }
                 });
             }
@@ -268,10 +338,39 @@ class TOSAcceptance {
 
     proceedWithDownload() {
         if (this.pendingDownload) {
-            const { button, originalHref } = this.pendingDownload;
+            const { url, filename, button, originalHref } = this.pendingDownload;
             
-            if (originalHref) {
-                window.open(originalHref, '_blank');
+            if (url && filename) {
+                // Force download using temporary link - NO PAGE NAVIGATION
+                const tempLink = document.createElement('a');
+                tempLink.href = url;
+                tempLink.download = filename;
+                tempLink.style.display = 'none';
+                document.body.appendChild(tempLink);
+                
+                // Use click() to trigger download without navigation
+                tempLink.click();
+                
+                // Mark download as initiated
+                this.downloadInitiated = true;
+                
+                // Clean up after a longer delay to ensure download starts
+                setTimeout(() => {
+                    document.body.removeChild(tempLink);
+                }, 500);
+                
+            } else if (originalHref) {
+                // Fallback to original method (this might navigate)
+                const tempLink = document.createElement('a');
+                tempLink.href = originalHref;
+                tempLink.download = filename || 'LatticeVeilInstaller.exe';
+                tempLink.style.display = 'none';
+                document.body.appendChild(tempLink);
+                tempLink.click();
+                this.downloadInitiated = true;
+                setTimeout(() => {
+                    document.body.removeChild(tempLink);
+                }, 500);
             }
             
             this.pendingDownload = null;
