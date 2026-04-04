@@ -17,13 +17,19 @@
     <header class="reader-header">
         <div style="display:flex; align-items:center; gap:8px;">
             <a href="./" class="reader-title" onclick="event.preventDefault(); saveAndReturn();">LATTICEVEIL</a>
-            <select id="chapterSelect" class="chapter-select">
-                <option value="1">FRAME 01</option>
-                <option value="2">FRAME 02</option>
-                <option value="3">FRAME 03</option>
-                <option value="4">FRAME 04</option>
-                <option value="5" selected>FRAME 05</option>
-            </select>
+            <div class="chapter-selector-container">
+                <button id="chapterSelectBtn" class="chapter-select-btn" onclick="toggleChapterSelector()">
+                    <span id="currentChapterLabel">FRAME 05</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div id="chapterDropdown" class="chapter-dropdown" style="display:none;">
+                    <div class="chapter-item" onclick="switchToChapter(1)">FRAME 01</div>
+                    <div class="chapter-item" onclick="switchToChapter(2)">FRAME 02</div>
+                    <div class="chapter-item" onclick="switchToChapter(3)">FRAME 03</div>
+                    <div class="chapter-item" onclick="switchToChapter(4)">FRAME 04</div>
+                    <div class="chapter-item" onclick="switchToChapter(5)">FRAME 05</div>
+                </div>
+            </div>
         </div>
         <div class="reader-controls">
             <button class="icon-btn" id="helpBtn" title="How to Use"><i class="fas fa-question-circle"></i></button>
@@ -1032,6 +1038,170 @@
     </div>
 
     
+    
+    <style>
+    .chapter-selector-container {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .chapter-select-btn {
+        background: var(--reader-bg);
+        border: 1px solid var(--reader-border);
+        color: var(--reader-text);
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: inherit;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+    }
+    
+    .chapter-select-btn:hover {
+        background: var(--reader-hover);
+        border-color: var(--reader-accent);
+    }
+    
+    .chapter-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--reader-bg);
+        border: 1px solid var(--reader-border);
+        border-radius: 6px;
+        margin-top: 4px;
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    .chapter-item {
+        padding: 10px 12px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--reader-border);
+        transition: background-color 0.2s ease;
+        font-size: 0.9rem;
+    }
+    
+    .chapter-item:last-child {
+        border-bottom: none;
+    }
+    
+    .chapter-item:hover {
+        background: var(--reader-hover);
+        color: var(--reader-accent);
+    }
+    
+    .chapter-item.active {
+        background: var(--reader-accent);
+        color: var(--reader-bg);
+    }
+    </style>
+    
+    <script>
+    function switchToChapter(chapterNum) {
+        // Close dropdown first
+        document.getElementById('chapterDropdown').style.display = 'none';
+        
+        // Then refresh to the new chapter
+        window.location.href = `${window.location.pathname}?chapter=${chapterNum}`;
+    }
+    
+    function toggleChapterSelector() {
+        const dropdown = document.getElementById('chapterDropdown');
+        const isVisible = dropdown.style.display !== 'none';
+        dropdown.style.display = isVisible ? 'none' : 'block';
+        
+        // Close when clicking outside
+        if (!isVisible) {
+            setTimeout(() => {
+                document.addEventListener('click', closeChapterSelector);
+            }, 100);
+        }
+    }
+    
+    function closeChapterSelector(e) {
+        const container = document.querySelector('.chapter-selector-container');
+        if (!container.contains(e.target)) {
+            document.getElementById('chapterDropdown').style.display = 'none';
+            document.removeEventListener('click', closeChapterSelector);
+        }
+    }
+    
+    function updateChapterLabel(chapterNum) {
+        const label = document.getElementById('currentChapterLabel');
+        label.textContent = `FRAME ${chapterNum.toString().padStart(2, '0')}`;
+        
+        // Update active state in dropdown
+        const items = document.querySelectorAll('.chapter-item');
+        items.forEach((item, index) => {
+            item.classList.toggle('active', index === chapterNum - 1);
+        });
+    }
+    
+    // Also update when hash changes (for browser back/forward)
+    window.addEventListener('hashchange', function() {
+        let currentChapter = '1';
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('chapter')) {
+            currentChapter = urlParams.get('chapter');
+        } else if (window.location.hash) {
+            const hashMatch = window.location.hash.match(/chapter=(\d+)/);
+            if (hashMatch) {
+                currentChapter = hashMatch[1];
+            }
+        }
+        updateChapterLabel(parseInt(currentChapter));
+    });
+    
+    // Update the existing switchChapter function to also update the label
+    const originalSwitchChapter = window.switchChapter;
+    window.switchChapter = function(chapterNum) {
+        // Just refresh to the new chapter URL - this saves the reading position
+        window.location.href = `${window.location.pathname}?chapter=${chapterNum}`;
+    };
+    
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get current chapter from visible section using computed style
+        let currentChapter = '1';
+        
+        // Check which section is actually visible using getComputedStyle
+        const sections = document.querySelectorAll('section[data-chapter]');
+        sections.forEach(section => {
+            const computedStyle = window.getComputedStyle(section);
+            if (computedStyle.display !== 'none') {
+                currentChapter = section.getAttribute('data-chapter');
+            }
+        });
+        
+        // Fallback to URL parameters if no visible section found
+        if (currentChapter === '1') {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('chapter')) {
+                currentChapter = urlParams.get('chapter');
+            } else if (window.location.hash) {
+                const hashMatch = window.location.hash.match(/chapter=(\d+)/);
+                if (hashMatch) {
+                    currentChapter = hashMatch[1];
+                }
+            }
+        }
+        
+        updateChapterLabel(parseInt(currentChapter));
+        
+        // Update active state in dropdown
+        const items = document.querySelectorAll('.chapter-item');
+        items.forEach((item, index) => {
+            item.classList.toggle('active', index === parseInt(currentChapter) - 1);
+        });
+    });
+    </script>
     
     <script src="assets/reader.js"></script>
 </body>
