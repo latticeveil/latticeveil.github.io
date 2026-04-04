@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>LatticeVeil: Chrono Weaver | Official Website</title>
+    <title>LatticeVeil: Frontier Polish | Official Website</title>
 
     <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
 
@@ -1062,6 +1062,10 @@
                         <div class="chapter-number">FRAME 04</div>
                         <div class="chapter-name">Project Chimera: Inbound</div>
                     </a>
+                    <a href="./echoes.html?chapter=5" class="chapter-item">
+                        <div class="chapter-number">FRAME 05</div>
+                        <div class="chapter-name">Stabilization & Positioning</div>
+                    </a>
                 </div>
                 <div class="modal-actions">
                     <a href="./echoes.html" class="modal-action-btn">
@@ -1187,7 +1191,7 @@
 
                 <br>
 
-                <small style="color: #666;">Available for Windows x64</small>
+                <small style="color: #666;">Available for Windows x64. The installer remains the stable bootstrap and always fetches the latest public game release.</small>
 
             </div>
 
@@ -1819,6 +1823,39 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             
             <div id="log-game" class="sub-content active">
                 <div class="log-entry">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Frontier Polish">
+                    <div class="log-header">
+                        <h3>✨ V13.0.0 "Frontier Polish" - GUI + Worldgen Overhaul</h3>
+                        <span class="log-date">APR 04, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p><strong>Frontier Polish is the official V13.0.0 release.</strong> This pass focuses on GUI cleanup, terrain/world generation polish, and a clean latest-release target for updater validation.</p>
+
+                        <h4>🖥️ GUI Polish</h4>
+                        <ul>
+                            <li><strong>Settings Cleanup:</strong> Resolution-aware settings layout, corrected frame-safe insets, scroll behavior cleanup, and better bounds for controls, audio, and all-binds content.</li>
+                            <li><strong>Main Menu Pass:</strong> Larger primary home buttons, tighter vertical spacing, balanced footer utility buttons, and the refreshed screenshot button presentation.</li>
+                            <li><strong>Quality-of-Life:</strong> Cheats now default off for new worlds, launcher defaults favor dark mode and close-after-launch, and GUI scale is capped at the current intended max look.</li>
+                        </ul>
+
+                        <h4>🌍 World Generation</h4>
+                        <ul>
+                            <li><strong>Terrain Pass:</strong> Terrain worlds now feel larger and smoother, with less harsh walling, better walkable contours, and more natural coast shaping.</li>
+                            <li><strong>Biome + Ocean Fixes:</strong> Ocean generation, beaches, inland terrain surfaces, and biome alignment were rebuilt to avoid false sand-world behavior.</li>
+                            <li><strong>Trees + Ores:</strong> Forest density, tree spacing, canopy behavior, seam reliability, and ore vein sizing were all tightened up.</li>
+                        </ul>
+
+                        <h4>⬆️ Release + Update Validation</h4>
+                        <ul>
+                            <li><strong>New Latest Release:</strong> V13.0.0 is published as a new release without modifying V12.0.0, so older installs can be used for manual updater verification.</li>
+                            <li><strong>Stable Installer Flow:</strong> The installer remains the long-lived bootstrap entrypoint and continues pulling the latest public game release.</li>
+                            <li><strong>Release Contract:</strong> Official game releases continue targeting <code>LatticeVeilMonoGame.exe</code> and assets continue targeting <code>Assets.zip</code>.</li>
+                        </ul>
+
+                        <p><strong>Downloads:</strong> <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v13.0.0" style="color: var(--primary);">Game V13.0.0</a> | <a href="https://github.com/latticeveil/Assets/releases/tag/v13.0.0" style="color: var(--primary);">Assets V13.0.0</a> | <a href="https://github.com/latticeveil/latticeveil.github.io/releases/download/v12.0.0/LatticeVeilInstaller.exe" style="color: var(--primary);">Installer Bootstrap</a></p>
+                    </div>
+                </div>
+                <div class="log-entry">
                     <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Chrono Weaver">
                     <div class="log-header">
                         <h3>🌀 V12.0.0 "Chrono Weaver" - Complete Release</h3>
@@ -2297,6 +2334,21 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             <!-- WEBSITE UPDATES -->
 
             <div id="log-website" class="sub-content">
+                <div class="log-entry">
+                    <div class="log-header">
+                        <h3>Website: V13.0.0 "Frontier Polish" - Release Sync + Content Separation</h3>
+                        <span class="log-date">APR 04, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p>The website now tracks V13.0.0 as the latest public game release while keeping V12.0.0 intact as historical release history. This site pass also keeps game-release notes separate from website-specific updates.</p>
+                        <ul>
+                            <li><strong>Release Sync:</strong> Homepage release surfaces now point at the V13.0.0 game and assets releases without retagging or overwriting V12.0.0.</li>
+                            <li><strong>Installer Messaging:</strong> Download copy now makes it explicit that the installer is a stable bootstrap which always fetches the latest public game release.</li>
+                            <li><strong>Separated Logs:</strong> GAME updates and WEBSITE updates stay distinct so game release notes do not get mixed into site-only work.</li>
+                            <li><strong>Current Site Work Included:</strong> The local website changes included in this sync still ship here separately, including roadmap refreshes and the new Echoes FRAME 05 entry.</li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="log-entry">
                     <div class="log-header">
                         <h3>Website: V12.0.0 "Portal Weaver" - Unified Docs + Navigation Overhaul</h3>
