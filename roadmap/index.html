@@ -37,10 +37,10 @@
             <article class="roadmap-card">
                 <h2>Current Focus</h2>
                 <p>
-                    Launcher auto-update is still the main priority. The updater feature is already added in code, but it still needs real end-to-end testing before it can be treated as fully proven.
+                    Launcher auto-update is still the main priority. The updater feature is already added in code, but it still needs real end-to-end testing before it can be treated as fully proven. Before the first health-and-hunger release, the next concrete game work is a stabilization pass for tree generation, terrain and ocean generation, and profile or friends performance.
                 </p>
                 <div class="roadmap-note">
-                    Status: the updater is <strong>ADDED, NEEDS TESTING</strong>. The next real gameplay build used to validate it is the health-and-hunger update.
+                    Status: the updater is <strong>ADDED, NEEDS TESTING</strong>. The first real gameplay build used to validate it is still the health, hunger, and fall-damage update, but that build now comes after the current stabilization pass.
                 </div>
             </article>
 
@@ -81,10 +81,10 @@
             <article class="roadmap-card">
                 <h2>Before Public Release</h2>
                 <p>
-                    A usable GitHub version comes after the updater has been validated on a real gameplay build, health and hunger are working, the world data contract is cleaner, direct launch is in place, and the game has a more dependable playable core.
+                    A usable GitHub version comes after the updater has been validated on a real gameplay build, the current tree and terrain problems are corrected, health and hunger are working, the world data contract is cleaner, direct launch is in place, and the game has a more dependable playable core.
                 </p>
                 <div class="roadmap-note">
-                    Public-build gate: updater validated on a real feature release, health and hunger shipped, world data cleaned up, and the core survival/world path stable enough to represent the project properly.
+                    Public-build gate: updater validated on a real feature release, worldgen and profile stabilization complete, health and hunger shipped, world data cleaned up, and the core survival/world path stable enough to represent the project properly.
                 </div>
             </article>
         </section>
@@ -100,30 +100,32 @@
                         </div>
                         <ul class="roadmap-order-list">
                             <li><span class="roadmap-order-pill">1</span>Launcher updater already exists in code, but still needs real end-to-end update-path testing.</li>
-                            <li><span class="roadmap-order-pill">2</span>The first gameplay release used to prove it is the health-and-hunger update.</li>
+                            <li><span class="roadmap-order-pill">2</span>The first gameplay release used to prove it is still the health, hunger, and fall-damage update.</li>
                         </ul>
                     </div>
                     <div class="roadmap-order-band">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>First gameplay validation chain</h3>
+                            <h3>Stabilization pass before the first survival release</h3>
                         </div>
                         <ul class="roadmap-order-list">
-                            <li><span class="roadmap-order-pill">2A</span>Add the health bar first, along with the damage and healing hooks that make health matter, including fall damage.</li>
-                            <li><span class="roadmap-order-pill">2B</span>Then add the hunger bar, hunger drain, and starvation behavior.</li>
-                            <li><span class="roadmap-order-pill">2C</span>Then add save/load support for survival values and stabilize the survival UI.</li>
-                            <li><span class="roadmap-order-pill">2D</span>Then ship that build through the updater and use it to validate real feature delivery.</li>
+                            <li><span class="roadmap-order-pill">2A</span>Fix tree generation so trees are generated from a world-space tree descriptor instead of a chunk-local stamp.</li>
+                            <li><span class="roadmap-order-pill">2B</span>Rebuild the standard canopy into the intended compact layered shape and add taller trunk-only forest variants.</li>
+                            <li><span class="roadmap-order-pill">3</span>Rework terrain relief so broad landmass shape, inland rolling terrain, and warped surface detail are separated more clearly.</li>
+                            <li><span class="roadmap-order-pill">4</span>Fix ocean generation so ocean-classified areas actually become readable coast, shallow ocean, and deeper basin terrain.</li>
+                            <li><span class="roadmap-order-pill">5</span>Make profile loading feel immediate and rework friends, requests, and blocked users into a cleaner list layout.</li>
                         </ul>
                     </div>
                     <div class="roadmap-order-band">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>After the health-and-hunger release</h3>
+                            <h3>First gameplay validation chain after that</h3>
                         </div>
                         <ul class="roadmap-order-list">
-                            <li><span class="roadmap-order-pill">3</span>Clean up <code>world.lvc</code> so the save and world contract has one canonical structure.</li>
-                            <li><span class="roadmap-order-pill">4</span>Improve launcher polish, direct launch, debug tooling, and launcher news.</li>
-                            <li><span class="roadmap-order-pill">5</span>Expand terrain, sky islands, and Crimson Veil once the data and launcher flow are cleaner.</li>
+                            <li><span class="roadmap-order-pill">6</span>Add the health bar first, along with the damage and healing hooks that make health matter.</li>
+                            <li><span class="roadmap-order-pill">7</span>Then add hunger, hunger drain, starvation behavior, and survival save/load support.</li>
+                            <li><span class="roadmap-order-pill">8</span>Keep fall damage in that same first health pass using the current first-pass tuning target.</li>
+                            <li><span class="roadmap-order-pill">9</span>Ship that build through the updater and use it to validate real feature delivery.</li>
                         </ul>
                     </div>
                     <div class="roadmap-order-band">
@@ -132,10 +134,13 @@
                             <h3>Later core-game chain</h3>
                         </div>
                         <ul class="roadmap-order-list">
-                            <li><span class="roadmap-order-pill">6</span>Broaden survival with saturation, regeneration, death, respawn, swimming, crafting, temperature, and Fractured Soul.</li>
-                            <li><span class="roadmap-order-pill">7</span>Then move into Command PC, wiring, switches, and pulse automation systems.</li>
-                            <li><span class="roadmap-order-pill">8</span>Then move into attunement and instability.</li>
-                            <li><span class="roadmap-order-pill">9</span>Then expand into portals, triumphs, music or resonance systems, and Veilnet account-linked skin syncing.</li>
+                            <li><span class="roadmap-order-pill">10</span>Clean up <code>world.lvc</code> so the save and world contract has one canonical structure.</li>
+                            <li><span class="roadmap-order-pill">11</span>Improve launcher polish, direct launch, debug tooling, and launcher news.</li>
+                            <li><span class="roadmap-order-pill">12</span>Expand terrain further with sky islands, seed reliability work, and Crimson Veil world-side growth.</li>
+                            <li><span class="roadmap-order-pill">13</span>Broaden survival with saturation, regeneration, death, respawn, swimming, crafting, temperature, and Fractured Soul.</li>
+                            <li><span class="roadmap-order-pill">14</span>Then move into Command PC, wiring, switches, and pulse automation systems.</li>
+                            <li><span class="roadmap-order-pill">15</span>Then move into attunement and instability.</li>
+                            <li><span class="roadmap-order-pill">16</span>Then expand into portals, triumphs, music or resonance systems, and Veilnet account-linked skin syncing.</li>
                         </ul>
                     </div>
                 </div>
@@ -156,12 +161,36 @@
                         <span class="roadmap-step-num">2</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>Health system first</h3>
-                            <p>Add the visible health bar first, along with the damage and healing hooks that make health meaningful before hunger gets layered on top. Fall damage should come in with this first health pass.</p>
+                            <h3>Tree generation reliability and canopy pass</h3>
+                            <p>Replace chunk-local simple-tree placement with world-space tree descriptors so trees stop breaking at chunk borders, and reshape the canopy into the intended compact layered form.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">3</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status needs-added">Needs Added</span>
+                            <h3>Terrain relief and ocean biome fix</h3>
+                            <p>Separate broad landmass shape, inland relief, and smaller warped detail so the world stops reading as flat, and make ocean-classified regions turn into real coasts and water basins.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">4</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status needs-added">Needs Added</span>
+                            <h3>Profile and friends performance cleanup</h3>
+                            <p>Show cached profile text immediately, refresh Veilnet assets in the background, remove low-value status lines, and turn friends into a proper list layout.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">5</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status needs-added">Needs Added</span>
+                            <h3>Health system first</h3>
+                            <p>Add the visible health bar first, along with the damage and healing hooks that make health meaningful before hunger gets layered on top.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">6</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status needs-added">Needs Added</span>
                             <h3>Hunger system next</h3>
@@ -169,47 +198,39 @@
                         </div>
                     </li>
                     <li class="roadmap-step">
-                        <span class="roadmap-step-num">4</span>
-                        <div class="roadmap-step-body">
-                            <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>World data cleanup</h3>
-                            <p>Lock down `world.lvc` so game settings stop being duplicated across competing structures.</p>
-                        </div>
-                    </li>
-                    <li class="roadmap-step">
-                        <span class="roadmap-step-num">5</span>
-                        <div class="roadmap-step-body">
-                            <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>Direct launch, debug tooling, and launcher news</h3>
-                            <p>Improve iteration speed, release handling, bug reporting, and communication flow once the updater is validated.</p>
-                        </div>
-                    </li>
-                    <li class="roadmap-step">
-                        <span class="roadmap-step-num">6</span>
-                        <div class="roadmap-step-body">
-                            <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>World generation expansion</h3>
-                            <p>Terrain rework, seed reliability, sky islands, skyblock, and Crimson Veil sit here.</p>
-                        </div>
-                    </li>
-                    <li class="roadmap-step">
                         <span class="roadmap-step-num">7</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>Broader survival systems</h3>
-                            <p>Saturation, regeneration, death and respawn, swimming, crafting basics, temperature, and Fractured Soul come after the first health-and-hunger slice and the world-data cleanup work.</p>
+                            <h3>Fall damage in the first health pass</h3>
+                            <p>Fall damage belongs in the first health-system pass, using the current first-pass tuning target instead of being pushed off into a vague later survival bucket.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">8</span>
                         <div class="roadmap-step-body">
-                            <span class="roadmap-status planned">Planned</span>
-                            <h3>Sandbox automation systems</h3>
-                            <p>Command PCs, wiring, switches, circuits, and pulse logic come after the cleaner survival and world base.</p>
+                            <span class="roadmap-status needs-added">Needs Added</span>
+                            <h3>First updater-tested playable build</h3>
+                            <p>Ship the health, hunger, and fall-damage build through the updater so the already-added updater path gets validated on a real gameplay release.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">9</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status needs-added">Needs Added</span>
+                            <h3>World data cleanup</h3>
+                            <p>Lock down <code>world.lvc</code> so game settings stop being duplicated across competing structures.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">10</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status needs-added">Needs Added</span>
+                            <h3>Launcher workflow improvements</h3>
+                            <p>Direct launch, debug tooling, and launcher news follow once the first updater-tested gameplay slice and world-data cleanup are in place.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">11</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status planned">Planned</span>
                             <h3>Attunement, then portals, then triumphs, music, and account-linked skins</h3>
@@ -244,16 +265,62 @@
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status needs-added">Needs Added</span>
+                            <h3>Tree Generation Reliability + Final Canopy Pass</h3>
+                        </div>
+                        <ul class="roadmap-detail-list">
+                            <li>Replace the single hardcoded simple-tree path with deterministic world-space tree descriptors.</li>
+                            <li>Stop letting chunk-edge rejection decide whether a tree exists.</li>
+                            <li>Keep the standard trunk height at 4 blocks.</li>
+                            <li>Rebuild the canopy into the compact layered target shape instead of a flat slab.</li>
+                            <li>Add at least two deterministic variants in the same canopy family.</li>
+                            <li>Add taller trunk-only forest variants in the 6 to 8 block range.</li>
+                            <li>Keep grasslands and hills on the shorter standard tree family.</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status needs-added">Needs Added</span>
+                            <h3>Terrain Relief + Ocean Biome Fix</h3>
+                        </div>
+                        <ul class="roadmap-detail-list">
+                            <li>Separate broad landmass shape from inland relief and smaller warped detail.</li>
+                            <li>Use a low-frequency landmass mask for land, coast, and ocean placement.</li>
+                            <li>Add broader inland relief for rolling uplands, valleys, and ridge-like variation.</li>
+                            <li>Add smaller warped detail so terrain stops reading as evenly repetitive.</li>
+                            <li>Align ocean biome classification and terrain thresholds.</li>
+                            <li>Add cleaner coast, shallow ocean, and deeper basin behavior.</li>
+                            <li>Keep seabeds reliably below sea level.</li>
+                            <li>Make beaches and shorelines transition more cleanly.</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status needs-added">Needs Added</span>
+                            <h3>Profile/Friends Performance + UI Cleanup</h3>
+                        </div>
+                        <ul class="roadmap-detail-list">
+                            <li>Show cached profile text immediately on open.</li>
+                            <li>Refresh remote avatar and banner in the background after text is already visible.</li>
+                            <li>Add a lightweight local cache for the last successful Veilnet profile payload.</li>
+                            <li>Remove <code>MY ID:</code> from <code>STATUS</code>.</li>
+                            <li>Remove <code>CONFIG:</code> from <code>STATUS</code>.</li>
+                            <li>Keep the status panel focused on EOS/online state and refresh result.</li>
+                            <li>Rework friends, requests, and blocked users into a cleaner list with icon + primary/secondary text.</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status needs-added">Needs Added</span>
                             <h3>Health Then Hunger Validation Slice</h3>
                         </div>
                         <ul class="roadmap-detail-list">
                             <li>Add a visible health bar.</li>
-                            <li>Add fall damage as part of the first health-system pass.</li>
-                            <li>Use a simple first-pass fall rule: falls of 3 blocks or less are safe, and 4+ block falls deal 1 heart of damage per block beyond 3.</li>
                             <li>Add damage and healing hooks needed for health to matter.</li>
                             <li>Add a visible hunger bar.</li>
                             <li>Add hunger drain rules.</li>
                             <li>Add basic starvation behavior.</li>
+                            <li>Add fall damage as part of the first health-system pass.</li>
+                            <li>Use a simple first-pass fall rule: falls of 3 blocks or less are safe, and 4+ block falls deal 1 heart of damage per block beyond 3.</li>
                             <li>Add save/load support for survival values.</li>
                             <li>Make the survival UI readable and stable.</li>
                             <li>Ship this as the first real gameplay update through the updater.</li>
@@ -302,6 +369,14 @@
                             <h3>Next Survival Chain</h3>
                         </div>
                         <ul class="roadmap-detail-list">
+                            <li>Tree generation reliability + final canopy pass</li>
+                            <li>World-space tree descriptors instead of chunk-local simple-tree stamping</li>
+                            <li>Compact layered standard tree canopy</li>
+                            <li>Taller trunk-only forest variants</li>
+                            <li>Terrain relief pass with broader landform shaping and warped detail</li>
+                            <li>Proper coast, shallow ocean, and deeper ocean basin generation</li>
+                            <li>Profile loading cache-first with background refresh</li>
+                            <li>Friends, requests, and blocked users as proper list rows with icon and secondary info</li>
                             <li>Health bar</li>
                             <li>Fall damage</li>
                             <li>First-pass fall rule: safe at 3 blocks or less, then 1 heart per block beyond 3</li>
