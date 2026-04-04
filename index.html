@@ -8,7 +8,7 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>LatticeVeil: Frontier Polish | Official Website</title>
+    <title>LatticeVeil | Official Website</title>
 
     <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
 
@@ -1191,7 +1191,7 @@
 
                 <br>
 
-                <small style="color: #666;">Available for Windows x64. The installer remains the stable bootstrap and always fetches the latest public game release.</small>
+                <small style="color: #666;">Available for Windows x64. This installer is a standalone bootstrap used to fetch and install the latest public game release.</small>
 
             </div>
 
@@ -3789,8 +3789,8 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
 
         async function fetchLatestRelease() {
             try {
-                // Fetch from website repo since that's where the installer is
-                const response = await fetch('https://api.github.com/repos/latticeveil/latticeveil.github.io/releases/latest');
+                // Fetch from the game repo so the installer area always shows the latest public game release
+                const response = await fetch('https://api.github.com/repos/latticeveil/LatticeVeil/releases/latest');
                 if (response.ok) {
                     const data = await response.json();
                     latestReleaseData = data;
@@ -3825,7 +3825,7 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                     month: 'short',
                     day: 'numeric'
                 });
-                statusElement.innerHTML = `Latest: <strong>${releaseData.name || releaseData.tag_name}</strong> (${releaseDate})`;
+                statusElement.innerHTML = `Latest game release: <strong>${releaseData.name || releaseData.tag_name}</strong> (${releaseDate})`;
                 statusElement.style.color = '#4caf50';
             } else {
                 statusElement.textContent = 'Release information unavailable';
