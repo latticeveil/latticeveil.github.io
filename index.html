@@ -18,7 +18,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <link rel="stylesheet" href="assets/site.css">
+    <link rel="stylesheet" href="assets/site.css?v=20260405c">
     <link rel="stylesheet" href="assets/tos-modal.css">
 
     <style>
@@ -757,7 +757,7 @@
     
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="assets/enhanced-ui.js"></script>
+    <script src="assets/enhanced-ui.js?v=20260405c"></script>
     <script src="assets/tos-acceptance.js"></script>
     <script src="assets/asset-catalog-order.js?v=1"></script>
     <script src="assets/asset-3d-viewer.js?v=1"></script>
@@ -1066,15 +1066,51 @@
                         <div class="chapter-number">FRAME 05</div>
                         <div class="chapter-name">Stabilization & Positioning</div>
                     </a>
+                    <a href="./echoes.html?chapter=6" class="chapter-item">
+                        <div class="chapter-number">FRAME 06</div>
+                        <div class="chapter-name">Convergence</div>
+                    </a>
                 </div>
                 <div class="modal-actions">
                     <a href="./echoes.html" class="modal-action-btn">
                         <i class="fas fa-book-open"></i>
                         <span>Full Reader</span>
                     </a>
-                    <button onclick="clearBookData()" class="modal-action-btn clear-btn">
+                    <button onclick="showBookDataClearConfirm()" class="modal-action-btn clear-btn">
                         <i class="fas fa-eraser"></i>
                         <span>Clear Data</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bookDataConfirmModal" class="book-modal-overlay confirm-modal-overlay" onclick="if(event.target===this) hideBookDataClearConfirm()">
+        <div class="book-modal confirm-modal">
+            <div class="book-modal-header">
+                <h2>Clear Novel Data</h2>
+                <button class="book-modal-close" onclick="hideBookDataClearConfirm()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="book-modal-content">
+                <div class="confirm-copy">
+                    <p class="confirm-lead">This will clear all saved Echoes of the Continuist reader data.</p>
+                    <ul class="confirm-list">
+                        <li>Your saved frame and reading position</li>
+                        <li>TTS progress and saved spoken spot</li>
+                        <li>Reader comments, notes, and reader-specific settings</li>
+                    </ul>
+                    <p class="confirm-warning">This clears data across every frame in the novel reader.</p>
+                </div>
+                <div class="modal-actions confirm-actions">
+                    <button onclick="hideBookDataClearConfirm()" class="modal-action-btn">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Keep Data</span>
+                    </button>
+                    <button onclick="clearBookData()" class="modal-action-btn clear-btn">
+                        <i class="fas fa-trash"></i>
+                        <span>Yes, Clear It</span>
                     </button>
                 </div>
             </div>
@@ -1852,17 +1888,17 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                             <li><strong>Release Contract:</strong> Official game releases continue targeting <code>LatticeVeilMonoGame.exe</code> and assets continue targeting <code>Assets.zip</code>.</li>
                         </ul>
 
-                        <p><strong>Downloads:</strong> <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v13.0.0" style="color: var(--primary);">Game V13.0.0</a> | <a href="https://github.com/latticeveil/Assets/releases/tag/v13.0.0" style="color: var(--primary);">Assets V13.0.0</a> | <a href="https://github.com/latticeveil/latticeveil.github.io/releases/download/v12.0.0/LatticeVeilInstaller.exe" style="color: var(--primary);">Installer Bootstrap</a></p>
+                        <p><strong>Downloads:</strong> <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v13.0.0" style="color: var(--primary);">Game V13.0.0</a> | <a href="https://github.com/latticeveil/Assets/releases/tag/v13.0.0" style="color: var(--primary);">Assets V13.0.0</a> | <a href="https://github.com/latticeveil/latticeveil.github.io/releases/download/v12.0.0/LatticeVeilInstaller.exe" style="color: var(--primary);">LatticeVeil Installer V1</a></p>
                     </div>
                 </div>
                 <div class="log-entry">
-                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Chrono Weaver">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Installer V1">
                     <div class="log-header">
-                        <h3>🌀 V12.0.0 "Chrono Weaver" - Complete Release</h3>
+                        <h3>🌀 V12.0.0 Installer Release</h3>
                         <span class="log-date">APR 03, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p><strong>Chrono Weaver is the official V12.0.0 release.</strong> A comprehensive update featuring installer-first distribution, self-updating launcher, temporal manipulation branding, and unified website experience.</p>
+                        <p><strong>V12.0.0 established the installer-first website release.</strong> This pass focused on launcher distribution, self-updating flow, and the website-side installer delivery path.</p>
                         
                         <h4>🚀 Launcher & Update System</h4>
                         <ul>
@@ -1878,15 +1914,14 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                             <li><strong>Unified Release Package:</strong> Game, Assets, and Website all released as V12.0.0 with synchronized versioning.</li>
                         </ul>
                         
-                        <h4>🎨 Branding & Website</h4>
+                        <h4>🎨 Website & Installer</h4>
                         <ul>
-                            <li><strong>Temporal Branding:</strong> Updated all website titles and meta tags to reflect "Chrono Weaver" identity.</li>
                             <li><strong>Installer Priority:</strong> Main download button now emphasizes installer distribution for seamless user experience.</li>
-                            <li><strong>Game Integration:</strong> Product name and descriptions updated to match temporal manipulation theme.</li>
-                            <li><strong>Unified Identity:</strong> Consistent "Chrono Weaver" branding across website, game, and documentation.</li>
+                            <li><strong>Launcher Integration:</strong> Website copy and release links were aligned around the installer-first flow.</li>
+                            <li><strong>Unified Delivery:</strong> Game, assets, and website releases stayed synchronized without requiring the installer binary to live in the site repo itself.</li>
                         </ul>
                         
-                        <p><strong>Downloads:</strong> <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v12.0.0" style="color: var(--primary);">Game V12.0.0</a> | <a href="https://github.com/latticeveil/Assets/releases/tag/v12.0.0" style="color: var(--primary);">Assets V12.0.0</a> | <a href="https://github.com/latticeveil/latticeveil.github.io/releases/tag/v12.0.0" style="color: var(--primary);">Installer V12.0.0</a></p>
+                        <p><strong>Downloads:</strong> <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v12.0.0" style="color: var(--primary);">Game V12.0.0</a> | <a href="https://github.com/latticeveil/Assets/releases/tag/v12.0.0" style="color: var(--primary);">Assets V12.0.0</a> | <a href="https://github.com/latticeveil/latticeveil.github.io/releases/tag/v12.0.0" style="color: var(--primary);">LatticeVeil Installer V1</a></p>
                     </div>
                 </div>
                 <div class="log-entry">
