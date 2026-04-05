@@ -15,14 +15,32 @@ class EnhancedUIManager {
     }
 
     setupContinueReading() {
-        // Get last read chapter and scroll position
-        const lastChapter = localStorage.getItem('reader_chapter') || '1';
-        const lastScroll = localStorage.getItem(`reader_scroll_ch${lastChapter}`) || '0';
-        
         // Make continueReading function globally available
         window.continueReading = function() {
-            // Navigate to echoes.html with last chapter and scroll
-            window.location.href = `./echoes.html?chapter=${lastChapter}#scroll=${lastScroll}`;
+            const lastChapter = localStorage.getItem('reader_chapter') || '1';
+            const lastScroll = localStorage.getItem(`reader_scroll_ch${lastChapter}`) || '0';
+
+            localStorage.setItem('reader_return_context', JSON.stringify({
+                chapter: parseInt(lastChapter, 10),
+                scroll: parseInt(lastScroll, 10) || 0,
+                timestamp: Date.now()
+            }));
+
+            window.location.href = `./echoes.html?chapter=${lastChapter}`;
+        };
+
+        window.openReaderChapter = function(chapterNum) {
+            const normalizedChapter = Math.max(1, parseInt(chapterNum, 10) || 1);
+            const savedScroll = parseInt(localStorage.getItem(`reader_scroll_ch${normalizedChapter}`) || '0', 10) || 0;
+
+            localStorage.setItem('reader_chapter', String(normalizedChapter));
+            localStorage.setItem('reader_return_context', JSON.stringify({
+                chapter: normalizedChapter,
+                scroll: savedScroll,
+                timestamp: Date.now()
+            }));
+
+            window.location.href = `./echoes.html?chapter=${normalizedChapter}`;
         };
         
         // Make toggleBookDropdown function globally available
@@ -74,6 +92,18 @@ class EnhancedUIManager {
             if (e.key === 'Escape') {
                 hideBookModal();
             }
+        });
+
+        document.querySelectorAll('#bookModal .chapter-item[href*="echoes.html?chapter="]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const href = this.getAttribute('href') || '';
+                const match = href.match(/chapter=(\d+)/);
+                const chapterNum = match ? parseInt(match[1], 10) : 1;
+
+                window.openReaderChapter(chapterNum);
+            });
         });
     }
 
@@ -171,24 +201,71 @@ class EnhancedUIManager {
     setupDataManagement() {
         // Make functions globally available
         window.clearBookData = this.clearBookData.bind(this);
+        window.showBookDataClearConfirm = this.showBookDataClearConfirm.bind(this);
+        window.hideBookDataClearConfirm = this.hideBookDataClearConfirm.bind(this);
         window.clearSiteData = this.clearSiteData.bind(this);
         window.fullResetSite = this.fullResetSite.bind(this);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.hideBookDataClearConfirm();
+            }
+        });
+    }
+
+    getBookDataKeys() {
+        const bookKeyPatterns = [
+            /^reader_/i,
+            /^echoes_/i,
+            /^book_/i,
+            /^chapter(?:_|$|\d)/i,
+            /^page(?:_|$|\d)/i
+        ];
+
+        return Object.keys(localStorage).filter((key) =>
+            bookKeyPatterns.some((pattern) => pattern.test(key))
+        );
+    }
+
+    showBookDataClearConfirm() {
+        const modal = document.getElementById('bookDataConfirmModal');
+        if (!modal) return;
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    hideBookDataClearConfirm() {
+        const modal = document.getElementById('bookDataConfirmModal');
+        if (!modal) return;
+
+        modal.classList.remove('active');
+
+        if (!document.querySelector('.book-modal-overlay.active')) {
+            document.body.style.overflow = '';
+        }
     }
 
     clearBookData() {
-        // Clear only book-related data
-        const bookKeys = Object.keys(localStorage).filter(key => 
-            key.includes('book') || 
-            key.includes('echoes') || 
-            key.includes('reader') ||
-            key.includes('chapter') ||
-            key.includes('page')
-        );
+        const bookKeys = this.getBookDataKeys();
 
         bookKeys.forEach(key => localStorage.removeItem(key));
-        
-        this.showNotification('Book data cleared successfully', 'success');
+
+        this.hideBookDataClearConfirm();
+        this.hideBookModalIfOpen();
+        this.showNotification('Novel reader data cleared for all frames', 'success');
         this.closeAllDropdowns();
+    }
+
+    hideBookModalIfOpen() {
+        const modal = document.getElementById('bookModal');
+        if (modal) {
+            modal.classList.remove('active');
+        }
+
+        if (!document.querySelector('.book-modal-overlay.active')) {
+            document.body.style.overflow = '';
+        }
     }
 
     clearSiteData() {

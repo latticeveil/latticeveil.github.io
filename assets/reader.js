@@ -18,6 +18,10 @@ const state = {
     showLore: true,
     showHighlight: true,
     showUserHighlights: true,
+    highlightMode: false,
+    selectedColor: '#f2c14e',
+    highlightToolbarPosition: { x: null, y: null },
+    readAlongEnabled: true,
     zoomLocked: false,
     wakeLock: false,
     speaking: false,
@@ -27,6 +31,22 @@ const state = {
     comments: {},
     panelPosition: { x: null, y: null }
 };
+
+const objectStateKeys = new Set(['panelPosition', 'highlightToolbarPosition']);
+
+function getTtsStorageKey(type, chapterNum = state.chapter) {
+    return `reader_tts_${type}_ch${chapterNum}`;
+}
+
+function loadChapterTtsState(chapterNum = state.chapter) {
+    state.ttsSpanId = localStorage.getItem(getTtsStorageKey('span', chapterNum)) || '';
+    state.ttsPaused = localStorage.getItem(getTtsStorageKey('paused', chapterNum)) === 'true';
+}
+
+function saveChapterTtsState(chapterNum = state.chapter) {
+    localStorage.setItem(getTtsStorageKey('span', chapterNum), state.ttsSpanId || '');
+    localStorage.setItem(getTtsStorageKey('paused', chapterNum), String(!!state.ttsPaused));
+}
 
 // Safe storage mapping
 const storageMap = {
@@ -46,10 +66,12 @@ const storageMap = {
     showLore: 'reader_show_lore',
     showHighlight: 'reader_show_highlight',
     showUserHighlights: 'reader_show_user_highlights',
+    highlightMode: 'reader_highlight_mode',
+    selectedColor: 'reader_selected_highlight_color',
+    highlightToolbarPosition: 'reader_highlight_toolbar_position',
+    readAlongEnabled: 'reader_read_along_enabled',
     zoomLocked: 'reader_zoom_locked',
     panelPosition: 'reader_panel_position',
-    ttsPaused: 'reader_tts_paused',
-    ttsSpanId: 'reader_tts_span',
     readAlongActive: 'reader_read_along_active'
 };
 
@@ -58,6 +80,17 @@ function loadPersistentState() {
         Object.keys(storageMap).forEach(key => {
             const val = localStorage.getItem(storageMap[key]);
             if (val !== null) {
+                if (objectStateKeys.has(key)) {
+                    try {
+                        const parsed = JSON.parse(val);
+                        if (parsed && typeof parsed === 'object') {
+                            state[key] = parsed;
+                        }
+                    } catch (_) {
+                        state[key] = { x: null, y: null };
+                    }
+                    return;
+                }
                 if (val === 'true') state[key] = true;
                 else if (val === 'false') state[key] = false;
                 else if (!isNaN(val) && val !== "" && key !== 'theme' && key !== 'font' && key !== 'textAlign' && key !== 'voiceName') {
@@ -77,16 +110,37 @@ const loreData = {
     "Eli": { role: "Character", desc: "Eli, 'The Listener.' Sensitive to the Echo’s pressure and the way places try to complete themselves. He uses alcohol as a crude, risky limiter to blur the signal—buying clarity later at the cost of himself." },
     "Sister Orin": { role: "Character", desc: "Principles Veilkeeper Sealwright. Believes an open door is a debt unpaid." },
     "Kade Rowan": { role: "Character", desc: "Veteran Hearthward Guide. Specialist in safe routes and community discipline." },
-    "Rook": { role: "Character", desc: "Ascendant Breaker. Charismatic risk-taker who 'runs systems hot'." },
+    "Rook": { role: "Character", desc: "Field specialist with sharp instincts and a bad habit of pushing timing right to the edge. Useful in a crisis, unsettling when the numbers stop behaving." },
+    "Dr. Sarah Chen": { role: "Character", desc: "Lead researcher on the real-world side of the breach. Precise, controlled, and deeply committed to getting her people home alive." },
+    "Sarah Chen": { role: "Character", desc: "Lead researcher on the real-world side of the breach. Precise, controlled, and deeply committed to getting her people home alive." },
+    "Sarah": { role: "Character", desc: "A scientist who treats uncertainty like something to be mapped, tested, and survived rather than feared." },
+    "Dr. Avery Chen": { role: "Character", desc: "Systems-focused researcher with a habit of analyzing impossible spaces as if they can still be reasoned with." },
+    "Avery Chen": { role: "Character", desc: "Systems-focused researcher with a habit of analyzing impossible spaces as if they can still be reasoned with." },
+    "Elijah Jay Marcus": { role: "Character", desc: "Observant analyst whose instincts are often faster than his explanations. He notices patterns other people miss, even when he wishes he did not." },
+    "Elijah": { role: "Character", desc: "Observant analyst whose instincts are often faster than his explanations. He notices patterns other people miss, even when he wishes he did not." },
+    "Kaden Ave Williams": { role: "Character", desc: "Communications and signal specialist carrying more strain than he lets the others see. Useful, steady, and clearly tied to unusual equipment." },
+    "Kaden": { role: "Character", desc: "Communications and signal specialist carrying more strain than he lets the others see. Useful, steady, and clearly tied to unusual equipment." },
     "Continuist": { role: "Faction", desc: "Continuists treat reality like a system you can stabilize: repeatable steps, logged observations, and the Rule of Three. They don’t worship artifacts; they trust process—especially when the Veil starts rewriting the rules." },
     "Veilkeepers": { role: "Faction", desc: "Veilkeepers are sealwrights, wardens, and boundary engineers. They prioritize containment over discovery: close the breach, cap the conduit, deny the loop—then argue about meaning later." },
     "Hearthward": { role: "Faction", desc: "Focuses on communal survival holds and practical discipline." },
     "Echo Faith": { role: "Faction", desc: "Listeners who interpret the Echo's patterns as messages." },
     "Ascendants": { role: "Faction", desc: "Pressure-seekers who believe limits are lies." },
+    "Project Chimera": { role: "Program", desc: "A classified real-world dimensional research program trying to measure, track, and survive contact with places that do not behave like ordinary reality." },
+    "Chimera": { role: "Program", desc: "A classified real-world dimensional research program trying to measure, track, and survive contact with places that do not behave like ordinary reality." },
+    "Continuum": { role: "Place", desc: "The voxel world at the center of the story: ancient, procedural, and full of routes, ruins, and rules that feel discovered rather than invented." },
     "Veil": { role: "Phenomenon", desc: "The Veil is the boundary between places, states, and routes—thin in some corridors, welded shut in others. When it loosens, the world starts offering ‘second doors’: outcomes that feel inevitable until you refuse to complete them." },
     "Echo": { role: "Phenomenon", desc: "The Echo is pattern-pressure: a pull toward completion. It rewards repetition, loops, and clean endings—usually by shaving away detail. People don’t vanish loudly here; they simplify." },
     "Limiter": { role: "Concept", desc: "A limiter is a termination condition—an enforced stop that prevents a system from escalating into self-reinforcing collapse. In the field, limiters are less about power and more about refusal." },
     "Timed Limiter": { role: "Concept", desc: "A device designed to force an ending onto a local pattern." },
+    "Frame": { role: "Concept", desc: "The stabilizing structure around an event, route, or portal. If the frame fails, everything inside it starts negotiating new rules." },
+    "Conduit": { role: "Concept", desc: "The path or material that lets a force, signal, or breach move from one state into another." },
+    "portal": { role: "Structure", desc: "A threshold structure linking spaces or layers of the world. Stable ones can be used safely; unstable ones demand repair, caution, or both." },
+    "lattice scars": { role: "Phenomenon", desc: "Pale geometric seams left where reality has been stressed, stitched, or forced to settle into a shape it did not choose naturally." },
+    "survey slate": { role: "Item", desc: "A practical field tool for marks, notes, and procedures. In a place ruled by routes and repetition, writing things down can be a form of survival." },
+    "Pebble": { role: "Character", desc: "A quiet Wayhound that matters more than a first glance suggests. Helpful, watchful, and clearly connected to routes and thresholds." },
+    "Wayhound": { role: "Creature", desc: "A route-sensitive animal species tied to guidance, movement, and safe passage through unstable parts of the world." },
+    "Crimson Veil": { role: "Dimension", desc: "A hostile voxel-only dimension deeper inside LatticeVeil’s cosmology. Dangerous, survivable, and treated like a real destination rather than a myth." },
+    "Pale Archive": { role: "Dimension", desc: "A colder, quieter voxel-only dimension shaped by age, silence, and wrong spatial logic more than open aggression." },
     "Nullrock": { role: "Block", img: "assets/img/nullrock.png", desc: "World bottom (Y=0). 'Refusal made physical'." },
     "Veilglass": { role: "Block", img: "assets/img/veilglass.png", desc: "Material tuned to the frequency of the Veil." },
     "Runestone": { role: "Block", img: "assets/img/runestone.png", desc: "Continuist stone used to anchor rites." },
@@ -96,13 +150,7 @@ const loreData = {
 
 let wakeLockObj = null;
 
-// New Text-Offset-Based Highlight System
-let currentSelection = null;
-let currentRange = null;
-let highlights = [];
-let highlightToolbar = null;
-let noteModal = null;
-let pendingHighlightData = null;
+// Highlight feature removed
 
 // Text Offset Calculation Functions
 function getTextOffsets(range) {
@@ -217,7 +265,7 @@ function initDraggable(panel) {
 
 function restorePanelPosition(panel) {
     const settingsPanel = panel.querySelector('.settings-panel');
-    if (!settingsPanel || !state.panelPosition.x || !state.panelPosition.y) return;
+    if (!settingsPanel || state.panelPosition.x == null || state.panelPosition.y == null) return;
     
     // Check if position is still valid (within viewport)
     const maxX = window.innerWidth - settingsPanel.offsetWidth;
@@ -328,271 +376,75 @@ function createRangeFromOffsets(startOffset, endOffset) {
     return range;
 }
 
-// Highlight Storage Functions
 function loadHighlights() {
     try {
-        const stored = localStorage.getItem('reader_highlights_v2');
-        if (stored) {
-            highlights = JSON.parse(stored);
-        }
-    } catch (e) {
-        console.warn('Failed to load highlights:', e);
-        highlights = [];
-    }
+        localStorage.removeItem('reader_highlights_v2');
+    } catch (_) {}
 }
 
-function saveHighlights() {
+function saveHighlights() {}
+function renderAllHighlights() {}
+function clearAllHighlights() {}
+function hideHighlightToolbar() {}
+function showHighlightToolbar() {}
+function updateHighlightToolbarSelection() {}
+function renderNotesList() {}
+function openHighlightEditor() {}
+function hideNoteModal() {}
+function saveNote() {}
+function deleteActiveHighlight() {}
+function loadHighlightUiState() {
+    state.highlightMode = false;
+    state.showUserHighlights = false;
     try {
-        localStorage.setItem('reader_highlights_v2', JSON.stringify(highlights));
-    } catch (e) {
-        console.warn('Failed to save highlights:', e);
-    }
+        localStorage.removeItem(storageMap.highlightMode);
+        localStorage.removeItem(storageMap.showUserHighlights);
+        localStorage.removeItem(storageMap.selectedColor);
+        localStorage.removeItem(storageMap.highlightToolbarPosition);
+        localStorage.removeItem('reader_highlights_v2');
+    } catch (_) {}
 }
 
-function getCurrentChapter() {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('chapter') || '1';
-}
-
-function addHighlight(startOffset, endOffset, color, note = '') {
-    const chapter = getCurrentChapter();
-    const highlight = {
-        id: crypto.randomUUID(),
-        chapter: chapter,
-        start: startOffset,
-        end: endOffset,
-        color: color,
-        note: note,
-        timestamp: new Date().toISOString()
-    };
-    
-    highlights.push(highlight);
-    saveHighlights();
-    renderHighlight(highlight);
-    return highlight;
-}
-
-function removeHighlight(highlightId) {
-    highlights = highlights.filter(h => h.id !== highlightId);
-    saveHighlights();
-    removeHighlightElement(highlightId);
-}
-
-function renderHighlight(highlight) {
-    const range = createRangeFromOffsets(highlight.start, highlight.end);
-    if (!range) return;
-    
-    const span = document.createElement('span');
-    span.className = 'highlight';
-    span.setAttribute('data-highlight-id', highlight.id);
-    span.style.backgroundColor = highlight.color;
-    
-    if (highlight.note) {
-        span.setAttribute('data-note', highlight.note);
-        span.classList.add('has-note');
-    }
-    
-    // Add click handler for note display
-    span.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showHighlightNote(highlight, e.target);
-    });
-    
-    try {
-        range.surroundContents(span);
-    } catch (e) {
-        console.warn('Failed to surround contents with highlight:', e);
-    }
-}
-
-function removeHighlightElement(highlightId) {
-    const element = document.querySelector(`[data-highlight-id="${highlightId}"]`);
-    if (element) {
-        const parent = element.parentNode;
-        while (element.firstChild) {
-            parent.insertBefore(element.firstChild, element);
-        }
-        parent.removeChild(element);
-    }
-}
-
-function renderAllHighlights() {
-    const chapter = getCurrentChapter();
-    const chapterHighlights = highlights.filter(h => h.chapter === chapter);
-    
-    chapterHighlights.forEach(highlight => {
-        renderHighlight(highlight);
-    });
-}
-
-function clearAllHighlights() {
-    document.querySelectorAll('.highlight').forEach(element => {
-        const highlightId = element.getAttribute('data-highlight-id');
-        if (highlightId) {
-            removeHighlightElement(highlightId);
-        }
-    });
-}
-
-// Selection and Toolbar Functions
-function handleSelectionChange() {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-    
-    const range = selection.getRangeAt(0);
-    const selectedText = selection.toString().trim();
-    
-    if (selectedText.length > 0) {
-        currentSelection = selection;
-        currentRange = range;
-        showHighlightToolbar(range);
-    } else {
-        hideHighlightToolbar();
-    }
-}
-
-function showHighlightToolbar(range) {
-    if (!highlightToolbar) {
-        highlightToolbar = document.getElementById('highlightToolbar');
-    }
-    
-    if (!highlightToolbar) return;
-    
-    // Get selection coordinates
-    const rect = range.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-    
-    // Position toolbar above the selection
-    let top = rect.top + scrollTop - 50;
-    let left = rect.left + scrollLeft + (rect.width / 2) - 100; // Center the toolbar
-    
-    // Keep toolbar within viewport
-    if (top < 10) top = rect.bottom + scrollTop + 10;
-    if (left < 10) left = 10;
-    if (left + 200 > window.innerWidth) left = window.innerWidth - 210;
-    
-    highlightToolbar.style.top = top + 'px';
-    highlightToolbar.style.left = left + 'px';
-    highlightToolbar.style.display = 'block';
-    
-    // Auto-hide after 5 seconds if no interaction
-    setTimeout(() => {
-        if (highlightToolbar && highlightToolbar.style.display === 'block') {
-            hideHighlightToolbar();
-        }
-    }, 5000);
-}
-
-function hideHighlightToolbar() {
-    if (highlightToolbar) {
-        highlightToolbar.style.display = 'none';
-    }
-    currentSelection = null;
-    currentRange = null;
-}
-
-function createHighlightWithColor(color) {
-    if (!currentRange) return;
-    
-    const offsets = getTextOffsets(currentRange);
-    if (!offsets) return;
-    
-    hideHighlightToolbar();
-    
-    // Store pending data for potential note
-    pendingHighlightData = {
-        start: offsets.start,
-        end: offsets.end,
-        color: color
-    };
-    
-    // Create highlight immediately
-    addHighlight(offsets.start, offsets.end, color);
-    
-    // Clear selection
-    window.getSelection().removeAllRanges();
-}
-
-function showNoteModal() {
-    if (!noteModal) {
-        noteModal = document.getElementById('noteModal');
-    }
-    if (!noteModal || !pendingHighlightData) return;
-    
-    noteModal.style.display = 'flex';
-    document.getElementById('noteInput').value = '';
-    document.getElementById('noteInput').focus();
-}
-
-function hideNoteModal() {
-    if (noteModal) {
-        noteModal.style.display = 'none';
-    }
-    pendingHighlightData = null;
-}
-
-function saveNote() {
-    if (!pendingHighlightData) return;
-    
-    const noteText = document.getElementById('noteInput').value.trim();
-    
-    // Remove the temporary highlight and create one with note
-    const tempHighlights = highlights.filter(h => 
-        h.start === pendingHighlightData.start && 
-        h.end === pendingHighlightData.end &&
-        !h.note
-    );
-    
-    tempHighlights.forEach(h => removeHighlight(h.id));
-    
-    // Create highlight with note
-    addHighlight(
-        pendingHighlightData.start,
-        pendingHighlightData.end,
-        pendingHighlightData.color,
-        noteText
-    );
-    
-    hideNoteModal();
-}
-
-function showHighlightNote(highlight, element) {
-    if (!highlight.note) return;
-    
-    // Remove existing tooltips
-    document.querySelectorAll('.note-tooltip').forEach(t => t.remove());
-    
-    const tooltip = document.createElement('div');
-    tooltip.className = 'note-tooltip';
-    tooltip.textContent = highlight.note;
-    
-    document.body.appendChild(tooltip);
-    
-    const rect = element.getBoundingClientRect();
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
-    
-    tooltip.style.top = (rect.bottom + scrollTop + 5) + 'px';
-    tooltip.style.left = (rect.left + scrollLeft) + 'px';
-    
-    // Auto-hide after 3 seconds or on click
-    setTimeout(() => {
-        if (tooltip.parentNode) {
-            tooltip.parentNode.removeChild(tooltip);
-        }
-    }, 3000);
-    
-    tooltip.addEventListener('click', () => {
-        if (tooltip.parentNode) {
-            tooltip.parentNode.removeChild(tooltip);
-        }
-    });
-}
+window.renderAllHighlights = renderAllHighlights;
 
 // GLOBAL FUNCTIONS
-window.togglePanel = function(id) {
+function getReaderHistoryState(overrides = {}) {
+    return {
+        readerView: true,
+        chapter: state.chapter,
+        panel: null,
+        menu: null,
+        ...overrides
+    };
+}
+
+window.getCurrentReaderChapter = function() {
+    return state.chapter;
+};
+
+window.syncPanelHistoryState = function(historyState = null) {
+    const panelId = historyState?.panel || null;
+    document.querySelectorAll('.panel-overlay').forEach((p) => p.classList.remove('active'));
+    document.body.classList.toggle('panel-open', !!panelId);
+
+    if (!panelId) return;
+
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+
+    panel.classList.add('active');
+    if (window.matchMedia('(min-width: 768px)').matches && panelId === 'settingsPanel') {
+        initDraggable(panel);
+        restorePanelPosition(panel);
+    } else if (panelId === 'settingsPanel') {
+        resetPanelPosition(panel);
+    }
+};
+
+window.togglePanel = function(id, options = {}) {
+    const { updateHistory = true } = options;
     document.querySelectorAll('.panel-overlay').forEach(p => p.classList.remove('active'));
+    document.body.classList.toggle('panel-open', !!id);
     if (id) {
         const p = document.getElementById(id);
         if(p) {
@@ -602,6 +454,8 @@ window.togglePanel = function(id) {
             if (window.matchMedia('(min-width: 768px)').matches && id === 'settingsPanel') {
                 initDraggable(p);
                 restorePanelPosition(p);
+            } else if (id === 'settingsPanel') {
+                resetPanelPosition(p);
             }
         }
         
@@ -611,9 +465,12 @@ window.togglePanel = function(id) {
         if (id === 'settingsPanel') url.searchParams.set('settings', '1');
         else if (id === 'helpPanel') url.searchParams.set('help', '1');
         else if (id === 'downloadPanel') url.searchParams.set('download', '1');
-        else if (id === 'highlightPickerPanel') url.searchParams.set('highlight', '1');
-        else { url.searchParams.delete('settings'); url.searchParams.delete('help'); url.searchParams.delete('download'); url.searchParams.delete('highlight'); }
-        window.history.pushState({}, '', url);
+        else { url.searchParams.delete('settings'); url.searchParams.delete('help'); url.searchParams.delete('download'); url.searchParams.delete('highlight'); url.searchParams.delete('notes'); }
+        if (updateHistory) {
+            window.history.pushState(getReaderHistoryState({ panel: id }), '', url);
+        } else {
+            window.history.replaceState(getReaderHistoryState({ panel: id }), '', url);
+        }
     } else {
         const url = new URL(window.location);
         url.searchParams.set('chapter', state.chapter);
@@ -621,37 +478,24 @@ window.togglePanel = function(id) {
         url.searchParams.delete('help');
         url.searchParams.delete('download');
         url.searchParams.delete('highlight');
-        window.history.pushState({}, '', url);
+        url.searchParams.delete('notes');
+        if (updateHistory) {
+            window.history.pushState(getReaderHistoryState({ panel: null }), '', url);
+        } else {
+            window.history.replaceState(getReaderHistoryState({ panel: null }), '', url);
+        }
     }
 };
 
-window.toggleHighlightMode = function() {
-    // New system doesn't need manual mode - highlights work automatically
-    console.log('Highlight mode is now automatic - just select text!');
-};
-
-window.toggleHighlights = function() {
-    const body = document.body;
-    const isHidden = body.classList.contains('hide-highlights');
-    
-    if (isHidden) {
-        body.classList.remove('hide-highlights');
-        renderAllHighlights();
-    } else {
-        body.classList.add('hide-highlights');
-        clearAllHighlights();
-    }
-    
-    const btn = document.getElementById('toggleHighlightsBtn');
-    if(btn) {
-        btn.innerHTML = isHidden ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>';
-    }
-};
+window.toggleHighlightMode = function() {};
+window.toggleHighlights = function() {};
 
 window.saveHighlight = function() {
     // Old function - replaced by new offset-based system
     console.log('Old saveHighlight called - use new text selection system');
 };
+
+window.openNotesPanel = function() {};
 
 // Old DOM-based functions removed - replaced by offset-based system
 
@@ -877,6 +721,7 @@ function generateHTML(title, content) {
     
     // Ensure scroll position is saved
     localStorage.setItem(`reader_scroll_ch${currentChapter}`, currentScroll);
+    localStorage.setItem('reader_chapter', String(currentChapter));
     
     // Save return context for when user comes back
     localStorage.setItem('reader_return_context', JSON.stringify({
@@ -932,10 +777,12 @@ window.masterResetAll = function() {
             tempo: 250, 
             showLore: true, 
             showHighlight: true, 
-            showUserHighlights: true,
+            showUserHighlights: false,
+            highlightMode: false,
             zoomLocked: false,
             selectedColor: 'rgba(242, 193, 78, 0.4)',
             wakeLock: false,
+            readAlongEnabled: true,
             readAlongActive: false,
             ttsPaused: false,
             ttsSpanId: '',
@@ -959,38 +806,124 @@ window.masterResetAll = function() {
     }
 };
 
-window.switchChapter = function(num, autoScroll = true) {
+window.switchChapter = function(num, autoScroll = false, options = {}) {
+    const { updateHistory = true } = options;
+    const previousChapter = state.chapter;
+    const outgoingScroll = window.scrollY;
+
+    if (previousChapter) {
+        localStorage.setItem(`reader_scroll_ch${previousChapter}`, String(outgoingScroll));
+        console.log(`Switching away: saved scroll for chapter ${previousChapter}: ${outgoingScroll}px`);
+    }
+
+    if (typeof stopReading === 'function') {
+        stopReading({ preserveCheckpoint: true });
+    } else if (window.speechSynthesis) {
+        window.ttsCancelledByUser = true;
+        window.speechSynthesis.cancel();
+    }
+
     state.chapter = num;
+    loadChapterTtsState(num);
+    localStorage.setItem('reader_chapter', String(num));
     try {
         const url = new URL(window.location);
         url.searchParams.set('chapter', num);
-        window.history.pushState({}, '', url);
+        url.searchParams.delete('settings');
+        url.searchParams.delete('help');
+        url.searchParams.delete('download');
+        url.searchParams.delete('highlight');
+        url.searchParams.delete('notes');
+        if (updateHistory) {
+            window.history.pushState(getReaderHistoryState({ chapter: num, panel: null }), '', url);
+        } else {
+            window.history.replaceState(getReaderHistoryState({ chapter: num, panel: null }), '', url);
+        }
     } catch(e) {}
     
     document.querySelectorAll('section[data-chapter]').forEach(s => s.style.display = 'none');
     const ch = document.querySelector(`section[data-chapter="${num}"]`);
     if (ch) {
         ch.style.display = 'block';
-        if (autoScroll) {
-            const savedScroll = parseInt(localStorage.getItem(`reader_scroll_ch${num}`)) || 0;
-            console.log(`Restoring scroll for chapter ${num}: ${savedScroll}px`);
-            // Delay scroll restoration to ensure content is fully rendered
-            setTimeout(() => {
-                console.log(`Actually scrolling to: ${savedScroll}px`);
+        const rawSavedScroll = localStorage.getItem(`reader_scroll_ch${num}`);
+        const savedScroll = rawSavedScroll !== null ? parseInt(rawSavedScroll, 10) || 0 : null;
+        const scrollToChapterStart = () => {
+            const chapterHeader = ch.querySelector('.chapter-title-wrap') || ch;
+            const headerOffset = document.querySelector('.reader-header')?.offsetHeight || 0;
+            const top = Math.max(0, window.scrollY + chapterHeader.getBoundingClientRect().top - headerOffset - 24);
+            window.scrollTo(0, top);
+            console.log(`Scrolled to chapter ${num} start: ${top}px`);
+        };
+
+        setTimeout(() => {
+            if (savedScroll !== null) {
+                console.log(`Restoring scroll for chapter ${num}: ${savedScroll}px`);
                 window.scrollTo(0, savedScroll);
-                console.log(`Current scroll after restore: ${window.scrollY}px`);
-            }, 100);
-        }
+            } else {
+                scrollToChapterStart();
+            }
+            console.log(`Current scroll after chapter switch: ${window.scrollY}px`);
+        }, 100);
     }
     
     // Clear existing highlights and render new chapter highlights
     clearAllHighlights();
     renderAllHighlights();
+
+    const chapterSelect = document.getElementById('chapterSelect');
+    if (chapterSelect) {
+        chapterSelect.value = String(num);
+    }
+
+    if (typeof window.updateChapterLabel === 'function') {
+        window.updateChapterLabel(num);
+    }
+
+    try {
+        window.dispatchEvent(new CustomEvent('chapterchange', {
+            detail: { chapter: num }
+        }));
+    } catch (e) {
+        // Ignore event dispatch issues on older browser contexts.
+    }
     
     applySettings();
 };
 
+window.switchChapterFromHistory = function(num) {
+    const targetChapter = Math.max(1, parseInt(num, 10) || 1);
+    if (targetChapter === state.chapter) {
+        window.syncPanelHistoryState(window.history.state || null);
+        return;
+    }
+    window.switchChapter(targetChapter, true, { updateHistory: false });
+    window.syncPanelHistoryState(window.history.state || null);
+};
+
+function resetPanelPosition(panel) {
+    const settingsPanel = panel?.querySelector('.settings-panel');
+    if (!settingsPanel) return;
+    settingsPanel.style.position = '';
+    settingsPanel.style.left = '';
+    settingsPanel.style.top = '';
+    settingsPanel.style.transform = '';
+    settingsPanel.style.margin = '';
+}
+
+window.scrollToChapterStart = function(chapterNum = state.chapter) {
+    const ch = document.querySelector(`section[data-chapter="${chapterNum}"]`);
+    if (!ch) return;
+    const chapterHeader = ch.querySelector('.chapter-title-wrap') || ch;
+    const headerOffset = document.querySelector('.reader-header')?.offsetHeight || 0;
+    const top = Math.max(0, window.scrollY + chapterHeader.getBoundingClientRect().top - headerOffset - 24);
+    window.scrollTo({ top, behavior: 'smooth' });
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+    if ('scrollRestoration' in window.history) {
+        window.history.scrollRestoration = 'manual';
+    }
+
     // Clear any hash immediately to prevent scroll parameters
     if (window.location.hash && window.location.hash.includes('scroll=')) {
         window.history.replaceState({}, '', window.location.pathname + window.location.search);
@@ -1017,9 +950,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 4. Initial apply
     applySettings();
-    setupLoreLinks();
+    setupLoreLinks(document.getElementById('bookContent'));
     
     // 5. Load highlights
+    loadHighlightUiState();
     loadHighlights();
     
     // 6. URL Sync
@@ -1028,7 +962,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const setParam = urlParams.get('settings');
     const helpParam = urlParams.get('help');
     const downloadParam = urlParams.get('download');
-    const highlightParam = urlParams.get('highlight');
+    const notesParam = urlParams.get('notes');
     
     if (chParam) {
         // Check if user is returning from main site with chapter parameter
@@ -1037,20 +971,21 @@ document.addEventListener('DOMContentLoaded', () => {
         if (returnContext) {
             const context = JSON.parse(returnContext);
             console.log('Page load: Found return context with chapter param:', context);
+            const requestedChapter = parseInt(chParam, 10);
             // Only restore if it's recent (within 30 minutes)
-            if (Date.now() - context.timestamp < 30 * 60 * 1000) {
+            if (Date.now() - context.timestamp < 30 * 60 * 1000 && context.chapter === requestedChapter) {
                 console.log(`Page load: Prioritizing return context - restoring chapter ${context.chapter} with scroll ${context.scroll}px`);
-                switchChapter(context.chapter, true);
+                switchChapter(context.chapter, true, { updateHistory: false });
                 // Clear the return context after using it
                 localStorage.removeItem('reader_return_context');
             } else {
-                console.log('Page load: Return context too old, using chapter parameter');
-                switchChapter(parseInt(chParam), false);
+                console.log('Page load: Chapter parameter takes priority over stale or mismatched return context');
+                switchChapter(requestedChapter, false, { updateHistory: false });
                 localStorage.removeItem('reader_return_context');
             }
         } else {
             console.log('Page load: No return context, using chapter parameter');
-            switchChapter(parseInt(chParam), false);
+            switchChapter(parseInt(chParam), false, { updateHistory: false });
         }
     }
     else {
@@ -1063,43 +998,145 @@ document.addEventListener('DOMContentLoaded', () => {
             // Only restore if it's recent (within 30 minutes)
             if (Date.now() - context.timestamp < 30 * 60 * 1000) {
                 console.log(`Page load: Restoring chapter ${context.chapter} with scroll ${context.scroll}px`);
-                switchChapter(context.chapter, true);
+                switchChapter(context.chapter, true, { updateHistory: false });
                 // Clear the return context after using it
                 localStorage.removeItem('reader_return_context');
             } else {
                 console.log('Page load: Return context too old, starting at chapter 1');
-                switchChapter(1, true);
+                switchChapter(1, true, { updateHistory: false });
                 localStorage.removeItem('reader_return_context');
             }
         } else {
             console.log('Page load: No return context, starting at chapter 1');
-            switchChapter(1, true);
+            switchChapter(1, true, { updateHistory: false });
         }
     }
 
-    if (setParam) window.togglePanel('settingsPanel');
-    if (helpParam) window.togglePanel('helpPanel');
-    if (downloadParam) window.togglePanel('downloadPanel');
-    if (highlightParam) window.togglePanel('highlightPickerPanel');
+    try {
+        const initialUrl = new URL(window.location);
+        initialUrl.searchParams.delete('settings');
+        initialUrl.searchParams.delete('help');
+        initialUrl.searchParams.delete('download');
+        initialUrl.searchParams.delete('highlight');
+        initialUrl.searchParams.delete('notes');
+        const initialPanel = setParam ? 'settingsPanel' : helpParam ? 'helpPanel' : downloadParam ? 'downloadPanel' : null;
+        window.history.replaceState(getReaderHistoryState({ panel: initialPanel }), '', initialUrl);
+        if (initialPanel) {
+            window.togglePanel(initialPanel, { updateHistory: false });
+        }
+    } catch (_) {}
+
+    if (notesParam) window.openNotesPanel();
 
     if (window.speechSynthesis) {
         window.speechSynthesis.onvoiceschanged = () => ensureVoicesLoaded();
         ensureVoicesLoaded();
     }
+
+    updateTtsSupportUi();
 });
 
-function prepareTextForReading() {
-    const paragraphs = document.querySelectorAll('#bookContent p');
-    paragraphs.forEach((p, pIdx) => {
+function prepareTextForReading(scope = document) {
+    const root = scope instanceof Element || scope instanceof Document ? scope : document;
+    const paragraphs = root.querySelectorAll('#bookContent p, section[data-chapter] p, p');
+
+    paragraphs.forEach((p) => {
+        if (p.dataset.ttsPrepared === 'true') {
+            return;
+        }
+
+        const chapterSection = p.closest('section[data-chapter]');
+        const chapterKey = chapterSection?.dataset.chapter || 'global';
+        const paragraphIndex = Array.from(chapterSection ? chapterSection.querySelectorAll('p') : document.querySelectorAll('#bookContent p')).indexOf(p);
         let html = p.innerHTML;
         const sentences = html.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [html];
-        p.innerHTML = sentences.map((s, sIdx) => `<span class="read-span" id="s-${pIdx}-${sIdx}">${s}</span>`).join(' ');
+
+        p.innerHTML = sentences.map((s, sIdx) =>
+            `<span class="read-span" id="s-${chapterKey}-${paragraphIndex}-${sIdx}">${s.trim()}</span>`
+        ).join(' ');
+        p.dataset.ttsPrepared = 'true';
+    });
+}
+
+window.prepareTextForReading = prepareTextForReading;
+
+function escapeRegex(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function autoLinkLore(root = document) {
+    const container = root instanceof Element || root instanceof Document ? root : document;
+    const host = container.querySelector?.('#bookContent') || container;
+    if (!host) return;
+
+    const skippedSelector = [
+        'a', 'button', 'script', 'style', 'textarea', 'option',
+        '.lore-link', '.chapter-number', '.chapter-title', '.chapter-nav-wrap',
+        '.chapter-item', '.chapter-select-btn', '.reader-title',
+        '#lorePanel', '#settingsPanel', '#helpPanel', '#downloadPanel'
+    ].join(', ');
+
+    const keys = Object.keys(loreData)
+        .filter(key => key && key.length > 1)
+        .sort((a, b) => b.length - a.length);
+    const lookup = new Map(keys.map(key => [key.toLowerCase(), key]));
+
+    if (!keys.length) return;
+
+    const pattern = new RegExp(`\\b(${keys.map(escapeRegex).join('|')})\\b`, 'gi');
+    const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+            const parent = node.parentElement;
+            if (!parent) return NodeFilter.FILTER_REJECT;
+            if (parent.closest(skippedSelector)) return NodeFilter.FILTER_REJECT;
+            const text = node.textContent || '';
+            pattern.lastIndex = 0;
+            if (!text || !pattern.test(text)) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+        }
+    });
+
+    const textNodes = [];
+    let currentNode;
+    while ((currentNode = walker.nextNode())) {
+        textNodes.push(currentNode);
+    }
+
+    textNodes.forEach((node) => {
+        const text = node.textContent || '';
+        pattern.lastIndex = 0;
+        let match;
+        let lastIndex = 0;
+        const fragment = document.createDocumentFragment();
+
+        while ((match = pattern.exec(text)) !== null) {
+            const matchedText = match[0];
+            const key = lookup.get(String(match[1] || '').toLowerCase()) || match[1];
+            const start = match.index;
+
+            if (start > lastIndex) {
+                fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+            }
+
+            const span = document.createElement('span');
+            span.className = 'lore-link';
+            span.dataset.lore = key;
+            span.textContent = matchedText;
+            fragment.appendChild(span);
+            lastIndex = start + matchedText.length;
+        }
+
+        if (lastIndex < text.length) {
+            fragment.appendChild(document.createTextNode(text.slice(lastIndex)));
+        }
+
+        node.parentNode.replaceChild(fragment, node);
     });
 }
 
 function applySettings() {
     const body = document.body;
-    body.className = `${state.theme} ${state.font} ${state.highContrast ? 'high-contrast' : ''} ${state.focusMode ? 'focus-mode' : ''} ${state.showUserHighlights ? '' : 'hide-highlights'}`;
+    body.className = `${state.theme} ${state.font} ${state.highContrast ? 'high-contrast' : ''} ${state.focusMode ? 'focus-mode' : ''} ${state.showLore ? '' : 'hide-lore-tags'}`;
     
     document.documentElement.style.setProperty('--reader-font', state.font === 'font-serif' ? "'Merriweather', serif" : state.font === 'font-sans' ? "'Inter', sans-serif" : "'VT323', monospace");
     document.documentElement.style.setProperty('--reader-size', `${state.size * state.zoom}px`);
@@ -1142,18 +1179,11 @@ function applySettings() {
     setCheck('focusModeToggle', state.focusMode);
     setCheck('wakeLockToggle', state.wakeLock);
     setCheck('toggleLore', state.showLore);
-    setCheck('toggleHighlight', state.showUserHighlights);
-    setCheck('toggleReadAlong', state.readAlongActive);
+    setCheck('toggleReadAlong', state.readAlongEnabled);
     
     document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.theme === state.theme));
     document.querySelectorAll('.btn-toggle[data-align]').forEach(b => b.classList.toggle('active', b.dataset.align === state.textAlign));
     document.querySelectorAll('.btn-toggle[data-font]').forEach(b => b.classList.toggle('active', b.dataset.font === state.font));
-    
-    const hb = document.getElementById('highlightModeBtn');
-    if (hb) {
-        hb.classList.toggle('active', state.highlightMode);
-        body.classList.toggle('highlight-mode-active', state.highlightMode);
-    }
     
     const lb = document.getElementById('lockBtn');
     if (lb) {
@@ -1166,6 +1196,16 @@ function applySettings() {
     } else {
         const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-play"></i>';
     }
+
+    const ttsControls = ['ttsBtn', 'ttsPrevBtn', 'ttsRestartBtn'];
+    ttsControls.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = !state.readAlongEnabled;
+            el.hidden = !state.readAlongEnabled;
+            el.setAttribute('aria-hidden', String(!state.readAlongEnabled));
+        }
+    });
 }
 
 function setupEventListeners() {
@@ -1185,11 +1225,20 @@ function setupEventListeners() {
     click('tempoReset', () => { state.tempo = 250; saveState(); applySettings(); });
 
     // Tab Logic
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.tab-btn, .tab-content-area').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
             const content = document.getElementById(btn.dataset.tab);
+            if (content) content.classList.add('active');
+        };
+    });
+
+    document.querySelectorAll('.help-tab-btn').forEach((btn) => {
+        btn.onclick = () => {
+            document.querySelectorAll('.help-tab-btn, .help-tab-content').forEach((el) => el.classList.remove('active'));
+            btn.classList.add('active');
+            const content = document.getElementById(btn.dataset.helpTab);
             if (content) content.classList.add('active');
         };
     });
@@ -1201,8 +1250,6 @@ function setupEventListeners() {
     click('settingsBtn', () => window.togglePanel('settingsPanel'));
     click('helpBtn', () => window.togglePanel('helpPanel'));
     click('downloadBtn', () => window.togglePanel('downloadPanel'));
-    click('highlightModeBtn', toggleHighlightMode);
-    click('toggleHighlightsBtn', toggleHighlights);
     document.querySelectorAll('.close-btn').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
     document.querySelectorAll('.settings-close').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
 
@@ -1216,10 +1263,10 @@ function setupEventListeners() {
     });
 
     click('ttsBtn', toggleReading);
-    click('ttsRestartBtn', restartFromTop);
+    click('ttsPrevBtn', previousLine);
+    click('ttsRestartBtn', nextLine);
     click('previewVoiceBtn', previewVoice);
     click('lockBtn', () => { state.zoomLocked = !state.zoomLocked; saveState(); applySettings(); });
-
     const chSelect = document.getElementById('chapterSelect');
     if(chSelect) chSelect.onchange = (e) => window.switchChapter(parseInt(e.target.value));
     
@@ -1236,71 +1283,17 @@ function setupEventListeners() {
         };
     }
 
-    // New Text-Offset-Based Highlight System
-    document.addEventListener('selectionchange', handleSelectionChange);
-    
-    // Highlight toolbar event listeners
-    document.querySelectorAll('.toolbar-color-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const color = btn.dataset.color;
-            createHighlightWithColor(color);
-        });
-    });
-    
-    const toolbarNoteBtn = document.getElementById('toolbarNoteBtn');
-    if (toolbarNoteBtn) {
-        toolbarNoteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showNoteModal();
-        });
-    }
-    
-    const toolbarCloseBtn = document.getElementById('toolbarCloseBtn');
-    if (toolbarCloseBtn) {
-        toolbarCloseBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            hideHighlightToolbar();
-        });
-    }
-    
-    // Note modal event listeners
-    const noteSaveBtn = document.getElementById('noteSaveBtn');
-    if (noteSaveBtn) {
-        noteSaveBtn.addEventListener('click', saveNote);
-    }
-    
-    const noteCancelBtn = document.getElementById('noteCancelBtn');
-    if (noteCancelBtn) {
-        noteCancelBtn.addEventListener('click', hideNoteModal);
-    }
-    
-    // Close note modal on background click
-    const noteModal = document.getElementById('noteModal');
-    if (noteModal) {
-        noteModal.addEventListener('click', (e) => {
-            if (e.target === noteModal) {
-                hideNoteModal();
-            }
-        });
-    }
-    
-    // Hide toolbar when clicking outside
-    document.addEventListener('click', (e) => {
-        if (highlightToolbar && 
-            highlightToolbar.style.display === 'block' && 
-            !highlightToolbar.contains(e.target)) {
-            hideHighlightToolbar();
-        }
-    });
-
-
     const toggle = (id, key) => { 
         const el = document.getElementById(id); 
         if(el) el.onchange = (e) => { 
             state[key] = e.target.checked; 
-            // If toggling readAlongActive off, stop reading
-            if (key === 'readAlongActive' && !state[key]) {
+            if (key === 'showLore' && !state[key]) {
+                const lorePanel = document.getElementById('lorePanel');
+                if (lorePanel?.classList.contains('active')) {
+                    window.togglePanel(null);
+                }
+            }
+            if (key === 'readAlongEnabled' && !state[key]) {
                 stopReading();
             }
             saveState(); applySettings(); 
@@ -1310,8 +1303,7 @@ function setupEventListeners() {
     toggle('focusModeToggle', 'focusMode');
     toggle('wakeLockToggle', 'wakeLock');
     toggle('toggleLore', 'showLore');
-    toggle('toggleHighlight', 'showUserHighlights');
-    toggle('toggleReadAlong', 'readAlongActive');
+    toggle('toggleReadAlong', 'readAlongEnabled');
     
     const wake = document.getElementById('wakeLockToggle');
     if(wake) wake.onchange = toggleWakeLock;
@@ -1342,8 +1334,10 @@ function setupEventListeners() {
 
 // Old manual highlight functions removed - replaced by new offset-based system
 
-function setupLoreLinks() {
-    document.querySelectorAll('.lore-link').forEach(link => {
+function setupLoreLinks(scope = document) {
+    autoLinkLore(scope);
+    const root = scope instanceof Element || scope instanceof Document ? scope : document;
+    root.querySelectorAll('.lore-link').forEach(link => {
         link.onclick = (e) => {
             if (!state.showLore) return;
             e.preventDefault();
@@ -1353,12 +1347,45 @@ function setupLoreLinks() {
     });
 }
 
+window.setupLoreLinks = setupLoreLinks;
+
 function showLore(title, data) {
     const t = document.getElementById('loreTitle'); if(t) t.innerText = title;
     const r = document.getElementById('loreRole'); if(r) r.innerText = data.role;
     const d = document.getElementById('loreDesc'); if(d) d.innerText = data.desc;
+    const visuals = document.getElementById('loreVisuals');
     const img = document.getElementById('loreImg');
-    if (img) { if (data.img) { img.src = data.img; img.style.display = 'block'; } else img.style.display = 'none'; }
+    const imgAlt = document.getElementById('loreImgAlt');
+    const imgPlaceholder = document.getElementById('loreImgPlaceholder');
+    const imgAltPlaceholder = document.getElementById('loreImgAltPlaceholder');
+    const isCharacter = String(data.role || '').toLowerCase() === 'character';
+
+    if (visuals) visuals.style.display = (isCharacter || data.img || data.imgAlt) ? 'grid' : 'none';
+
+    if (img) {
+        if (data.img) {
+            img.src = data.img;
+            img.style.display = 'block';
+            if (imgPlaceholder) imgPlaceholder.style.display = 'none';
+        } else {
+            img.removeAttribute('src');
+            img.style.display = 'none';
+            if (imgPlaceholder) imgPlaceholder.style.display = isCharacter ? 'flex' : 'none';
+        }
+    }
+
+    if (imgAlt) {
+        if (data.imgAlt) {
+            imgAlt.src = data.imgAlt;
+            imgAlt.style.display = 'block';
+            if (imgAltPlaceholder) imgAltPlaceholder.style.display = 'none';
+        } else {
+            imgAlt.removeAttribute('src');
+            imgAlt.style.display = 'none';
+            if (imgAltPlaceholder) imgAltPlaceholder.style.display = isCharacter ? 'flex' : 'none';
+        }
+    }
+
     window.togglePanel('lorePanel');
 }
 
@@ -1466,6 +1493,12 @@ function getSelectedVoice() {
     return selected || voices[0];
 }
 
+function normalizeTtsPronunciation(text) {
+    return String(text || '')
+        .replace(/\bProject\s+Chimera\b/gi, 'Project Kaimaira')
+        .replace(/\bChimera\b/gi, 'Kaimaira');
+}
+
 function previewVoice() {
     if(!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
@@ -1475,7 +1508,7 @@ function previewVoice() {
     console.log('Available voices for preview:', voices.map(v => `${v.name} (${v.lang})`));
     
     const voice = getSelectedVoice();
-    const utter = new SpeechSynthesisUtterance("Continuist system check. This is a voice preview to test the selected voice at the current tempo setting.");
+    const utter = new SpeechSynthesisUtterance(normalizeTtsPronunciation("Continuist system check."));
     
     if(voice) {
         utter.voice = voice;
@@ -1496,57 +1529,147 @@ function previewVoice() {
     window.speechSynthesis.speak(utter);
 }
 
+function updateTtsSupportUi() {
+    const supported = !!window.speechSynthesis;
+    const note = document.getElementById('ttsSupportNote');
+    const ttsBtn = document.getElementById('ttsBtn');
+    const prevBtn = document.getElementById('ttsPrevBtn');
+    const restartBtn = document.getElementById('ttsRestartBtn');
+    const previewBtn = document.getElementById('previewVoiceBtn');
+    const voiceSelect = document.getElementById('voiceSelect');
+
+    [ttsBtn, prevBtn, restartBtn, previewBtn, voiceSelect].forEach((el) => {
+        if (el) el.disabled = !supported;
+    });
+
+    if (note) {
+        note.textContent = supported
+            ? 'Speech options come from your browser or device. On some mobile browsers, voices appear after your first tap.'
+            : 'Text-to-speech is not available in this browser or device context.';
+    }
+}
+
 function toggleReading() {
-    if (state.readAlongActive) {
-        if (state.ttsPaused) {
-            resumeReading();
-        } else {
-            pauseReading();
-        }
+    if (!window.speechSynthesis || !state.readAlongEnabled) return;
+
+    if (state.ttsPaused) {
+        resumeReading();
+    } else if (state.readAlongActive) {
+        pauseReading();
     } else {
         startReadAlong();
     }
 }
 
-function startReadAlong() {
-    if (!window.speechSynthesis) return;
+function speakQueueFromIndex(index) {
+    if (!state.readAlongEnabled) return;
+    if (!Array.isArray(window.ttsQueue) || !window.ttsQueue.length) {
+        startReadAlong();
+        return;
+    }
+
+    window.ttsCancelledByUser = true;
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+    }
+
     state.readAlongActive = true;
     state.ttsPaused = false;
+    window.ttsIndex = Math.max(0, Math.min(index, window.ttsQueue.length - 1));
+    const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
+    saveState();
+
+    setTimeout(() => {
+        window.ttsCancelledByUser = false;
+        speakNext();
+    }, 30);
+}
+
+function previousLine() {
+    if (!state.readAlongEnabled) return;
+    if (state.ttsPaused || state.readAlongActive) {
+        const nextIndex = typeof window.ttsIndex === 'number'
+            ? Math.max(0, window.ttsIndex - 1)
+            : 0;
+        speakQueueFromIndex(nextIndex);
+        return;
+    }
+
+    startReadAlong();
+}
+
+function nextLine() {
+    if (!state.readAlongEnabled) return;
+    if (state.ttsPaused || state.readAlongActive) {
+        const queueLength = Array.isArray(window.ttsQueue) ? window.ttsQueue.length : 0;
+        const nextIndex = typeof window.ttsIndex === 'number'
+            ? Math.min(Math.max(queueLength - 1, 0), window.ttsIndex + 1)
+            : 0;
+        speakQueueFromIndex(nextIndex);
+        return;
+    }
+
+    startReadAlong();
+}
+
+function normalizeChapterNumberForSpeech(chapterNumber) {
+    const match = String(chapterNumber || '').match(/FRAME\s*0*(\d+)/i);
+    if (!match) return String(chapterNumber || '').trim();
+    return `Frame ${parseInt(match[1], 10)}`;
+}
+
+function buildReadQueue(chapter) {
+    const queue = [];
+    if (!chapter) return queue;
+
+    const chapterNumberRaw = chapter.querySelector('.chapter-number')?.textContent?.trim() || '';
+    const chapterNumber = normalizeChapterNumberForSpeech(chapterNumberRaw);
+    const chapterTitle = chapter.querySelector('.chapter-title')?.textContent?.trim() || '';
+    const introText = [chapterNumber, chapterTitle].filter(Boolean).join('. ');
+
+    if (introText) {
+        queue.push({
+            id: `tts-intro-ch${chapter.dataset.chapter}`,
+            text: introText,
+            target: chapter.querySelector('.chapter-title-wrap') || chapter
+        });
+    }
+
+    chapter.querySelectorAll('.read-span').forEach((span) => {
+        queue.push({
+            id: span.id,
+            text: span.textContent.trim(),
+            target: span
+        });
+    });
+
+    return queue.filter(item => item.text);
+}
+
+function startReadAlong() {
+    if (!window.speechSynthesis || !state.readAlongEnabled) return;
+    loadChapterTtsState(state.chapter);
+    state.readAlongActive = true;
+    state.ttsPaused = false;
+    saveChapterTtsState();
     const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-pause"></i>';
     
-    // Get all readable elements: headings + spans
     const chapter = document.querySelector(`section[data-chapter="${state.chapter}"]`);
     if (!chapter) return;
-    
-    const headings = Array.from(chapter.querySelectorAll('h1, h2'));
-    const spans = Array.from(chapter.querySelectorAll('.read-span'));
-    const allElements = [];
-    
-    // Add headings with special class
-    headings.forEach(h => {
-        const wrapper = document.createElement('span');
-        wrapper.className = 'tts-heading';
-        wrapper.textContent = h.textContent.trim();
-        wrapper.dataset.originalId = h.id || '';
-        allElements.push(wrapper);
-    });
-    
-    // Add spans
-    allElements.push(...spans);
+
+    prepareTextForReading(chapter);
+    const allElements = buildReadQueue(chapter);
+    if (!allElements.length) return;
     
     // Find starting position
     let startIndex = 0;
     if (state.ttsSpanId) {
-        const idx = allElements.findIndex(el => el.id === state.ttsSpanId || (el.dataset.originalId === state.ttsSpanId));
+        const idx = allElements.findIndex(el => el.id === state.ttsSpanId);
         if (idx >= 0) startIndex = idx;
     } else {
-        // Find first visible element
         const firstVisible = allElements.find(el => {
-            if (el.id) {
-                const elem = document.getElementById(el.id);
-                return elem && elem.getBoundingClientRect().top > 100;
-            }
-            return false;
+            const elem = el.target;
+            return elem && elem.getBoundingClientRect().top > 100;
         });
         if (firstVisible) startIndex = allElements.indexOf(firstVisible);
     }
@@ -1564,7 +1687,7 @@ function speakNext() {
     }
     
     const element = window.ttsQueue[window.ttsIndex];
-    const text = element.textContent.trim();
+    const text = (element?.text || element?.target?.textContent || '').trim();
     
     if (!text) {
         window.ttsIndex++;
@@ -1575,30 +1698,21 @@ function speakNext() {
     // Clear previous highlights
     document.querySelectorAll('.reading-highlight').forEach(el => el.classList.remove('reading-highlight'));
     
-    // Highlight current element
-    let targetElement;
-    if (element.classList.contains('tts-heading')) {
-        // Find the actual heading element
-        targetElement = element.dataset.originalId ? 
-            document.getElementById(element.dataset.originalId) || 
-            document.querySelector(`section[data-chapter="${state.chapter}"] h1, section[data-chapter="${state.chapter}"] h2`) :
-            document.querySelector(`section[data-chapter="${state.chapter}"] h1, section[data-chapter="${state.chapter}"] h2`);
-    } else {
-        targetElement = document.getElementById(element.id);
-    }
+    const targetElement = element.target || document.getElementById(element.id);
     
     if (targetElement) {
         targetElement.classList.add('reading-highlight');
         targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
-        // Save current position
-        state.ttsSpanId = element.id || element.dataset.originalId || '';
+        state.ttsSpanId = element.id || '';
+        saveChapterTtsState();
         saveState();
     }
     
     // Create fresh utterance for each text
-    const utter = new SpeechSynthesisUtterance(text);
+    const utter = new SpeechSynthesisUtterance(normalizeTtsPronunciation(text));
     const voice = getSelectedVoice();
+    window.ttsCancelledByUser = false;
     
     if (voice) {
         utter.voice = voice;
@@ -1608,14 +1722,23 @@ function speakNext() {
     }
     
     utter.rate = state.tempo / 200;
+    utter.lang = voice?.lang || 'en-US';
     
     utter.onstart = () => console.log('Started speaking with voice:', utter.voice?.name);
     utter.onend = () => {
+        if (window.ttsCancelledByUser) {
+            window.ttsCancelledByUser = false;
+            return;
+        }
         console.log('Finished speaking, moving to next');
         window.ttsIndex++;
         speakNext();
     };
     utter.onerror = (e) => {
+        if (window.ttsCancelledByUser) {
+            window.ttsCancelledByUser = false;
+            return;
+        }
         console.error('Speech error:', e);
         window.ttsIndex++;
         speakNext();
@@ -1626,46 +1749,61 @@ function speakNext() {
 
 function pauseReading() {
     if (window.speechSynthesis) {
-        window.speechSynthesis.cancel(); // Use cancel instead of pause for immediate stop
+        window.ttsCancelledByUser = true;
+        window.speechSynthesis.cancel();
         state.ttsPaused = true;
-        state.readAlongActive = false; // Reset to allow restart from same position
+        state.readAlongActive = false;
         const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-play"></i>';
+        saveChapterTtsState();
         saveState();
     }
 }
 
 function resumeReading() {
-    // Resume by starting from current position
     startReadAlong();
 }
 
-function stopReading() {
+function stopReading(options = {}) {
+    const { preserveCheckpoint = false } = options;
     if(window.speechSynthesis) {
+        window.ttsCancelledByUser = true;
         window.speechSynthesis.cancel();
     }
     state.readAlongActive = false;
     state.ttsPaused = false;
+    if (!preserveCheckpoint) {
+        state.ttsSpanId = '';
+    }
     const btn = document.getElementById('ttsBtn'); if(btn) btn.innerHTML = '<i class="fas fa-play"></i>';
     document.querySelectorAll('.reading-highlight').forEach(el => el.classList.remove('reading-highlight'));
     window.ttsQueue = [];
     window.ttsIndex = 0;
+    saveChapterTtsState();
     saveState();
 }
 
 function restartFromTop() {
-    // Clear saved position
     state.ttsSpanId = '';
     state.ttsPaused = false;
+    saveChapterTtsState();
     
     // Stop current reading
     if (window.speechSynthesis) {
         window.speechSynthesis.cancel();
     }
     
-    // Start from top
     state.readAlongActive = false;
     setTimeout(() => startReadAlong(), 100);
 }
+
+window.addEventListener('resize', () => {
+    if (!window.matchMedia('(min-width: 768px)').matches) {
+        const activeSettings = document.getElementById('settingsPanel');
+        if (activeSettings?.classList.contains('active')) {
+            resetPanelPosition(activeSettings);
+        }
+    }
+});
 
 async function toggleWakeLock(e) {
     state.wakeLock = e.target.checked;
@@ -1675,7 +1813,10 @@ async function toggleWakeLock(e) {
 }
 
 function saveState() {
-    Object.keys(storageMap).forEach(key => localStorage.setItem(storageMap[key], state[key]));
+    Object.keys(storageMap).forEach(key => {
+        const value = objectStateKeys.has(key) ? JSON.stringify(state[key]) : state[key];
+        localStorage.setItem(storageMap[key], value);
+    });
     localStorage.setItem('reader_comments', JSON.stringify(state.comments));
 }
 
@@ -1695,8 +1836,8 @@ function setupJumpToTop() {
     const jumpToTopBtn = document.createElement('a');
     jumpToTopBtn.href = '#top';
     jumpToTopBtn.className = 'jump-to-top';
-    jumpToTopBtn.textContent = 'JUMP TO TOP';
-    jumpToTopBtn.setAttribute('aria-label', 'Jump to top of page');
+    jumpToTopBtn.innerHTML = '<i class="fas fa-chevron-up" aria-hidden="true"></i><span>FRAME START</span>';
+    jumpToTopBtn.setAttribute('aria-label', 'Jump to start of current frame');
     
     // Add to page
     document.body.appendChild(jumpToTopBtn);
@@ -1717,10 +1858,14 @@ function setupJumpToTop() {
     // Smooth scroll behavior
     jumpToTopBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        window.scrollTo({
-            top: 0,
-            behavior: 'smooth'
-        });
+        if (typeof window.scrollToChapterStart === 'function') {
+            window.scrollToChapterStart(state.chapter);
+        } else {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        }
     });
     
     // Initial check

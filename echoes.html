@@ -8,18 +8,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Merriweather:wght@300;400;700&family=Inter:wght@400;600&family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <link rel="stylesheet" href="assets/reader.css">
+    <link rel="stylesheet" href="assets/reader.css?v=20260405r">
     <meta name="theme-color" content="#000000">
 </head>
 <body class="theme-oled font-serif">
 
     <!-- Fixed Header -->
     <header class="reader-header">
-        <div style="display:flex; align-items:center; gap:8px;">
-            <a href="./" class="reader-title" onclick="event.preventDefault(); saveAndReturn();">LATTICEVEIL</a>
+        <div class="reader-brand-row">
+            <a href="./" class="reader-title reader-home-btn" onclick="event.preventDefault(); saveAndReturn();" aria-label="Return to LatticeVeil home">
+                <i class="fas fa-arrow-left"></i>
+                <span>RETURN TO LATTICEVEIL</span>
+            </a>
+            <div class="reader-work-title" aria-label="Current work title">ECHOES OF THE CONTINUIST</div>
             <div class="chapter-selector-container">
                 <button id="chapterSelectBtn" class="chapter-select-btn" onclick="toggleChapterSelector()">
-                    <span id="currentChapterLabel">FRAME 05</span>
+                    <span id="currentChapterLabel">FRAME --</span>
                     <i class="fas fa-chevron-down"></i>
                 </button>
                 <div id="chapterDropdown" class="chapter-dropdown" style="display:none;">
@@ -28,15 +32,17 @@
                     <div class="chapter-item" onclick="switchToChapter(3)">FRAME 03</div>
                     <div class="chapter-item" onclick="switchToChapter(4)">FRAME 04</div>
                     <div class="chapter-item" onclick="switchToChapter(5)">FRAME 05</div>
+                    <div class="chapter-item" onclick="switchToChapter(6)">FRAME 06</div>
                 </div>
             </div>
         </div>
         <div class="reader-controls">
-            <button class="icon-btn" id="helpBtn" title="How to Use"><i class="fas fa-question-circle"></i></button>
-            <button class="icon-btn" id="ttsBtn" title="Play/Pause Reading"><i class="fas fa-play"></i></button>
-            <button class="icon-btn" id="ttsRestartBtn" title="Restart from top of chapter"><i class="fas fa-step-backward"></i></button>
-            <button class="icon-btn" id="settingsBtn" title="Settings"><i class="fas fa-cog"></i></button>
-            <button class="icon-btn" id="downloadBtn" title="Download"><i class="fas fa-download"></i></button>
+            <button class="icon-btn" id="helpBtn" title="How to Use" aria-label="How to use reader"><i class="fas fa-question-circle"></i></button>
+            <button class="icon-btn tts-control-btn" id="ttsPrevBtn" title="Previous line" aria-label="Previous spoken line"><i class="fas fa-step-backward"></i></button>
+            <button class="icon-btn tts-control-btn" id="ttsBtn" title="TTS" aria-label="TTS play or pause"><i class="fas fa-play"></i></button>
+            <button class="icon-btn tts-control-btn" id="ttsRestartBtn" title="Next line" aria-label="Next spoken line"><i class="fas fa-step-forward"></i></button>
+            <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Reader settings"><i class="fas fa-cog"></i></button>
+            <button class="icon-btn" id="downloadBtn" title="Download" aria-label="Download book formats"><i class="fas fa-download"></i></button>
         </div>
     </header>
 
@@ -814,46 +820,17 @@
                     <a href="?chapter=6" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(6);">CONTINUE TO FRAME 06</a>
                 </div>
             </section>
+
+            <section data-chapter="6" id="ch-6" style="display:none;">
+                <div class="chapter-title-wrap">
+                    <span class="chapter-number">FRAME 06</span>
+                    <h2 class="chapter-title">CONVERGENCE</h2>
+                </div>
+                <div id="frame06Content"></div>
+            </section>
         </div>
     </div>
 
-    <!-- Highlight Color Picker -->
-    <div class="panel-overlay" id="highlightPickerPanel">
-        <div class="settings-panel">
-            <div class="settings-header">
-                <i class="fas fa-highlighter"></i>
-                <span>HIGHLIGHT COLOR</span>
-                <div class="settings-header-controls">
-                    <button class="settings-close" onclick="window.togglePanel(null)" aria-label="Close color picker">&times;</button>
-                </div>
-            </div>
-            <div class="panel-body" style="padding:20px; overflow-y:auto;">
-                <div class="setting-item">
-                    <span class="category-label">Choose Color</span>
-                    <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
-                        <input type="color" id="highlightColorPicker" value="#f2c14e" style="width: 80px; height: 80px; border: none; border-radius: 8px; cursor: pointer;">
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
-                            <button class="color-preset" data-color="#f2c14e" style="background: #f2c14e;"></button>
-                            <button class="color-preset" data-color="#38e1ff" style="background: #38e1ff;"></button>
-                            <button class="color-preset" data-color="#ff6b6b" style="background: #ff6b6b;"></button>
-                            <button class="color-preset" data-color="#4ecdc4" style="background: #4ecdc4;"></button>
-                            <button class="color-preset" data-color="#45b7d1" style="background: #45b7d1;"></button>
-                            <button class="color-preset" data-color="#96ceb4" style="background: #96ceb4;"></button>
-                            <button class="color-preset" data-color="#ffeaa7" style="background: #ffeaa7;"></button>
-                            <button class="color-preset" data-color="#dfe6e9" style="background: #dfe6e9;"></button>
-                        </div>
-                    </div>
-                </div>
-                <div class="setting-item">
-                    <div style="display:flex; justify-content:space-between;"><span class="setting-item-label">ADD NOTE</span><button class="btn-toggle" id="addNoteBtn" style="padding:4px 12px; font-size:0.7rem;">ADD</button></div>
-                    <textarea id="highlightNote" placeholder="Add optional note..." style="width:100%; min-height:60px; background:var(--reader-bg); color:var(--reader-text); border:1px solid var(--reader-accent); border-radius:4px; padding:8px; margin-top:8px; resize:vertical; font-family:inherit;"></textarea>
-                </div>
-                <div class="setting-item">
-                    <button class="btn-toggle" id="saveHighlightBtn" style="width:100%; padding:10px; font-size:0.8rem;">SAVE HIGHLIGHT</button>
-                </div>
-            </div>
-        </div>
-    </div>
     <div class="panel-overlay" id="downloadPanel">
         <div class="settings-panel">
             <div class="settings-header">
@@ -973,10 +950,11 @@
                 <span class="category-label">Voice & Tempo</span>
                 <div class="setting-item">
                     <span class="setting-item-label">VOICE (TTS)</span>
-                    <div style="display:flex; gap:10px;">
+                    <div class="audio-voice-row">
                         <select id="voiceSelect" class="voice-select"><option value="">Loading...</option></select>
-                        <button class="preview-btn" id="previewVoiceBtn"><i class="fas fa-play"></i></button>
+                        <button class="preview-btn" id="previewVoiceBtn" aria-label="Test selected voice">TEST</button>
                     </div>
+                    <p class="tts-support-note" id="ttsSupportNote">Speech options come from your browser or device. On some mobile browsers, voices appear after your first tap.</p>
                 </div>
                 <div class="setting-item">
                     <div style="display:flex; justify-content:space-between; align-items:center;"><span class="setting-item-label" id="tempoLabel" style="margin:0;">TEMPO: 250 WPM</span><button class="btn-toggle" id="tempoReset" style="padding:2px 8px; font-size:0.5rem; flex:none;">RESET</button></div>
@@ -988,7 +966,6 @@
                 <div class="toggle-row"><span>Keep Awake</span><label class="switch"><input type="checkbox" id="wakeLockToggle"><span class="slider"></span></label></div>
                 <div class="toggle-row"><span>Lore Tags</span><label class="switch"><input type="checkbox" id="toggleLore" checked><span class="slider"></span></label></div>
                 <div class="toggle-row"><span>Read-Along</span><label class="switch"><input type="checkbox" id="toggleReadAlong" checked><span class="slider"></span></label></div>
-                <div class="toggle-row"><span>Show Highlights</span><label class="switch"><input type="checkbox" id="toggleHighlight" checked><span class="slider"></span></label></div>
             </div>
         </div>
     </div>
@@ -1003,27 +980,75 @@
                     <button class="settings-close" onclick="window.togglePanel(null)" aria-label="Close help">&times;</button>
                 </div>
             </div>
-            <div class="panel-body" style="padding:20px; overflow-y:auto;">
-                <div class="help-grid">
-                                        <div class="help-item">
-                        <div class="help-icon"><i class="fas fa-palette"></i></div>
-                        <div class="help-text"><h4>Color Picker</h4><p>Choose custom colors with RGB wheel or use preset colors. Add optional notes to highlights.</p></div>
+            <div class="settings-tab-bar help-tab-bar">
+                <button class="tab-btn help-tab-btn active" data-help-tab="help-overview">OVERVIEW</button>
+                <button class="tab-btn help-tab-btn" data-help-tab="help-reader">READER</button>
+                <button class="tab-btn help-tab-btn" data-help-tab="help-audio">AUDIO</button>
+                <button class="tab-btn help-tab-btn" data-help-tab="help-data">DATA</button>
+            </div>
+            <div class="panel-body help-panel-body">
+                <div class="help-tab-content active" id="help-overview">
+                    <div class="help-grid">
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-book-open"></i></div>
+                            <div class="help-text"><h4>Frame Reader</h4><p>Use the frame dropdown to move anywhere in the novel. New frame opens start at the frame heading unless you intentionally use a return or resume action.</p></div>
+                        </div>
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-arrow-up"></i></div>
+                            <div class="help-text"><h4>Frame Start</h4><p>The floating frame button always returns you to the current frame heading, even if your saved reading spot is lower on the page.</p></div>
+                        </div>
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-bookmark"></i></div>
+                            <div class="help-text"><h4>Return To Latest Page</h4><p>The homepage novel popup can send you back to your saved frame and reading position across the whole reader.</p></div>
+                        </div>
                     </div>
-                    <div class="help-item">
-                        <div class="help-icon"><i class="fas fa-download"></i></div>
-                        <div class="help-text"><h4>Download Books</h4><p>Export to EPUB, PDF, TXT, or HTML formats for use in other reading apps.</p></div>
+                </div>
+                <div class="help-tab-content" id="help-reader">
+                    <div class="help-grid">
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-tags"></i></div>
+                            <div class="help-text"><h4>Lore Tags</h4><p>Clickable names and world terms open quick-reference entries. Turn Lore Tags off in FEATS if you want plain text without highlighted terms.</p></div>
+                        </div>
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-sliders-h"></i></div>
+                            <div class="help-text"><h4>Display Controls</h4><p>Theme, font, spacing, alignment, and focus settings are saved locally on this device for the reader.</p></div>
+                        </div>
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-mobile-alt"></i></div>
+                            <div class="help-text"><h4>Popup Behavior</h4><p>Reader panels open as overlays. Background scrolling is locked while a popup is open so the page underneath stays in place.</p></div>
+                        </div>
                     </div>
-                    <div class="help-item">
-                        <div class="help-icon"><i class="fas fa-play"></i></div>
-                        <div class="help-text"><h4>Text-to-Speech</h4><p>Listen to the book with voice selection and adjustable tempo. Pause/resume functionality.</p></div>
+                </div>
+                <div class="help-tab-content" id="help-audio">
+                    <div class="help-grid">
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-play"></i></div>
+                            <div class="help-text"><h4>Read Along</h4><p>The Read Along switch in FEATS controls whether the top audio buttons are shown. Turning it off hides the TTS controls and stops active speech.</p></div>
+                        </div>
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-volume-up"></i></div>
+                            <div class="help-text"><h4>Voice & Tempo</h4><p>Choose a browser voice and test it in Settings. Tempo changes how quickly each frame is read.</p></div>
+                        </div>
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-save"></i></div>
+                            <div class="help-text"><h4>Saved Audio Spot</h4><p>TTS remembers its place per frame, so pausing one frame does not overwrite the saved spoken spot for another.</p></div>
+                        </div>
                     </div>
-                    <div class="help-item">
-                        <div class="help-icon"><i class="fas fa-cog"></i></div>
-                        <div class="help-text"><h4>Settings</h4><p>Customize theme, fonts, spacing, and reading preferences. Master reset available.</p></div>
-                    </div>
-                                        <div class="help-item">
-                        <div class="help-icon"><i class="fas fa-trash"></i></div>
-                        <div class="help-text"><h4>Master Reset</h4><p>Reset all settings to defaults with the trash button in any panel header.</p></div>
+                </div>
+                <div class="help-tab-content" id="help-data">
+                    <div class="help-grid">
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-download"></i></div>
+                            <div class="help-text"><h4>Downloads</h4><p>Export the novel to EPUB, PDF, TXT, or HTML from the download button in the top bar.</p></div>
+                        </div>
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-eraser"></i></div>
+                            <div class="help-text"><h4>Clear Novel Data</h4><p>The homepage novel popup asks for confirmation before clearing saved frame position, TTS progress, comments, and reader-specific local data.</p></div>
+                        </div>
+                        <div class="help-item">
+                            <div class="help-icon"><i class="fas fa-trash"></i></div>
+                            <div class="help-text"><h4>Master Reset</h4><p>The trash button in panel headers restores reader settings to defaults for this device.</p></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1033,12 +1058,23 @@
     <div class="panel-overlay" id="lorePanel">
         <div class="settings-panel" style="max-width: 400px;">
             <div class="panel-header" style="padding:15px 20px;"><span class="panel-title" id="loreTitle">LORE</span><button class="close-btn" onclick="window.togglePanel(null)" style="background:none; border:none; color:var(--reader-accent); cursor:pointer;">&times;</button></div>
-            <div class="panel-body" style="padding:20px;"><img id="loreImg" class="lore-img" style="display:none;"><span class="category-label" id="loreRole" style="margin-bottom:10px;">Role</span><p id="loreDesc" style="font-size:0.9rem; line-height:1.5;"></p></div>
+            <div class="panel-body lore-panel-body" style="padding:20px;">
+                <div id="loreVisuals" class="lore-visuals" style="display:none;">
+                    <div class="lore-visual-slot">
+                        <img id="loreImg" class="lore-img" alt="Primary character reference" style="display:none;">
+                        <div id="loreImgPlaceholder" class="lore-img-placeholder">CHARACTER IMAGE</div>
+                    </div>
+                    <div class="lore-visual-slot">
+                        <img id="loreImgAlt" class="lore-img" alt="Secondary character reference" style="display:none;">
+                        <div id="loreImgAltPlaceholder" class="lore-img-placeholder">ALT IMAGE</div>
+                    </div>
+                </div>
+                <span class="category-label" id="loreRole" style="margin-bottom:10px;">Role</span>
+                <p id="loreDesc" style="font-size:0.9rem; line-height:1.5;"></p>
+            </div>
         </div>
     </div>
 
-    
-    
     <style>
     .chapter-selector-container {
         position: relative;
@@ -1104,11 +1140,61 @@
     </style>
     
     <script>
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function renderFrameMarkdown(markdown) {
+        return markdown
+            .split(/\r?\n/)
+            .map(line => line.trimEnd())
+            .filter((line, index) => !(index < 2 && line.startsWith('#')))
+            .map(line => {
+                if (!line.trim()) return '';
+                if (line.trim() === '*') return '<p>*</p>';
+                const safe = escapeHtml(line)
+                    .replace(/`([^`]+)`/g, '<code>$1</code>');
+                return `<p>${safe}</p>`;
+            })
+            .join('');
+    }
+
+    function getRequestedChapterNumber() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlChapter = parseInt(urlParams.get('chapter') || '', 10);
+        if (!Number.isNaN(urlChapter) && urlChapter > 0) {
+            return urlChapter;
+        }
+
+        if (window.location.hash) {
+            const hashMatch = window.location.hash.match(/chapter=(\d+)/);
+            if (hashMatch) {
+                const hashChapter = parseInt(hashMatch[1], 10);
+                if (!Number.isNaN(hashChapter) && hashChapter > 0) {
+                    return hashChapter;
+                }
+            }
+        }
+
+        const storedChapter = parseInt(localStorage.getItem('reader_chapter') || '', 10);
+        if (!Number.isNaN(storedChapter) && storedChapter > 0) {
+            return storedChapter;
+        }
+
+        return 1;
+    }
+
     function switchToChapter(chapterNum) {
         // Close dropdown first
         document.getElementById('chapterDropdown').style.display = 'none';
-        
-        // Then refresh to the new chapter
+
+        if (typeof window.switchChapter === 'function') {
+            window.switchChapter(chapterNum);
+            return;
+        }
+
         window.location.href = `${window.location.pathname}?chapter=${chapterNum}`;
     }
     
@@ -1116,6 +1202,19 @@
         const dropdown = document.getElementById('chapterDropdown');
         const isVisible = dropdown.style.display !== 'none';
         dropdown.style.display = isVisible ? 'none' : 'block';
+
+        if (!isVisible) {
+            try {
+                const url = new URL(window.location);
+                window.history.pushState({
+                    ...(window.history.state || {}),
+                    readerView: true,
+                    chapter: typeof window.getCurrentReaderChapter === 'function' ? window.getCurrentReaderChapter() : getRequestedChapterNumber(),
+                    panel: null,
+                    menu: 'chapterDropdown'
+                }, '', url);
+            } catch (_) {}
+        }
         
         // Close when clicking outside
         if (!isVisible) {
@@ -1133,7 +1232,7 @@
         }
     }
     
-    function updateChapterLabel(chapterNum) {
+    window.updateChapterLabel = function(chapterNum) {
         const label = document.getElementById('currentChapterLabel');
         label.textContent = `FRAME ${chapterNum.toString().padStart(2, '0')}`;
         
@@ -1142,67 +1241,111 @@
         items.forEach((item, index) => {
             item.classList.toggle('active', index === chapterNum - 1);
         });
-    }
-    
-    // Also update when hash changes (for browser back/forward)
-    window.addEventListener('hashchange', function() {
-        let currentChapter = '1';
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('chapter')) {
-            currentChapter = urlParams.get('chapter');
-        } else if (window.location.hash) {
-            const hashMatch = window.location.hash.match(/chapter=(\d+)/);
-            if (hashMatch) {
-                currentChapter = hashMatch[1];
-            }
-        }
-        updateChapterLabel(parseInt(currentChapter));
-    });
-    
-    // Update the existing switchChapter function to also update the label
-    const originalSwitchChapter = window.switchChapter;
-    window.switchChapter = function(chapterNum) {
-        // Just refresh to the new chapter URL - this saves the reading position
-        window.location.href = `${window.location.pathname}?chapter=${chapterNum}`;
     };
+    
+    function syncVisibleChapterLabel(fallbackChapter = getRequestedChapterNumber()) {
+        const visibleSection = Array.from(document.querySelectorAll('section[data-chapter]')).find(section => {
+            return window.getComputedStyle(section).display !== 'none';
+        });
+
+        if (visibleSection) {
+            updateChapterLabel(parseInt(visibleSection.getAttribute('data-chapter'), 10));
+            return;
+        }
+
+        updateChapterLabel(fallbackChapter);
+    }
+
+    window.addEventListener('hashchange', function() {
+        syncVisibleChapterLabel(getRequestedChapterNumber());
+    });
+
+    window.addEventListener('popstate', function(event) {
+        const dropdown = document.getElementById('chapterDropdown');
+        if (dropdown) {
+            dropdown.style.display = event.state?.menu === 'chapterDropdown' ? 'block' : 'none';
+        }
+
+        const stateChapter = parseInt(event.state?.chapter, 10);
+        if (!Number.isNaN(stateChapter) && typeof window.switchChapterFromHistory === 'function') {
+            window.switchChapterFromHistory(stateChapter);
+            return;
+        }
+
+        if (typeof window.syncPanelHistoryState === 'function') {
+            window.syncPanelHistoryState(event.state || null);
+        }
+
+        syncVisibleChapterLabel(getRequestedChapterNumber());
+    });
+
+    window.addEventListener('chapterchange', function(event) {
+        const chapterNum = parseInt(event.detail?.chapter, 10);
+        if (!Number.isNaN(chapterNum) && chapterNum > 0) {
+            updateChapterLabel(chapterNum);
+        } else {
+            syncVisibleChapterLabel(getRequestedChapterNumber());
+        }
+    });
+
+    window.addEventListener('load', function() {
+        syncVisibleChapterLabel(getRequestedChapterNumber());
+        setTimeout(() => syncVisibleChapterLabel(getRequestedChapterNumber()), 120);
+    });
     
     // Initialize on load
     document.addEventListener('DOMContentLoaded', function() {
-        // Get current chapter from visible section using computed style
-        let currentChapter = '1';
-        
-        // Check which section is actually visible using getComputedStyle
-        const sections = document.querySelectorAll('section[data-chapter]');
-        sections.forEach(section => {
-            const computedStyle = window.getComputedStyle(section);
-            if (computedStyle.display !== 'none') {
-                currentChapter = section.getAttribute('data-chapter');
-            }
-        });
-        
-        // Fallback to URL parameters if no visible section found
-        if (currentChapter === '1') {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('chapter')) {
-                currentChapter = urlParams.get('chapter');
-            } else if (window.location.hash) {
-                const hashMatch = window.location.hash.match(/chapter=(\d+)/);
-                if (hashMatch) {
-                    currentChapter = hashMatch[1];
-                }
-            }
+        const frame06Host = document.getElementById('frame06Content');
+        if (frame06Host) {
+            fetch('assets/frame-06.md')
+                .then(response => {
+                    if (!response.ok) throw new Error('Missing FRAME 06');
+                    return response.text();
+                })
+                .then(markdown => {
+                    frame06Host.innerHTML = renderFrameMarkdown(markdown);
+                    const chapterSection = frame06Host.closest('section[data-chapter]') || frame06Host;
+                    if (typeof window.prepareTextForReading === 'function') {
+                        window.prepareTextForReading(chapterSection);
+                    }
+                    if (typeof window.setupLoreLinks === 'function') {
+                        window.setupLoreLinks(chapterSection);
+                    }
+                    if (typeof window.renderAllHighlights === 'function') {
+                        window.renderAllHighlights();
+                    }
+                    const savedScroll = localStorage.getItem('reader_scroll_ch6');
+                    if ((savedScroll === null || parseInt(savedScroll, 10) <= 0) && typeof window.scrollToChapterStart === 'function') {
+                        requestAnimationFrame(() => window.scrollToChapterStart(6));
+                    }
+                })
+                .catch(() => {
+                    frame06Host.innerHTML = '<p>FRAME 06 failed to load locally.</p>';
+                    const chapterSection = frame06Host.closest('section[data-chapter]') || frame06Host;
+                    if (typeof window.prepareTextForReading === 'function') {
+                        window.prepareTextForReading(chapterSection);
+                    }
+                    if (typeof window.setupLoreLinks === 'function') {
+                        window.setupLoreLinks(chapterSection);
+                    }
+                    if (typeof window.renderAllHighlights === 'function') {
+                        window.renderAllHighlights();
+                    }
+                    const savedScroll = localStorage.getItem('reader_scroll_ch6');
+                    if ((savedScroll === null || parseInt(savedScroll, 10) <= 0) && typeof window.scrollToChapterStart === 'function') {
+                        requestAnimationFrame(() => window.scrollToChapterStart(6));
+                    }
+                });
         }
-        
-        updateChapterLabel(parseInt(currentChapter));
-        
-        // Update active state in dropdown
-        const items = document.querySelectorAll('.chapter-item');
-        items.forEach((item, index) => {
-            item.classList.toggle('active', index === parseInt(currentChapter) - 1);
-        });
+
+        const requestedChapter = getRequestedChapterNumber();
+        updateChapterLabel(requestedChapter);
+
+        requestAnimationFrame(() => syncVisibleChapterLabel(requestedChapter));
+        setTimeout(() => syncVisibleChapterLabel(requestedChapter), 120);
     });
     </script>
     
-    <script src="assets/reader.js"></script>
+    <script src="assets/reader.js?v=20260405aj"></script>
 </body>
 </html>
