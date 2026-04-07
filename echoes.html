@@ -33,6 +33,7 @@
                     <div class="chapter-item" onclick="switchToChapter(4)">FRAME 04</div>
                     <div class="chapter-item" onclick="switchToChapter(5)">FRAME 05</div>
                     <div class="chapter-item" onclick="switchToChapter(6)">FRAME 06</div>
+                    <div class="chapter-item" onclick="switchToChapter(7)">FRAME 07</div>
                 </div>
             </div>
         </div>
@@ -828,6 +829,14 @@
                 </div>
                 <div id="frame06Content"></div>
             </section>
+
+            <section data-chapter="7" id="ch-7" style="display:none;">
+                <div class="chapter-title-wrap">
+                    <span class="chapter-number">FRAME 07</span>
+                    <h2 class="chapter-title">AFTERIMAGE</h2>
+                </div>
+                <div id="frame07Content"></div>
+            </section>
         </div>
     </div>
 
@@ -1295,48 +1304,44 @@
     
     // Initialize on load
     document.addEventListener('DOMContentLoaded', function() {
-        const frame06Host = document.getElementById('frame06Content');
-        if (frame06Host) {
-            fetch('assets/frame-06.md')
+        const loadFrameMarkdown = (hostId, assetPath, chapterNum) => {
+            const host = document.getElementById(hostId);
+            if (!host) return;
+
+            const finalizeFrameRender = () => {
+                const chapterSection = host.closest('section[data-chapter]') || host;
+                if (typeof window.prepareTextForReading === 'function') {
+                    window.prepareTextForReading(chapterSection);
+                }
+                if (typeof window.setupLoreLinks === 'function') {
+                    window.setupLoreLinks(chapterSection);
+                }
+                if (typeof window.renderAllHighlights === 'function') {
+                    window.renderAllHighlights();
+                }
+                const savedScroll = localStorage.getItem(`reader_scroll_ch${chapterNum}`);
+                if ((savedScroll === null || parseInt(savedScroll, 10) <= 0) && typeof window.scrollToChapterStart === 'function') {
+                    requestAnimationFrame(() => window.scrollToChapterStart(chapterNum));
+                }
+            };
+
+            fetch(assetPath)
                 .then(response => {
-                    if (!response.ok) throw new Error('Missing FRAME 06');
+                    if (!response.ok) throw new Error(`Missing FRAME ${chapterNum.toString().padStart(2, '0')}`);
                     return response.text();
                 })
                 .then(markdown => {
-                    frame06Host.innerHTML = renderFrameMarkdown(markdown);
-                    const chapterSection = frame06Host.closest('section[data-chapter]') || frame06Host;
-                    if (typeof window.prepareTextForReading === 'function') {
-                        window.prepareTextForReading(chapterSection);
-                    }
-                    if (typeof window.setupLoreLinks === 'function') {
-                        window.setupLoreLinks(chapterSection);
-                    }
-                    if (typeof window.renderAllHighlights === 'function') {
-                        window.renderAllHighlights();
-                    }
-                    const savedScroll = localStorage.getItem('reader_scroll_ch6');
-                    if ((savedScroll === null || parseInt(savedScroll, 10) <= 0) && typeof window.scrollToChapterStart === 'function') {
-                        requestAnimationFrame(() => window.scrollToChapterStart(6));
-                    }
+                    host.innerHTML = renderFrameMarkdown(markdown);
+                    finalizeFrameRender();
                 })
                 .catch(() => {
-                    frame06Host.innerHTML = '<p>FRAME 06 failed to load locally.</p>';
-                    const chapterSection = frame06Host.closest('section[data-chapter]') || frame06Host;
-                    if (typeof window.prepareTextForReading === 'function') {
-                        window.prepareTextForReading(chapterSection);
-                    }
-                    if (typeof window.setupLoreLinks === 'function') {
-                        window.setupLoreLinks(chapterSection);
-                    }
-                    if (typeof window.renderAllHighlights === 'function') {
-                        window.renderAllHighlights();
-                    }
-                    const savedScroll = localStorage.getItem('reader_scroll_ch6');
-                    if ((savedScroll === null || parseInt(savedScroll, 10) <= 0) && typeof window.scrollToChapterStart === 'function') {
-                        requestAnimationFrame(() => window.scrollToChapterStart(6));
-                    }
+                    host.innerHTML = `<p>FRAME ${chapterNum.toString().padStart(2, '0')} failed to load locally.</p>`;
+                    finalizeFrameRender();
                 });
-        }
+        };
+
+        loadFrameMarkdown('frame06Content', 'assets/frame-06.md', 6);
+        loadFrameMarkdown('frame07Content', 'assets/frame-07.md', 7);
 
         const requestedChapter = getRequestedChapterNumber();
         updateChapterLabel(requestedChapter);
