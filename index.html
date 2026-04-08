@@ -1863,6 +1863,31 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             
             <div id="log-game" class="sub-content active">
                 <div class="log-entry">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Pauseglass Patch">
+                    <div class="log-header">
+                        <h3>🖱️ V14.0.1 "Pauseglass Patch" - Pause Menu Hotfix + Release Realignment</h3>
+                        <span class="log-date">APR 08, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p><strong>Pauseglass Patch is the official V14.0.1 release.</strong> This hotfix promotes the current local build state into the live release line, restores pause-menu hover feedback, and drops the stale JWT/verify framing from the release story.</p>
+
+                        <h4>🖱️ UI Hotfix</h4>
+                        <ul>
+                            <li><strong>Pause Hover Restored:</strong> Pause menu buttons now refresh hover state continuously instead of only reacting after a click.</li>
+                            <li><strong>Visual Feedback Cleanup:</strong> Resume, Host World, Settings, and Save &amp; Exit now behave more like proper menu controls again.</li>
+                        </ul>
+
+                        <h4>📦 Release Realignment</h4>
+                        <ul>
+                            <li><strong>Local Build Is Canonical:</strong> V14.0.1 is cut from the current local workspace state rather than carrying forward an old JWT/verify-centered branch identity.</li>
+                            <li><strong>Version Sync:</strong> Game metadata, installer metadata, release notes, and website release history are now aligned under <code>V14.0.1</code>.</li>
+                            <li><strong>Survival Payload Preserved:</strong> The current health, hunger, fall-damage, Attunement placeholder, and UI/layout work remain part of the live build.</li>
+                        </ul>
+
+                        <p><strong>Downloads:</strong> <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v14.0.1" style="color: var(--primary);">Game V14.0.1</a> | <a href="https://github.com/latticeveil/Assets/releases/tag/v14.0.1" style="color: var(--primary);">Assets V14.0.1</a> | <a href="https://github.com/latticeveil/latticeveil.github.io/releases/download/v12.0.0/LatticeVeilInstaller.exe" style="color: var(--primary);">LatticeVeil Installer V1</a></p>
+                    </div>
+                </div>
+                <div class="log-entry">
                     <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Veilborne Vitals">
                     <div class="log-header">
                         <h3>❤️ V14.0.0 "Veilborne Vitals" - Health, Hunger, and Attunement Arrival</h3>
@@ -2406,6 +2431,20 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             <!-- WEBSITE UPDATES -->
 
             <div id="log-website" class="sub-content">
+                <div class="log-entry">
+                    <div class="log-header">
+                        <h3>Website: V14.0.1 "Pauseglass Patch" - Release Feed + Version Sync</h3>
+                        <span class="log-date">APR 08, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p>The website now tracks <code>V14.0.1</code> as the latest public game and assets release, with the updates page reflecting the pause-menu hotfix and the current local-source-truth release promotion.</p>
+                        <ul>
+                            <li><strong>Game Feed Updated:</strong> Added the new <code>V14.0.1 "Pauseglass Patch"</code> entry at the top of the GAME UPDATES log.</li>
+                            <li><strong>Cross-Repo Sync:</strong> Website release history now points to the matching <code>latticeveil/LatticeVeil</code> and <code>latticeveil/Assets</code> release tags for <code>V14.0.1</code>.</li>
+                            <li><strong>Release Framing Cleanup:</strong> Website copy now treats this as a live patch release rather than carrying the old JWT/verify branch framing forward.</li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="log-entry">
                     <div class="log-header">
                         <h3>Website: V13.0.0 "Frontier Polish" - Release Sync + Content Separation</h3>
