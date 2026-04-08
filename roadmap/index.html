@@ -37,10 +37,10 @@
             <article class="roadmap-card">
                 <h2>Current Focus</h2>
                 <p>
-                    The current real-game focus is cleanup on systems that already exist in code: profile and friends performance or UI cleanup first, then inventory usability polish. The launcher or updater flow, LAN or EOS multiplayer foundations, world creation, hotbar, and base inventory already exist. The next true gameplay implementation after cleanup is health, then hunger, then fall damage, then the first gameplay validation build.
+                    The current real-game focus is still cleanup on systems that already exist in code: profile and friends performance or UI cleanup first, then inventory usability polish. The launcher or updater flow, LAN or EOS multiplayer foundations, world creation, hotbar, and base inventory already exist. Health, hunger, and fall damage are now in the game as a first pass, and Veilwalker also has a placeholder Attunement lane. The next work is tuning, validation, and deciding what the non-placeholder Attunement loop should actually do.
                 </p>
                 <div class="roadmap-note">
-                    Repo-verified status: launcher or updater flow is <strong>ALREADY IN CODE</strong>, not missing. Profile or friends and inventory are <strong>ADDED, NEED FOLLOW-UP</strong>. Health, hunger, and fall damage are still the first real missing gameplay slice.
+                    Repo-verified status: launcher or updater flow is <strong>ALREADY IN CODE</strong>, not missing. Profile or friends and inventory are <strong>ADDED, NEED FOLLOW-UP</strong>. Health, hunger, fall damage, and the placeholder Attunement lane are now <strong>ADDED, NEED FOLLOW-UP</strong> rather than still being purely missing.
                 </div>
             </article>
 
@@ -81,10 +81,10 @@
             <article class="roadmap-card">
                 <h2>Before Public Release</h2>
                 <p>
-                    A usable public-facing build comes after the current cleanup lanes are in better shape, health and hunger are working, fall damage is in, the updater has been proven on a real gameplay release, and the world data contract is cleaner.
+                    The next stronger public-facing survival build comes after the current cleanup lanes are in better shape, the new health and hunger pass is tuned, fall damage feels right, the placeholder Attunement lane is either better integrated or safely optional, and the world data contract is cleaner.
                 </p>
                 <div class="roadmap-note">
-                    Public-build gate: profile or friends and inventory cleanup in better shape, health and hunger shipped, fall damage included, updater validated on a real feature release, world data cleaned up, and the core survival path stable enough to represent the project properly.
+                    Public-build gate now: profile or friends and inventory cleanup in better shape, the first survival slice validated in real play, Attunement clarified beyond placeholder status, updater confidence maintained on feature releases, world data cleaned up, and the core gameplay path stable enough to represent the project properly.
                 </div>
             </article>
         </section>
@@ -105,27 +105,27 @@
                     </div>
                     <div class="roadmap-order-band">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>First gameplay validation chain after cleanup</h3>
+                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
+                            <h3>Current survival follow-up after V14.0.0</h3>
                         </div>
                         <ul class="roadmap-order-list">
-                            <li><span class="roadmap-order-pill">3</span>Add health first so the player can finally fail from direct survival pressure.</li>
-                            <li><span class="roadmap-order-pill">4</span>Add hunger next, with drain, starvation, and survival save or load support.</li>
-                            <li><span class="roadmap-order-pill">5</span>Keep fall damage in that same first health pass instead of leaving it vague.</li>
-                            <li><span class="roadmap-order-pill">6</span>Ship the first gameplay validation build through the updater path.</li>
+                            <li><span class="roadmap-order-pill">3</span>Basic health is now in the build, but it still needs tuning and a fuller damage or recovery pass.</li>
+                            <li><span class="roadmap-order-pill">4</span>Basic hunger is now visible, but drain, starvation pressure, and long-play balance still need follow-up.</li>
+                            <li><span class="roadmap-order-pill">5</span>Fall damage is now real and should be tuned against terrain scale, traversal, and readability.</li>
+                            <li><span class="roadmap-order-pill">6</span>The current Attunement lane is a placeholder and needs real gameplay purpose after the default loop stabilizes.</li>
                         </ul>
                     </div>
                     <div class="roadmap-order-band">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>Foundation cleanup after the first survival slice</h3>
+                            <h3>Validation and cleanup after the first survival slice</h3>
                         </div>
                         <ul class="roadmap-order-list">
-                            <li><span class="roadmap-order-pill">7</span>Clean up <code>world.lvc</code> so the save and world contract is easier to reason about.</li>
-                            <li><span class="roadmap-order-pill">8</span>Improve launcher polish, diagnostics, and developer workflow once the first gameplay slice is proven.</li>
-                            <li><span class="roadmap-order-pill">9</span>Expand world generation later instead of treating it as the immediate blocker now.</li>
-                            <li><span class="roadmap-order-pill">10</span>Then broaden survival, combat pressure, and sandbox systems.</li>
-                            <li><span class="roadmap-order-pill">11</span>Then move into attunement, instability, portals, triumphs, music, and later account-linked skin syncing.</li>
+                            <li><span class="roadmap-order-pill">7</span>Ship and validate the first survival-era release through the updater path.</li>
+                            <li><span class="roadmap-order-pill">8</span>Clean up <code>world.lvc</code> so the save and world contract is easier to reason about.</li>
+                            <li><span class="roadmap-order-pill">9</span>Improve launcher polish, diagnostics, and developer workflow once the first gameplay slice is proven.</li>
+                            <li><span class="roadmap-order-pill">10</span>Expand world generation later instead of treating it as the immediate blocker now.</li>
+                            <li><span class="roadmap-order-pill">11</span>Then broaden survival, combat pressure, sandbox systems, and the real Attunement chain.</li>
                         </ul>
                     </div>
                 </div>
@@ -153,37 +153,45 @@
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">3</span>
                         <div class="roadmap-step-body">
-                            <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>Health system first</h3>
-                            <p>Add the visible health bar first, along with the damage and healing hooks that make health meaningful before hunger gets layered on top.</p>
+                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
+                            <h3>Health system follow-up</h3>
+                            <p>The visible health bar is now in the build. What it still needs is tuning and a fuller damage or recovery pass so it feels intentional instead of merely present.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">4</span>
                         <div class="roadmap-step-body">
-                            <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>Hunger system next</h3>
-                            <p>After health works, add the visible hunger bar, hunger drain, starvation behavior, and the save or load support needed for the first gameplay validation build.</p>
+                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
+                            <h3>Hunger system follow-up</h3>
+                            <p>The visible hunger bar is now in the build. What remains is deeper drain, starvation, save/load validation, and longer-session balance work.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">5</span>
                         <div class="roadmap-step-body">
-                            <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>Fall damage in the same first survival pass</h3>
-                            <p>Fall damage belongs in the first health-system slice instead of being pushed off into a vague later bucket.</p>
+                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
+                            <h3>Fall damage tuning</h3>
+                            <p>Fall damage now exists in the same first survival slice. The next step is making sure its feel and readability match the actual terrain scale and movement loop.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">6</span>
                         <div class="roadmap-step-body">
-                            <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>First gameplay validation build</h3>
-                            <p>Ship the health, hunger, and fall-damage build through the updater path so the already-added launcher flow gets proven on a real gameplay release.</p>
+                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
+                            <h3>Placeholder Attunement clarification</h3>
+                            <p>Veilwalker now shows the placeholder Attunement lane, but it still needs real gameplay purpose and should remain optional while the default loop is unfinished.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">7</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status planned">Planned</span>
+                            <h3>Gameplay validation build after that</h3>
+                            <p>Keep shipping and validating the first survival-era build through the updater path so the already-added launcher flow is proven on real gameplay changes, not just infrastructure work.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">8</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status planned">Planned</span>
                             <h3>World data cleanup after that</h3>
@@ -191,7 +199,7 @@
                         </div>
                     </li>
                     <li class="roadmap-step">
-                        <span class="roadmap-step-num">8</span>
+                        <span class="roadmap-step-num">9</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status planned">Planned</span>
                             <h3>Launcher and workflow improvements</h3>
@@ -199,7 +207,7 @@
                         </div>
                     </li>
                     <li class="roadmap-step">
-                        <span class="roadmap-step-num">9</span>
+                        <span class="roadmap-step-num">10</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status planned">Planned</span>
                             <h3>World generation expansion later</h3>
@@ -207,19 +215,11 @@
                         </div>
                     </li>
                     <li class="roadmap-step">
-                        <span class="roadmap-step-num">10</span>
-                        <div class="roadmap-step-body">
-                            <span class="roadmap-status planned">Planned</span>
-                            <h3>Then broader survival, sandbox, and meta systems</h3>
-                            <p>Combat pressure, automation, attunement, instability, portals, triumphs, music, and later account-linked systems stay on top of a stronger core build order.</p>
-                        </div>
-                    </li>
-                    <li class="roadmap-step">
                         <span class="roadmap-step-num">11</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>Long-term systems still stay later</h3>
-                            <p>Attunement, instability, portals, triumphs, music, and account-linked skins still belong later on top of a more dependable core game.</p>
+                            <h3>Then broader survival, sandbox, and meta systems</h3>
+                            <p>Combat pressure, automation, deeper Attunement, instability, portals, triumphs, music, and later account-linked systems stay on top of a stronger core build order.</p>
                         </div>
                     </li>
                 </ol>
@@ -269,20 +269,18 @@
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>Health Then Hunger Validation Slice</h3>
+                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
+                            <h3>Basic Survival Slice</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Add a visible health bar.</li>
-                            <li>Add damage and healing hooks needed for health to matter.</li>
-                            <li>Add a visible hunger bar.</li>
-                            <li>Add hunger drain rules.</li>
-                            <li>Add basic starvation behavior.</li>
-                            <li>Add fall damage as part of the first health-system pass.</li>
-                            <li>Use a simple first-pass fall rule: falls of 3 blocks or less are safe, and 4+ block falls deal 1 heart of damage per block beyond 3.</li>
-                            <li>Add save/load support for survival values.</li>
-                            <li>Make the survival UI readable and stable.</li>
-                            <li>Ship this as the first real gameplay update through the updater.</li>
+                            <li>Visible health is now in the build.</li>
+                            <li>Visible hunger is now in the build.</li>
+                            <li>Fall damage now exists as part of the first health-system pass.</li>
+                            <li>The survival UI is now present in normal play instead of staying fully theoretical.</li>
+                            <li>The next work is tuning, drain or starvation depth, longer-session validation, and clearer damage or recovery balance.</li>
+                            <li>Veilwalker also now has a placeholder Attunement lane, but it should not be treated as the finished progression system yet.</li>
+                            <li>The placeholder Attunement bar can be disabled per world if it is bothersome while that system is still in flux.</li>
+                            <li>The first survival-era update still needs real runtime proof and follow-up balance work.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
@@ -417,7 +415,7 @@
                         <ul class="roadmap-detail-list">
                             <li>Attunement progression</li>
                             <li>Instability progression</li>
-                            <li>Split lattice-style UI behind health and hunger</li>
+                            <li>Replace the current placeholder Attunement circle with the finished split progression system</li>
                             <li>Difficulty-based tuning differences</li>
                             <li>Visual and audio effects for high attunement or instability</li>
                             <li>Balanced-state bonuses and danger escalation</li>
