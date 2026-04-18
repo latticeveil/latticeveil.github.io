@@ -34,6 +34,7 @@
                     <div class="chapter-item" onclick="switchToChapter(5)">FRAME 05</div>
                     <div class="chapter-item" onclick="switchToChapter(6)">FRAME 06</div>
                     <div class="chapter-item" onclick="switchToChapter(7)">FRAME 07</div>
+                    <div class="chapter-item" onclick="switchToChapter(8)">FRAME 08</div>
                 </div>
             </div>
         </div>
@@ -837,6 +838,14 @@
                 </div>
                 <div id="frame07Content"></div>
             </section>
+
+            <section data-chapter="8" id="ch-8" style="display:none;">
+                <div class="chapter-title-wrap">
+                    <span class="chapter-number">FRAME 08</span>
+                    <h2 class="chapter-title">BURST LOCK</h2>
+                </div>
+                <div id="frame08Content"></div>
+            </section>
         </div>
     </div>
 
@@ -1342,6 +1351,7 @@
 
         loadFrameMarkdown('frame06Content', 'assets/frame-06.md', 6);
         loadFrameMarkdown('frame07Content', 'assets/frame-07.md', 7);
+        loadFrameMarkdown('frame08Content', 'assets/frame-08.md', 8);
 
         const requestedChapter = getRequestedChapterNumber();
         updateChapterLabel(requestedChapter);
