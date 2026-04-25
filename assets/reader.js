@@ -106,7 +106,7 @@ function loadPersistentState() {
 }
 
 const loreData = {
-    "Avery": { role: "Character", img: "assets/img/hero_bg.png", desc: "Avery Hale — lead Continuist Surveyor. He treats procedure like armor: measure first, name second, improvise never. He’s stubbornly humane in a landscape that rewards clean patterns over messy people." },
+    "Avery": { role: "Character", img: "assets/img/hero_bg.png", desc: "A Continuum surveyor whose instincts are rooted in route discipline, salvage logic, and local field procedure. Careful, dry, and deeply adapted to the world’s rules." },
     "Eli": { role: "Character", desc: "Eli, 'The Listener.' Sensitive to the Echo’s pressure and the way places try to complete themselves. He uses alcohol as a crude, risky limiter to blur the signal—buying clarity later at the cost of himself." },
     "Sister Orin": { role: "Character", desc: "Principles Veilkeeper Sealwright. Believes an open door is a debt unpaid." },
     "Kade Rowan": { role: "Character", desc: "Veteran Hearthward Guide. Specialist in safe routes and community discipline." },
@@ -114,8 +114,11 @@ const loreData = {
     "Dr. Sarah Chen": { role: "Character", desc: "Lead researcher on the real-world side of the breach. Precise, controlled, and deeply committed to getting her people home alive." },
     "Sarah Chen": { role: "Character", desc: "Lead researcher on the real-world side of the breach. Precise, controlled, and deeply committed to getting her people home alive." },
     "Sarah": { role: "Character", desc: "A scientist who treats uncertainty like something to be mapped, tested, and survived rather than feared." },
-    "Dr. Avery Chen": { role: "Character", desc: "Systems-focused researcher with a habit of analyzing impossible spaces as if they can still be reasoned with." },
-    "Avery Chen": { role: "Character", desc: "Systems-focused researcher with a habit of analyzing impossible spaces as if they can still be reasoned with." },
+    "Dr. Avery Chen": { role: "Character", desc: "A real-world engineer and researcher from Project Chimera. Methodical, protective, and trained to reduce chaos into sequence, signal, and workable decisions." },
+    "Dr. Avery": { role: "Character", desc: "A real-world engineer and researcher from Project Chimera. Methodical, protective, and trained to reduce chaos into sequence, signal, and workable decisions." },
+    "Dr.Avery Chen": { role: "Character", desc: "A real-world engineer and researcher from Project Chimera. Methodical, protective, and trained to reduce chaos into sequence, signal, and workable decisions." },
+    "Dr.Avery": { role: "Character", desc: "A real-world engineer and researcher from Project Chimera. Methodical, protective, and trained to reduce chaos into sequence, signal, and workable decisions." },
+    "Avery Chen": { role: "Character", desc: "A real-world engineer and researcher from Project Chimera. Methodical, protective, and trained to reduce chaos into sequence, signal, and workable decisions." },
     "Elijah Jay Marcus": { role: "Character", desc: "Observant analyst whose instincts are often faster than his explanations. He notices patterns other people miss, even when he wishes he did not." },
     "Elijah": { role: "Character", desc: "Observant analyst whose instincts are often faster than his explanations. He notices patterns other people miss, even when he wishes he did not." },
     "Kaden Ave Williams": { role: "Character", desc: "Communications and signal specialist carrying more strain than he lets the others see. Useful, steady, and clearly tied to unusual equipment." },
@@ -127,6 +130,8 @@ const loreData = {
     "Ascendants": { role: "Faction", desc: "Pressure-seekers who believe limits are lies." },
     "Project Chimera": { role: "Program", desc: "A classified real-world dimensional research program trying to measure, track, and survive contact with places that do not behave like ordinary reality." },
     "Chimera": { role: "Program", desc: "A classified real-world dimensional research program trying to measure, track, and survive contact with places that do not behave like ordinary reality." },
+    "Meridian Group": { role: "Company", desc: "The parent organization above Project Chimera: secretive, well-funded, and directly tied to the breach work returning from the field." },
+    "Meridian": { role: "Company", desc: "The parent organization above Project Chimera: secretive, well-funded, and directly tied to the breach work returning from the field." },
     "Continuum": { role: "Place", desc: "The voxel world at the center of the story: ancient, procedural, and full of routes, ruins, and rules that feel discovered rather than invented." },
     "Veil": { role: "Phenomenon", desc: "The Veil is the boundary between places, states, and routes—thin in some corridors, welded shut in others. When it loosens, the world starts offering ‘second doors’: outcomes that feel inevitable until you refuse to complete them." },
     "Echo": { role: "Phenomenon", desc: "The Echo is pattern-pressure: a pull toward completion. It rewards repetition, loops, and clean endings—usually by shaving away detail. People don’t vanish loudly here; they simplify." },
@@ -139,6 +144,7 @@ const loreData = {
     "survey slate": { role: "Item", desc: "A practical field tool for marks, notes, and procedures. In a place ruled by routes and repetition, writing things down can be a form of survival." },
     "Pebble": { role: "Character", desc: "A quiet Wayhound that matters more than a first glance suggests. Helpful, watchful, and clearly connected to routes and thresholds." },
     "Wayhound": { role: "Creature", desc: "A route-sensitive animal species tied to guidance, movement, and safe passage through unstable parts of the world." },
+    "Braceback": { role: "Creature", desc: "A large territorial Continuum brute associated with broken braces, damaged routes, and disturbed stone. Heavy, fast in short bursts, and dangerous in tight terrain." },
     "Crimson Veil": { role: "Dimension", desc: "A hostile voxel-only dimension deeper inside LatticeVeil’s cosmology. Dangerous, survivable, and treated like a real destination rather than a myth." },
     "Pale Archive": { role: "Dimension", desc: "A colder, quieter voxel-only dimension shaped by age, silence, and wrong spatial logic more than open aggression." },
     "Nullrock": { role: "Block", img: "assets/img/nullrock.png", desc: "World bottom (Y=0). 'Refusal made physical'." },
@@ -1036,6 +1042,34 @@ document.addEventListener('DOMContentLoaded', () => {
     updateTtsSupportUi();
 });
 
+function splitReadingSentences(html) {
+    const protectedPeriods = new Map([
+        ['Dr.', 'Dr§'],
+        ['Mr.', 'Mr§'],
+        ['Mrs.', 'Mrs§'],
+        ['Ms.', 'Ms§'],
+        ['Prof.', 'Prof§'],
+        ['Sr.', 'Sr§'],
+        ['Jr.', 'Jr§'],
+        ['St.', 'St§']
+    ]);
+
+    let protectedHtml = html;
+    protectedPeriods.forEach((token, abbreviation) => {
+        protectedHtml = protectedHtml.replaceAll(abbreviation, token);
+    });
+
+    const sentences = protectedHtml.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [protectedHtml];
+
+    return sentences.map((sentence) => {
+        let restored = sentence;
+        protectedPeriods.forEach((token, abbreviation) => {
+            restored = restored.replaceAll(token, abbreviation);
+        });
+        return restored;
+    });
+}
+
 function prepareTextForReading(scope = document) {
     const root = scope instanceof Element || scope instanceof Document ? scope : document;
     const paragraphs = root.querySelectorAll('#bookContent p, section[data-chapter] p, p');
@@ -1049,7 +1083,7 @@ function prepareTextForReading(scope = document) {
         const chapterKey = chapterSection?.dataset.chapter || 'global';
         const paragraphIndex = Array.from(chapterSection ? chapterSection.querySelectorAll('p') : document.querySelectorAll('#bookContent p')).indexOf(p);
         let html = p.innerHTML;
-        const sentences = html.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [html];
+        const sentences = splitReadingSentences(html);
 
         p.innerHTML = sentences.map((s, sIdx) =>
             `<span class="read-span" id="s-${chapterKey}-${paragraphIndex}-${sIdx}">${s.trim()}</span>`
@@ -1078,12 +1112,16 @@ function autoLinkLore(root = document) {
 
     const keys = Object.keys(loreData)
         .filter(key => key && key.length > 1)
-        .sort((a, b) => b.length - a.length);
+        .sort((a, b) => {
+            const wordDelta = b.split(/\s+/).length - a.split(/\s+/).length;
+            if (wordDelta !== 0) return wordDelta;
+            return b.length - a.length;
+        });
     const lookup = new Map(keys.map(key => [key.toLowerCase(), key]));
 
     if (!keys.length) return;
 
-    const pattern = new RegExp(`\\b(${keys.map(escapeRegex).join('|')})\\b`, 'gi');
+    const pattern = new RegExp(`(^|[^A-Za-z0-9_])(${keys.map(escapeRegex).join('|')})(?=[^A-Za-z0-9_]|$)`, 'gi');
     const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT, {
         acceptNode(node) {
             const parent = node.parentElement;
@@ -1110,12 +1148,16 @@ function autoLinkLore(root = document) {
         const fragment = document.createDocumentFragment();
 
         while ((match = pattern.exec(text)) !== null) {
-            const matchedText = match[0];
-            const key = lookup.get(String(match[1] || '').toLowerCase()) || match[1];
+            const prefix = match[1] || '';
+            const matchedText = match[2];
+            const key = lookup.get(String(match[2] || '').toLowerCase()) || match[2];
             const start = match.index;
 
             if (start > lastIndex) {
                 fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+            }
+            if (prefix) {
+                fragment.appendChild(document.createTextNode(prefix));
             }
 
             const span = document.createElement('span');
@@ -1123,7 +1165,7 @@ function autoLinkLore(root = document) {
             span.dataset.lore = key;
             span.textContent = matchedText;
             fragment.appendChild(span);
-            lastIndex = start + matchedText.length;
+            lastIndex = start + prefix.length + matchedText.length;
         }
 
         if (lastIndex < text.length) {
