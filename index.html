@@ -1871,6 +1871,50 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             
             <div id="log-game" class="sub-content active">
                 <div class="log-entry">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Soulbound Signals">
+                    <div class="log-header">
+                        <h3>V15.0.0 "Soulbound Signals" - Souls, Multiplayer Polish, and Social UI Cleanup</h3>
+                        <span class="log-date">APR 27, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p><strong>Soulbound Signals is the official V15.0.0 release.</strong> This pass strengthens multiplayer presence, adds the first working soul recovery loop, improves PvP/admin commands, and cleans up several profile, invite, and installer-facing flows.</p>
+
+                        <h4>Survival and Souls</h4>
+                        <ul>
+                            <li><strong>Working Souls:</strong> Player deaths now create recoverable souls, giving death a clearer return-and-reclaim loop.</li>
+                            <li><strong>Soul Claiming:</strong> Soul recovery now uses the crouch action instead of treating any held Shift state as the claim input.</li>
+                            <li><strong>Player Name Labels:</strong> Souls now show the fallen player's name above the soul and keep that label hovering with it.</li>
+                            <li><strong>Hunger Foundation:</strong> Hunger UI and related commands were improved, keeping the survival lane ready for full hunger behavior later.</li>
+                        </ul>
+
+                        <h4>Multiplayer and Commands</h4>
+                        <ul>
+                            <li><strong>Kill Command:</strong> Added a working <code>/kill</code> command that can target yourself, one player, or multiple listed players.</li>
+                            <li><strong>PvP Controls:</strong> Multiplayer PvP behavior and related command handling were improved for hosted worlds.</li>
+                            <li><strong>Join and Leave Feedback:</strong> Players already in-game now receive clearer join messages, and future host-left messaging is planned for the next multiplayer pass.</li>
+                            <li><strong>Invite Flow Fixes:</strong> Invite sending now uses the host's real game presence data for world, mode, and status information instead of relying on stale invite-table assumptions.</li>
+                        </ul>
+
+                        <h4>Profile, Friends, and UI</h4>
+                        <ul>
+                            <li><strong>Invite Screen Polish:</strong> Invite popups and invite lists were cleaned up with better status, mode, world-name handling, and duplicate-invite feedback.</li>
+                            <li><strong>Friends and Profiles:</strong> Friend status display now better matches normal profile status, including launcher/game states.</li>
+                            <li><strong>TAB Menu Upgrade:</strong> The TAB player list now uses profile images, larger player rows, role tags where available, and banner-backed player presentation.</li>
+                            <li><strong>Launcher Profile Pass:</strong> Launcher profile viewing and general profile presentation were improved as part of the skin/player-model prep lane.</li>
+                        </ul>
+
+                        <h4>Installer and World Backup</h4>
+                        <ul>
+                            <li><strong>Installer Refresh:</strong> The installer was rebuilt with the updated uninstaller nested inside it.</li>
+                            <li><strong>Uninstaller World Backup:</strong> The uninstaller now reads the current <code>world.lvc</code> format for game mode, seed, cheats, and world type instead of showing old defaults.</li>
+                            <li><strong>World Import Conflicts:</strong> Installer world imports now handle duplicate worlds with safer choices, including copy names like <code>World Name (1)</code>.</li>
+                            <li><strong>Asset Package Sync:</strong> The V15 asset package was refreshed so launcher asset update checks can resolve the current release correctly.</li>
+                        </ul>
+
+                        <p><strong>Downloads:</strong> <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v15.0.0" style="color: var(--primary);">Game V15.0.0</a> | <a href="https://github.com/latticeveil/Assets/releases/tag/v15.0.0" style="color: var(--primary);">Assets V15.0.0</a> | <a href="https://github.com/latticeveil/latticeveil.github.io/releases/download/v12.0.0/LatticeVeilInstaller.exe" style="color: var(--primary);">LatticeVeil Installer</a></p>
+                    </div>
+                </div>
+                <div class="log-entry">
                     <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Pauseglass Patch">
                     <div class="log-header">
                         <h3>🖱️ V14.0.1 "Pauseglass Patch" - Pause Menu Hotfix + Release Realignment</h3>
