@@ -119,7 +119,7 @@
                         <div class="roadmap-step-body">
                             <span class="roadmap-status planned">Planned</span>
                             <h3>Survival loop expansion</h3>
-                            <p>Turn hunger from a foundation into gameplay pressure, tune health and fall damage, expand death/respawn, and build toward broader survival systems.</p>
+                            <p>Build on the current hunger, regeneration, starvation, health, fall-damage, death, and soul foundations with food, crafting, damage types, and broader survival systems.</p>
                         </div>
                     </li>
                 </ol>
@@ -175,12 +175,28 @@
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status current">Shipped</span>
+                            <h3>Player model and local skin foundation</h3>
+                        </div>
+                        <ul class="roadmap-detail-list">
+                            <li>In-game player model rendering exists for local and remote players.</li>
+                            <li>The game loads the default player skin texture from the asset pack.</li>
+                            <li>Player skin textures hot-reload locally when the skin file changes.</li>
+                            <li>A generated fallback skin exists when the asset skin cannot be loaded.</li>
+                            <li>Raised skin overlay mesh data is still intentionally disabled until the next skin pass.</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status current">Shipped</span>
                             <h3>Survival and souls</h3>
                         </div>
                         <ul class="roadmap-detail-list">
                             <li>Visible health foundation exists.</li>
-                            <li>Visible hunger foundation exists, with commands and UI groundwork ready for fuller behavior.</li>
-                            <li>Fall damage exists and needs continued tuning.</li>
+                            <li>Visible hunger exists with difficulty-based hunger drain.</li>
+                            <li>Natural regeneration and starvation pressure are wired through difficulty tuning.</li>
+                            <li>Health and hunger are saved in player world state and sync through multiplayer player state.</li>
+                            <li>Health, hunger, and attunement can be adjusted with the /set command.</li>
+                            <li>Fall damage exists and still needs continued tuning.</li>
                             <li>Death/respawn handling has been improved across normal play and pause-menu edge cases.</li>
                             <li>Recoverable souls exist.</li>
                             <li>Soul claiming is tied to crouch behavior instead of generic held Shift state.</li>
@@ -199,10 +215,12 @@
                             <li>Multiplayer browser now better distinguishes request-join, invited, whitelisted, and joinable states.</li>
                             <li>Invite sending uses host presence/world/mode data instead of assuming invite-table mode fields.</li>
                             <li>Invite popup/list presentation was cleaned up with better world, mode, status, and duplicate-invite feedback.</li>
+                            <li>Invite popups and friend profile previews use contained scrolling world-name text.</li>
+                            <li>The multiplayer browser world-name column scrolls contained long names instead of clipping them.</li>
                             <li>Join messages were improved so existing players receive clearer join feedback.</li>
                             <li>Host disconnects now send HOST LEFT THE GAME through LAN/EOS shutdown reasons and the multiplayer disconnect screen.</li>
                             <li>TAB list now uses profile images and larger player presentation with banner-backed rows.</li>
-                            <li>Profile and friends status text now better reflects launcher/game state.</li>
+                            <li>Profile and friends status text now better reflects launcher/game state, including saved-friend presence refresh.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
@@ -217,6 +235,7 @@
                             <li>Give-item feedback now tells the giver they gave the item instead of repeating the recipient message.</li>
                             <li>Chat slash-open behavior no longer conflicts with inventory opening.</li>
                             <li>Kick messaging was improved so players see the intended kick message before being returned.</li>
+                            <li>Host-only /op and /deop command basics exist for operator permissions.</li>
                         </ul>
                     </div>
                 </div>
@@ -234,8 +253,8 @@
                         </div>
                         <ul class="roadmap-detail-list">
                             <li>Add a live 3D player model preview to the launcher/profile area.</li>
-                            <li>Let players see the selected skin before launching.</li>
-                            <li>Add working skin selection with local cache and a safe default appearance.</li>
+                            <li>Let players see their account-selected skin before launching.</li>
+                            <li>Add account-linked skin selection and local cached downloads on top of the existing default/local skin loader.</li>
                             <li>Support raised cosmetic overlay layers as shallow 3D surfaces over the base player model.</li>
                             <li>Keep the skin format and presentation branded as LatticeVeil's own system.</li>
                         </ul>
@@ -276,10 +295,9 @@
                         </div>
                         <ul class="roadmap-detail-list">
                             <li>Keep multiplayer browser refresh reliable so hosted worlds do not disappear while active.</li>
-                            <li>Keep testing host-disconnect handling across LAN/EOS edge cases now that HOST LEFT THE GAME is wired through the disconnect path.</li>
-                            <li>Continue polishing disconnect behavior across kick, host shutdown, connection loss, and return-to-multiplayer routing.</li>
-                            <li>Keep join messages consistent for invited, whitelisted, and normal joined players.</li>
-                            <li>Continue improving invite popup presentation and contained scrolling world-name text.</li>
+                            <li>Keep testing disconnect behavior across kick, host shutdown, connection loss, and return-to-multiplayer routing.</li>
+                            <li>Keep validating join messages for invited, whitelisted, and normal joined players under real multiplayer sessions.</li>
+                            <li>Continue hardening invite and browser refresh behavior when host presence changes quickly.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
@@ -289,10 +307,8 @@
                         </div>
                         <ul class="roadmap-detail-list">
                             <li>Reduce social refresh cost.</li>
-                            <li>Keep saved friends updating even when the game window is not focused.</li>
-                            <li>Make online/offline/launcher/in-game status text consistent across profile, friends, and invite screens.</li>
                             <li>Keep avatar/banner fetching reliable without adding avoidable lag.</li>
-                            <li>Keep blocked-user rows cheap by skipping unnecessary presence/image fetches.</li>
+                            <li>Keep blocked-user and large-list rows cheap as social lists grow.</li>
                         </ul>
                     </div>
                 </div>
@@ -323,12 +339,12 @@
                             <h3>Survival expansion</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Hunger drain, starvation pressure, saturation, and natural regeneration.</li>
-                            <li>Better health tuning, damage types, and recovery flow.</li>
+                            <li>Food items, eating flow, hunger restoration, and saturation-style balancing.</li>
+                            <li>Better health tuning, fall-damage tuning, damage types, and recovery flow.</li>
                             <li>Basic crafting for survival items.</li>
                             <li>Water behavior overhaul and swimming.</li>
-                            <li>Temperature and environmental pressure later.</li>
-                            <li>Poison, fire, drowning, starvation, suffocation, void, and combat damage pressure.</li>
+                            <li>Gameplay temperature and environmental pressure beyond the current biome climate data.</li>
+                            <li>Poison, fire, drowning, suffocation, void, and combat damage pressure.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
