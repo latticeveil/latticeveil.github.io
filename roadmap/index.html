@@ -200,6 +200,7 @@
                             <li>Invite sending uses host presence/world/mode data instead of assuming invite-table mode fields.</li>
                             <li>Invite popup/list presentation was cleaned up with better world, mode, status, and duplicate-invite feedback.</li>
                             <li>Join messages were improved so existing players receive clearer join feedback.</li>
+                            <li>Host disconnects now send HOST LEFT THE GAME through LAN/EOS shutdown reasons and the multiplayer disconnect screen.</li>
                             <li>TAB list now uses profile images and larger player presentation with banner-backed rows.</li>
                             <li>Profile and friends status text now better reflects launcher/game state.</li>
                         </ul>
@@ -275,8 +276,8 @@
                         </div>
                         <ul class="roadmap-detail-list">
                             <li>Keep multiplayer browser refresh reliable so hosted worlds do not disappear while active.</li>
-                            <li>Show a clear HOST LEFT THE GAME message when the host disconnects.</li>
-                            <li>Continue polishing disconnect behavior so joining players return to the correct multiplayer screen.</li>
+                            <li>Keep testing host-disconnect handling across LAN/EOS edge cases now that HOST LEFT THE GAME is wired through the disconnect path.</li>
+                            <li>Continue polishing disconnect behavior across kick, host shutdown, connection loss, and return-to-multiplayer routing.</li>
                             <li>Keep join messages consistent for invited, whitelisted, and normal joined players.</li>
                             <li>Continue improving invite popup presentation and contained scrolling world-name text.</li>
                         </ul>
