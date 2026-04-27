@@ -22,25 +22,26 @@
             </div>
             <h1>LatticeVeil Roadmap</h1>
             <p>
-                This page shows the current development order in public-facing form. It is arranged so the next concrete work is clearer, the later systems are separated, and the platform plans stay in their own lane.
+                This roadmap reflects the current V15.0.0 state. It separates what is already shipped, what is being cleaned up next, and what is planned for later so the public build order is easier to follow.
             </p>
         </section>
 
         <section class="roadmap-tabbar" role="tablist" aria-label="Roadmap sections">
             <button type="button" class="roadmap-tab-btn active" data-roadmap-tab="overview" aria-selected="true">OVERVIEW</button>
-            <button type="button" class="roadmap-tab-btn" data-roadmap-tab="order" aria-selected="false">ORDER</button>
-            <button type="button" class="roadmap-tab-btn" data-roadmap-tab="ideas" aria-selected="false">GAME IDEAS</button>
+            <button type="button" class="roadmap-tab-btn" data-roadmap-tab="shipped" aria-selected="false">FINISHED</button>
+            <button type="button" class="roadmap-tab-btn" data-roadmap-tab="next" aria-selected="false">NEXT</button>
+            <button type="button" class="roadmap-tab-btn" data-roadmap-tab="later" aria-selected="false">LATER</button>
             <button type="button" class="roadmap-tab-btn" data-roadmap-tab="platforms" aria-selected="false">PLATFORMS</button>
         </section>
 
         <section class="roadmap-grid roadmap-tab-panel active" data-roadmap-panel="overview">
             <article class="roadmap-card">
-                <h2>Current Focus</h2>
+                <h2>Current Public State</h2>
                 <p>
-                    The current real-game focus is still cleanup on systems that already exist in code: profile and friends performance or UI cleanup first, then inventory usability polish. The launcher or updater flow, LAN or EOS multiplayer foundations, world creation, hotbar, and base inventory already exist. Health, hunger, and fall damage are now in the game as a first pass, and Veilwalker also has a placeholder Attunement lane. The next work is tuning, validation, and deciding what the non-placeholder Attunement loop should actually do.
+                    V15.0.0 "Soulbound Signals" is the current game release. The project now has real launcher updating, asset updating, world creation, terrain generation, multiplayer hosting and joining, friends/profile surfaces, survival HUD foundations, commands, PvP controls, death/respawn work, souls, installer delivery, and a refreshed uninstaller path.
                 </p>
                 <div class="roadmap-note">
-                    Repo-verified status: launcher or updater flow is <strong>ALREADY IN CODE</strong>, not missing. Profile or friends and inventory are <strong>ADDED, NEED FOLLOW-UP</strong>. Health, hunger, fall damage, and the placeholder Attunement lane are now <strong>ADDED, NEED FOLLOW-UP</strong> rather than still being purely missing.
+                    The next major work is not another distribution reset. The next pass is focused on player appearance, skin upload/storage, world import quality-of-life, social/profile cleanup, and better host/admin tools.
                 </div>
             </article>
 
@@ -49,411 +50,338 @@
                 <div class="roadmap-phase-list">
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status testing">Added, Needs Testing</span>
-                            <h3>Already built, but still needs follow-up or runtime proof</h3>
+                            <span class="roadmap-status current">Shipped</span>
+                            <h3>Available in the current release line</h3>
                         </div>
-                        <p>Use this for systems that already exist in code but still need polish, clearer UX, or stronger runtime validation.</p>
+                        <p>Systems in this group exist in current public builds, though some may still receive polish and bug fixes.</p>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>Concrete next implementation work</h3>
+                            <span class="roadmap-status testing">Needs Follow-Up</span>
+                            <h3>Built, but still being refined</h3>
                         </div>
-                        <p>Use this for named systems that are clearly next but are not actually built yet.</p>
+                        <p>These systems are real, but need tuning, clearer UI, better edge-case handling, or more multiplayer validation.</p>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status needs-added">Next Up</span>
+                            <h3>Concrete upcoming implementation work</h3>
+                        </div>
+                        <p>These are the next planned features after the current release pass.</p>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>Confirmed later system</h3>
+                            <h3>Confirmed later direction</h3>
                         </div>
-                        <p>Use this for confirmed future work and idea pools that are decided on but are not immediate.</p>
-                    </div>
-                    <div class="roadmap-phase">
-                        <div class="roadmap-row-head">
-                            <span class="roadmap-status unlikely">Unlikely</span>
-                            <h3>Probably not happening right now</h3>
-                        </div>
-                        <p>Use this for work that is currently unrealistic, mostly for financial reasons.</p>
+                        <p>These are expected later, after the immediate next update work is stable.</p>
                     </div>
                 </div>
             </article>
 
             <article class="roadmap-card">
-                <h2>Before Public Release</h2>
-                <p>
-                    The next stronger public-facing survival build comes after the current cleanup lanes are in better shape, the new health and hunger pass is tuned, fall damage feels right, the placeholder Attunement lane is either better integrated or safely optional, and the world data contract is cleaner.
-                </p>
-                <div class="roadmap-note">
-                    Public-build gate now: profile or friends and inventory cleanup in better shape, the first survival slice validated in real play, Attunement clarified beyond placeholder status, updater confidence maintained on feature releases, world data cleaned up, and the core gameplay path stable enough to represent the project properly.
-                </div>
-            </article>
-        </section>
-
-        <section class="roadmap-grid roadmap-tab-panel" data-roadmap-panel="order" hidden>
-            <article class="roadmap-card">
-                <h2>Readable Order</h2>
-                <div class="roadmap-order-bands">
-                    <div class="roadmap-order-band">
-                        <div class="roadmap-row-head">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Now: clean up the real systems that already exist</h3>
-                        </div>
-                        <ul class="roadmap-order-list">
-                            <li><span class="roadmap-order-pill">1</span>Profile, friends, requests, and blocked-user flows already exist, but still need performance cleanup and clearer UI behavior.</li>
-                            <li><span class="roadmap-order-pill">2</span>Hotbar and inventory already exist, but inventory still needs a follow-up usability and presentation pass.</li>
-                        </ul>
-                    </div>
-                    <div class="roadmap-order-band">
-                        <div class="roadmap-row-head">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Current survival follow-up after V14.0.0</h3>
-                        </div>
-                        <ul class="roadmap-order-list">
-                            <li><span class="roadmap-order-pill">3</span>Basic health is now in the build, but it still needs tuning and a fuller damage or recovery pass.</li>
-                            <li><span class="roadmap-order-pill">4</span>Basic hunger is now visible, but drain, starvation pressure, and long-play balance still need follow-up.</li>
-                            <li><span class="roadmap-order-pill">5</span>Fall damage is now real and should be tuned against terrain scale, traversal, and readability.</li>
-                            <li><span class="roadmap-order-pill">6</span>The current Attunement lane is a placeholder and needs real gameplay purpose after the default loop stabilizes.</li>
-                        </ul>
-                    </div>
-                    <div class="roadmap-order-band">
-                        <div class="roadmap-row-head">
-                            <span class="roadmap-status planned">Planned</span>
-                            <h3>Validation and cleanup after the first survival slice</h3>
-                        </div>
-                        <ul class="roadmap-order-list">
-                            <li><span class="roadmap-order-pill">7</span>Ship and validate the first survival-era release through the updater path.</li>
-                            <li><span class="roadmap-order-pill">8</span>Clean up <code>world.lvc</code> so the save and world contract is easier to reason about.</li>
-                            <li><span class="roadmap-order-pill">9</span>Improve launcher polish, diagnostics, and developer workflow once the first gameplay slice is proven.</li>
-                            <li><span class="roadmap-order-pill">10</span>Expand world generation later instead of treating it as the immediate blocker now.</li>
-                            <li><span class="roadmap-order-pill">11</span>Then broaden survival, combat pressure, sandbox systems, and the real Attunement chain.</li>
-                        </ul>
-                    </div>
-                </div>
-            </article>
-
-            <article class="roadmap-card">
-                <h2>Step-By-Step Sequence</h2>
+                <h2>Near-Term Build Order</h2>
                 <ol class="roadmap-sequence">
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">1</span>
                         <div class="roadmap-step-body">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Profile and friends cleanup first</h3>
-                            <p>The social or profile foundations are already in code. What they still need is performance cleanup, clearer refresh behavior, and less confusing UI feedback.</p>
+                            <span class="roadmap-status testing">Current</span>
+                            <h3>Finish V15 validation</h3>
+                            <p>Validate souls, reclaiming, PvP, kill commands, invite flows, multiplayer join/leave messaging, installer world import, and uninstaller backup metadata in normal use.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">2</span>
                         <div class="roadmap-step-body">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Inventory cleanup second</h3>
-                            <p>The hotbar and inventory foundations are already real. The next pass is about clearer normal-play flow, interaction cleanup, and better presentation.</p>
+                            <span class="roadmap-status needs-added">Next Up</span>
+                            <h3>Player model and skins</h3>
+                            <p>Add the launcher player model preview, working uploaded skins, account-linked active skin selection, local caching, and R2-backed image storage with Supabase metadata.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">3</span>
                         <div class="roadmap-step-body">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Health system follow-up</h3>
-                            <p>The visible health bar is now in the build. What it still needs is tuning and a fuller damage or recovery pass so it feels intentional instead of merely present.</p>
+                            <span class="roadmap-status needs-added">Next Up</span>
+                            <h3>Game-side world importing</h3>
+                            <p>Let the game import .lvworld files placed in the Worlds folder on launch, and add an IMPORT WORLD button with a proper texture for manual imports.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">4</span>
                         <div class="roadmap-step-body">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Hunger system follow-up</h3>
-                            <p>The visible hunger bar is now in the build. What remains is deeper drain, starvation, save/load validation, and longer-session balance work.</p>
+                            <span class="roadmap-status planned">Planned</span>
+                            <h3>Admin panel and host permissions</h3>
+                            <p>Replace the standalone invite button with a host/admin panel for invites, admins, ops, build-zone permissions, break/place permissions, and role tags in the TAB list.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">5</span>
                         <div class="roadmap-step-body">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Fall damage tuning</h3>
-                            <p>Fall damage now exists in the same first survival slice. The next step is making sure its feel and readability match the actual terrain scale and movement loop.</p>
-                        </div>
-                    </li>
-                    <li class="roadmap-step">
-                        <span class="roadmap-step-num">6</span>
-                        <div class="roadmap-step-body">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Placeholder Attunement clarification</h3>
-                            <p>Veilwalker now shows the placeholder Attunement lane, but it still needs real gameplay purpose and should remain optional while the default loop is unfinished.</p>
-                        </div>
-                    </li>
-                    <li class="roadmap-step">
-                        <span class="roadmap-step-num">7</span>
-                        <div class="roadmap-step-body">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>Gameplay validation build after that</h3>
-                            <p>Keep shipping and validating the first survival-era build through the updater path so the already-added launcher flow is proven on real gameplay changes, not just infrastructure work.</p>
-                        </div>
-                    </li>
-                    <li class="roadmap-step">
-                        <span class="roadmap-step-num">8</span>
-                        <div class="roadmap-step-body">
-                            <span class="roadmap-status planned">Planned</span>
-                            <h3>World data cleanup after that</h3>
-                            <p>Lock down <code>world.lvc</code> so the save and world contract stops dragging legacy overlap around.</p>
-                        </div>
-                    </li>
-                    <li class="roadmap-step">
-                        <span class="roadmap-step-num">9</span>
-                        <div class="roadmap-step-body">
-                            <span class="roadmap-status planned">Planned</span>
-                            <h3>Launcher and workflow improvements</h3>
-                            <p>Cleaner diagnostics, direct launch behavior, and workflow polish follow once the first gameplay slice and world-data cleanup are in place.</p>
-                        </div>
-                    </li>
-                    <li class="roadmap-step">
-                        <span class="roadmap-step-num">10</span>
-                        <div class="roadmap-step-body">
-                            <span class="roadmap-status planned">Planned</span>
-                            <h3>World generation expansion later</h3>
-                            <p>Worldgen growth is still planned, but it is no longer the immediate blocker ahead of the first survival systems.</p>
-                        </div>
-                    </li>
-                    <li class="roadmap-step">
-                        <span class="roadmap-step-num">11</span>
-                        <div class="roadmap-step-body">
-                            <span class="roadmap-status planned">Planned</span>
-                            <h3>Then broader survival, sandbox, and meta systems</h3>
-                            <p>Combat pressure, automation, deeper Attunement, instability, portals, triumphs, music, and later account-linked systems stay on top of a stronger core build order.</p>
+                            <h3>Survival loop expansion</h3>
+                            <p>Turn hunger from a foundation into gameplay pressure, tune health and fall damage, expand death/respawn, and build toward broader survival systems.</p>
                         </div>
                     </li>
                 </ol>
             </article>
+        </section>
 
+        <section class="roadmap-grid roadmap-tab-panel" data-roadmap-panel="shipped" hidden>
             <article class="roadmap-card">
-                <h2>Concrete Build Order Details</h2>
+                <h2>Finished / In Current Builds</h2>
                 <div class="roadmap-phase-list">
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Launcher And Runtime Foundations</h3>
+                            <span class="roadmap-status current">Shipped</span>
+                            <h3>Launcher, installer, and update delivery</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Launcher online or offline flow already exists in code.</li>
-                            <li>Official build verification and online gating already exist.</li>
-                            <li>Asset install and game release update flow already exist.</li>
-                            <li>LAN discovery and hosting foundations already exist.</li>
-                            <li>EOS or online hosting foundations already exist.</li>
-                            <li>What remains is follow-up validation, clearer player messaging, and continued updater confidence on real gameplay releases.</li>
+                            <li>Installer-first public download flow.</li>
+                            <li>Launcher checks the latest public game release and handles game updates.</li>
+                            <li>Asset release checking, download, extraction, and installed markers are in place.</li>
+                            <li>Official online gating and build verification exist for public online play.</li>
+                            <li>Build GUI exists for local dev/release packaging and asset zip creation.</li>
+                            <li>The installer now embeds the updated uninstaller.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Profile/Friends Performance + UI Cleanup</h3>
+                            <span class="roadmap-status current">Shipped</span>
+                            <h3>World creation and world data</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Show cached profile text immediately on open.</li>
-                            <li>Refresh remote avatar and banner in the background after text is already visible.</li>
-                            <li>Keep the status panel focused on EOS or online state and refresh result.</li>
-                            <li>Rework friends, requests, and blocked users into a cleaner list with icon plus primary or secondary text.</li>
-                            <li>Reduce list and refresh friction instead of treating the whole feature as missing.</li>
+                            <li>Create-world flow exists.</li>
+                            <li>Terrain and flatlands world types exist.</li>
+                            <li>World generation toggles for structures, caves, ores, and trees exist.</li>
+                            <li>World preview generation exists.</li>
+                            <li>world.lvc is the active world metadata format.</li>
+                            <li>The uninstaller now reads the current sectioned world.lvc format for mode, seed, cheats, and world type.</li>
+                            <li>Installer world import now handles duplicate worlds with safer options and copy names such as World Name (1).</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Inventory Follow-Up Lane</h3>
+                            <span class="roadmap-status current">Shipped</span>
+                            <h3>Terrain, sandbox, and inventory foundations</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Hotbar is already done as a real foundation.</li>
-                            <li>Inventory storage and UI are already in code.</li>
-                            <li>Artificer catalog, search, favorites, and persistence already exist.</li>
-                            <li>What remains is normal-play usability cleanup, clearer interaction flow, and better presentation.</li>
+                            <li>Terrain generation, biome services, ocean/forest/hills/desert/grasslands support, chunk storage, mesh, and region foundations exist.</li>
+                            <li>Movement, flying, noclip, block break/place, raycast, hotbar, and held-block rendering exist.</li>
+                            <li>Inventory storage and UI exist.</li>
+                            <li>Artificer catalog, search, favorites, persistence, and live inventory viewing plumbing exist.</li>
+                            <li>Chat and command foundations exist.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Basic Survival Slice</h3>
+                            <span class="roadmap-status current">Shipped</span>
+                            <h3>Survival and souls</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Visible health is now in the build.</li>
-                            <li>Visible hunger is now in the build.</li>
-                            <li>Fall damage now exists as part of the first health-system pass.</li>
-                            <li>The survival UI is now present in normal play instead of staying fully theoretical.</li>
-                            <li>The next work is tuning, drain or starvation depth, longer-session validation, and clearer damage or recovery balance.</li>
-                            <li>Veilwalker also now has a placeholder Attunement lane, but it should not be treated as the finished progression system yet.</li>
-                            <li>The placeholder Attunement bar can be disabled per world if it is bothersome while that system is still in flux.</li>
-                            <li>The first survival-era update still needs real runtime proof and follow-up balance work.</li>
+                            <li>Visible health foundation exists.</li>
+                            <li>Visible hunger foundation exists, with commands and UI groundwork ready for fuller behavior.</li>
+                            <li>Fall damage exists and needs continued tuning.</li>
+                            <li>Death/respawn handling has been improved across normal play and pause-menu edge cases.</li>
+                            <li>Recoverable souls exist.</li>
+                            <li>Soul claiming is tied to crouch behavior instead of generic held Shift state.</li>
+                            <li>Souls show the fallen player's name above them.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>`world.lvc` Cleanup</h3>
+                            <span class="roadmap-status current">Shipped</span>
+                            <h3>Multiplayer and social UI</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Remove duplicate or unused entries.</li>
-                            <li>Keep canonical core fields: `Name`, `GameMode`, `CreatedAt`, `EnableCheats`, and `WorldVersion`.</li>
-                            <li>Move gameplay settings to `Gameplay.*` only.</li>
-                            <li>Move player settings to `Player.*` only.</li>
-                            <li>Move world size to `WorldGeneration.WorldSize.*` only.</li>
-                            <li>Reject partial legacy mixes instead of carrying both forever.</li>
+                            <li>LAN and online multiplayer foundations exist.</li>
+                            <li>Host/join/browser screens exist.</li>
+                            <li>Friends, requests, blocked users, invites, and presence surfaces exist.</li>
+                            <li>Multiplayer browser now better distinguishes request-join, invited, whitelisted, and joinable states.</li>
+                            <li>Invite sending uses host presence/world/mode data instead of assuming invite-table mode fields.</li>
+                            <li>Invite popup/list presentation was cleaned up with better world, mode, status, and duplicate-invite feedback.</li>
+                            <li>Join messages were improved so existing players receive clearer join feedback.</li>
+                            <li>TAB list now uses profile images and larger player presentation with banner-backed rows.</li>
+                            <li>Profile and friends status text now better reflects launcher/game state.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status testing">Added, Needs Follow-Up</span>
-                            <h3>Launcher And Workflow Improvements</h3>
+                            <span class="roadmap-status current">Shipped</span>
+                            <h3>Commands and moderation basics</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Direct launch via `CTRL` and `-game`.</li>
-                            <li>Silent background auth and hash checks with fast offline fallback.</li>
-                            <li>Debug mode activation, debug overlay, dump tools, UI inspection, and timing/report export.</li>
-                            <li>Launcher news tab with feed filters, last-read tracking, cache, and offline fallback.</li>
+                            <li>Working /kill command exists for self, one player, or multiple named players.</li>
+                            <li>/kill player-name autofill was added.</li>
+                            <li>PvP behavior and related command handling were improved.</li>
+                            <li>Give-item feedback now tells the giver they gave the item instead of repeating the recipient message.</li>
+                            <li>Chat slash-open behavior no longer conflicts with inventory opening.</li>
+                            <li>Kick messaging was improved so players see the intended kick message before being returned.</li>
                         </ul>
                     </div>
                 </div>
             </article>
         </section>
 
-        <section class="roadmap-grid roadmap-tab-panel" data-roadmap-panel="ideas" hidden>
+        <section class="roadmap-grid roadmap-tab-panel" data-roadmap-panel="next" hidden>
             <article class="roadmap-card">
-                <h2>Game Ideas Not Yet Added</h2>
-                <p>
-                    This section stays game-only. It excludes launcher workflow and platform planning.
-                </p>
+                <h2>Next Update Targets</h2>
                 <div class="roadmap-phase-list">
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status needs-added">Needs Added</span>
-                            <h3>Next Survival Chain</h3>
+                            <span class="roadmap-status needs-added">Next Up</span>
+                            <h3>Launcher player model and skin system</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Tree generation reliability + final canopy pass</li>
-                            <li>World-space tree descriptors instead of chunk-local simple-tree stamping</li>
-                            <li>Compact layered standard tree canopy</li>
-                            <li>Taller trunk-only forest variants</li>
-                            <li>Terrain relief pass with broader landform shaping and warped detail</li>
-                            <li>Proper coast, shallow ocean, and deeper ocean basin generation</li>
-                            <li>Profile loading cache-first with background refresh</li>
-                            <li>Friends, requests, and blocked users as proper list rows with icon and secondary info</li>
-                            <li>Health bar</li>
-                            <li>Fall damage</li>
-                            <li>First-pass fall rule: safe at 3 blocks or less, then 1 heart per block beyond 3</li>
-                            <li>Hunger bar</li>
-                            <li>Hunger drain and starvation behavior</li>
-                            <li>Saturation</li>
-                            <li>Natural regeneration</li>
-                            <li>Basic death and respawn</li>
-                            <li>Better respawn handling at world spawn or home</li>
-                            <li>Water behavior overhaul and swimming</li>
-                            <li>Block-breaking progress feedback and persistent breaking option</li>
-                            <li>Alternate bridge placement</li>
-                            <li>Basic crafting for survival items</li>
-                            <li>Temperature</li>
-                            <li>Poison, fire, drowning, and starvation damage types</li>
-                            <li>Fractured Soul loot-on-death</li>
+                            <li>Add a live 3D player model preview to the launcher/profile area.</li>
+                            <li>Let players see the selected skin before launching.</li>
+                            <li>Add working skin selection with local cache and a safe default appearance.</li>
+                            <li>Support raised cosmetic overlay layers as shallow 3D surfaces over the base player model.</li>
+                            <li>Keep the skin format and presentation branded as LatticeVeil's own system.</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status needs-added">Next Up</span>
+                            <h3>Veilnet skin uploads and R2 migration</h3>
+                        </div>
+                        <ul class="roadmap-detail-list">
+                            <li>Use Cloudflare R2 for profile images, banners, and skin textures.</li>
+                            <li>Use Supabase as the source of truth for ownership, active asset IDs, object keys/URLs, hashes, and timestamps.</li>
+                            <li>Allow skin uploads and skin switching from the Veilnet website.</li>
+                            <li>Migrate existing Supabase-hosted profile pictures and banners to R2 during the skin-system pass.</li>
+                            <li>Update the website, launcher, and game to fetch profile images, banners, and skins from the new R2-backed locations.</li>
+                            <li>Use hash/version checks so cached images and skins are invalidated reliably.</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status needs-added">Next Up</span>
+                            <h3>.lvworld import quality-of-life</h3>
+                        </div>
+                        <ul class="roadmap-detail-list">
+                            <li>The game should auto-detect .lvworld files placed in Documents\LatticeVeil\Worlds on launch.</li>
+                            <li>Detected .lvworld files should import into proper world folders and then be moved or marked so they do not re-import every launch.</li>
+                            <li>Duplicate imports should use World Name (1), World Name (2), and so on.</li>
+                            <li>The imported world.lvc display name should be updated so the in-game list matches the folder name.</li>
+                            <li>Add an IMPORT WORLD button to the world/select screen.</li>
+                            <li>Create a proper texture/icon for the import button.</li>
+                            <li>Manual imports and launch-time imports should share validation, duplicate naming, and player-facing error handling.</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status testing">Needs Follow-Up</span>
+                            <h3>Multiplayer reliability and host lifecycle</h3>
+                        </div>
+                        <ul class="roadmap-detail-list">
+                            <li>Keep multiplayer browser refresh reliable so hosted worlds do not disappear while active.</li>
+                            <li>Show a clear HOST LEFT THE GAME message when the host disconnects.</li>
+                            <li>Continue polishing disconnect behavior so joining players return to the correct multiplayer screen.</li>
+                            <li>Keep join messages consistent for invited, whitelisted, and normal joined players.</li>
+                            <li>Continue improving invite popup presentation and contained scrolling world-name text.</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status testing">Needs Follow-Up</span>
+                            <h3>Profile/friends cleanup</h3>
+                        </div>
+                        <ul class="roadmap-detail-list">
+                            <li>Reduce social refresh cost.</li>
+                            <li>Keep saved friends updating even when the game window is not focused.</li>
+                            <li>Make online/offline/launcher/in-game status text consistent across profile, friends, and invite screens.</li>
+                            <li>Keep avatar/banner fetching reliable without adding avoidable lag.</li>
+                            <li>Keep blocked-user rows cheap by skipping unnecessary presence/image fetches.</li>
+                        </ul>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <section class="roadmap-grid roadmap-tab-panel" data-roadmap-panel="later" hidden>
+            <article class="roadmap-card">
+                <h2>Planned Later Systems</h2>
+                <div class="roadmap-phase-list">
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status planned">Planned</span>
+                            <h3>Multiplayer admin panel</h3>
+                        </div>
+                        <ul class="roadmap-detail-list">
+                            <li>Replace the current pause-menu INVITE FRIENDS entry with an ADMIN PANEL entry for hosts and authorized admins.</li>
+                            <li>Keep friend invite/send-invite controls inside the admin panel.</li>
+                            <li>Support appointing admins separately from ops.</li>
+                            <li>Let hosts grant specific permissions instead of blanket power.</li>
+                            <li>Permission categories should cover build zones, breaking blocks, placing blocks, invites, and future moderation tools.</li>
+                            <li>TAB list role tags should show HOST, OP, and configured admin roles.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>World And Dimension Chain</h3>
+                            <h3>Survival expansion</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Hill-filled Terralith-style terrain direction</li>
-                            <li>Cliffs, valleys, arches, overhangs, and better mountains</li>
-                            <li>Biome smoothing and seed reliability</li>
-                            <li>River shaping and layered terrain noise</li>
-                            <li>Large-world and infinite-feel generation support</li>
-                            <li>Skyblock option</li>
-                            <li>Rare sky islands with unique resources</li>
-                            <li>Ancient ruins and lattice-scar terrain</li>
-                            <li>Crimson Veil dimension</li>
-                            <li>Red grass, blackened trees, blood-red sky, crimson water, and red-veined stone</li>
-                            <li>Crimson Veil biomes, materials, monster pressure, and return-portal logic</li>
-                            <li>See-through portals and portal instability stages</li>
-                            <li>Standard portals, sky-related portals, temporary rifts, and ancient gateways</li>
-                            <li>Lattice breach style world events and temporary reality failures</li>
+                            <li>Hunger drain, starvation pressure, saturation, and natural regeneration.</li>
+                            <li>Better health tuning, damage types, and recovery flow.</li>
+                            <li>Basic crafting for survival items.</li>
+                            <li>Water behavior overhaul and swimming.</li>
+                            <li>Temperature and environmental pressure later.</li>
+                            <li>Poison, fire, drowning, starvation, suffocation, void, and combat damage pressure.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>Entities, Combat, And Pressure</h3>
+                            <h3>World and dimension expansion</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Mature hostile mob and combat progression</li>
-                            <li>Stronger monster variants in late or dangerous areas</li>
-                            <li>Higher monster pressure in Crimson Veil</li>
-                            <li>Echo beings as lore-linked encounters or entities</li>
-                            <li>Fall, suffocation, void, combat, poison, fire, drowning, and starvation damage pressure</li>
+                            <li>More meaningful terrain variety with cliffs, valleys, arches, overhangs, and better mountains.</li>
+                            <li>Biome smoothing, seed reliability, river shaping, and layered terrain noise.</li>
+                            <li>Skyblock option and rare sky islands.</li>
+                            <li>Ancient ruins and lattice-scar terrain.</li>
+                            <li>Crimson Veil dimension with unique biomes, materials, pressure, and return-portal logic.</li>
+                            <li>See-through portals, temporary rifts, ancient gateways, and portal instability stages.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>Automation Chain</h3>
+                            <h3>Automation and circuits</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Command PC programmable computer block</li>
-                            <li>In-game code editor and command language</li>
-                            <li>Event-driven automation and background execution</li>
-                            <li>PC data storage and networking</li>
-                            <li>World/entity/query/messaging/file APIs</li>
-                            <li>Copper wires and colored circuits</li>
-                            <li>Connectors, repeaters, insulators, and junctions</li>
-                            <li>Concealed wiring and switch types</li>
-                            <li>Digital and analog signals</li>
-                            <li>Walls, floors, ceilings, and hidden-placement wire support</li>
-                            <li>Signal degradation, repeaters, and cross-talk prevention</li>
-                            <li>Pulse/static timer block and chained timing logic</li>
+                            <li>Command PC programmable computer block.</li>
+                            <li>In-game code editor and command language.</li>
+                            <li>Event-driven automation and background execution.</li>
+                            <li>PC data storage, networking, world/entity/query/messaging/file APIs.</li>
+                            <li>Copper wires, colored circuits, connectors, repeaters, insulators, and junctions.</li>
+                            <li>Hidden wiring, digital/analog signals, pulse/static timer blocks, and chained timing logic.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>Long-Term Meta Chain</h3>
+                            <h3>Progression, resonance, and lore systems</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Attunement progression</li>
-                            <li>Instability progression</li>
-                            <li>Replace the current placeholder Attunement circle with the finished split progression system</li>
-                            <li>Difficulty-based tuning differences</li>
-                            <li>Visual and audio effects for high attunement or instability</li>
-                            <li>Balanced-state bonuses and danger escalation</li>
-                            <li>High attunement benefits versus high instability danger</li>
-                            <li>See-through portals and portal instability stages</li>
-                            <li>Portal creation, maintenance, ancient gateways, rifts, and dimension access rules</li>
-                            <li>Triumph and achievement system</li>
-                            <li>Exploration, building, combat, resource, fishing, knowledge, farming, pets, infusion, and music triumph categories</li>
-                            <li>Reward system, progress tracking, filtering, rarity, statistics, and mod-aware ore support</li>
-                            <li>Website-based skin changing linked to the player's Veilnet account</li>
-                            <li>In-game skin sync based on the selected Veilnet account skin</li>
+                            <li>Finished Attunement progression beyond the current placeholder.</li>
+                            <li>Instability progression and balanced-state risks/rewards.</li>
+                            <li>Triumph and achievement system.</li>
+                            <li>Echo-linked encounters and environmental storytelling.</li>
+                            <li>Ancient technology blocks, lore tablets, and Continuist-linked structures.</li>
+                            <li>Music/resonance systems with instruments, recording, automation integration, and biome response.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>Lore-Linked Game Content</h3>
+                            <h3>Veilhost and dedicated server path</h3>
                         </div>
                         <ul class="roadmap-detail-list">
-                            <li>Ancient technology blocks and devices</li>
-                            <li>Parallel Earth sky phenomena</li>
-                            <li>World lore tablets and environmental storytelling</li>
-                            <li>Continuist-linked structures and procedures</li>
-                            <li>Veilkeepers, Timed Limiters, Echo hooks, and dimensional world events</li>
-                        </ul>
-                    </div>
-                    <div class="roadmap-phase">
-                        <div class="roadmap-row-head">
-                            <span class="roadmap-status planned">Planned</span>
-                            <h3>Music And Resonance Systems</h3>
-                        </div>
-                        <ul class="roadmap-detail-list">
-                            <li>Position-sensitive instruments</li>
-                            <li>Attunement-linked musical range and quality</li>
-                            <li>Ensemble and recording systems</li>
-                            <li>Signal and circuit integration for automatic instrument sequences</li>
-                            <li>Resonance stones, percussion crystals, bass obelisks, and harmony spires</li>
-                            <li>Biome response and dimensional resonance affecting musical output</li>
+                            <li>Lock Veilhost requirements after survival and host-authority gameplay are stable.</li>
+                            <li>Finalize server folder contracts for mods, packs, plugins, worlds, and host settings.</li>
+                            <li>Design admin permissions so listen-host multiplayer can grow into dedicated server management later.</li>
+                            <li>Keep account/session expectations explicit before implementation.</li>
                         </ul>
                     </div>
                 </div>
@@ -469,21 +397,21 @@
                             <span class="roadmap-status planned">Planned</span>
                             <h3>Linux</h3>
                         </div>
-                        <p>Closest future target to the current desktop direction.</p>
+                        <p>Closest future desktop target after Windows stabilizes further.</p>
                     </div>
                     <div class="roadmap-platform">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status planned">Planned</span>
                             <h3>Mac</h3>
                         </div>
-                        <p>Another realistic desktop-side target after Windows is in a better place.</p>
+                        <p>Another realistic desktop-side target after the core Windows build is stronger.</p>
                     </div>
                     <div class="roadmap-platform">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status planned">Planned</span>
                             <h3>Android</h3>
                         </div>
-                        <p>Comes after the desktop path is more mature.</p>
+                        <p>Comes after desktop gameplay and account systems are more mature.</p>
                     </div>
                     <div class="roadmap-platform">
                         <div class="roadmap-row-head">
@@ -535,15 +463,9 @@
                     </div>
                 </div>
             </article>
-
-            <article class="roadmap-card">
-                <h2>Why These Versions Are Not Out Yet</h2>
-                <p>
-                    These versions are not on those platforms yet because the project is still being finished and the resources to fund additional platform work are limited. The goal is still to strengthen the Windows-first version, then expand outward in a sustainable order.
-                </p>
-            </article>
         </section>
     </main>
+
     <script>
         (function () {
             const buttons = Array.from(document.querySelectorAll('[data-roadmap-tab]'));
