@@ -109,7 +109,9 @@ const loreData = {
     "Avery": { role: "Character", img: "assets/img/hero_bg.png", desc: "A Continuum surveyor whose instincts are rooted in route discipline, salvage logic, and local field procedure. Careful, dry, and deeply adapted to the world’s rules." },
     "Eli": { role: "Character", desc: "Eli, 'The Listener.' Sensitive to the Echo’s pressure and the way places try to complete themselves. He uses alcohol as a crude, risky limiter to blur the signal—buying clarity later at the cost of himself." },
     "Sister Orin": { role: "Character", desc: "Principles Veilkeeper Sealwright. Believes an open door is a debt unpaid." },
+    "Orin": { role: "Character", desc: "Principles Veilkeeper Sealwright. Believes an open door is a debt unpaid." },
     "Kade Rowan": { role: "Character", desc: "Veteran Hearthward Guide. Specialist in safe routes and community discipline." },
+    "Continuum Rook": { role: "Character", desc: "A Continuum route-runner waiting at Anchorfall Cliffs. Clever, useful, and too fond of shortcuts. This is the voxel-side Rook, separate from the real-world Rook." },
     "Rook": { role: "Character", desc: "Field specialist with sharp instincts and a bad habit of pushing timing right to the edge. Useful in a crisis, unsettling when the numbers stop behaving." },
     "Dr. Sarah Chen": { role: "Character", desc: "Lead researcher on the real-world side of the breach. Precise, controlled, and deeply committed to getting her people home alive." },
     "Sarah Chen": { role: "Character", desc: "Lead researcher on the real-world side of the breach. Precise, controlled, and deeply committed to getting her people home alive." },
@@ -1150,7 +1152,11 @@ function autoLinkLore(root = document) {
         while ((match = pattern.exec(text)) !== null) {
             const prefix = match[1] || '';
             const matchedText = match[2];
-            const key = lookup.get(String(match[2] || '').toLowerCase()) || match[2];
+            let key = lookup.get(String(match[2] || '').toLowerCase()) || match[2];
+            const chapterSection = node.parentElement?.closest?.('section[data-chapter]');
+            if (chapterSection?.dataset.chapter === '10' && key === 'Rook') {
+                key = 'Continuum Rook';
+            }
             const start = match.index;
 
             if (start > lastIndex) {
