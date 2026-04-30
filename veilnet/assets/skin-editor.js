@@ -551,8 +551,6 @@
   function getLocalBackupName(source, name) {
     const normalized = normalizeDisplayName(name || displayNameInput?.value || "Website Skin");
     if (source === "draft") return `${normalized} Draft`;
-    if (source === "cloud") return `${normalized} Cloud`;
-    if (source === "launcher-sync") return `${normalized} Launcher`;
     return normalized;
   }
 
@@ -757,6 +755,10 @@
     window.location.href = "latticeveil://skin-import-clipboard";
   }
 
+  function requestLauncherSkinLibraryRefresh() {
+    window.location.href = "latticeveil://skin-library-refresh";
+  }
+
   async function downloadLocalLibraryZip(entries) {
     if (!window.JSZip) throw new Error("ZIP export library did not load.");
     const zip = new JSZip();
@@ -816,12 +818,8 @@
         imported += 1;
       }
 
-      try {
-        await requestLauncherClipboardImport(entries);
-      } catch {
-        openLauncher();
-      }
-      setStatus(`Imported ${imported} skin${imported === 1 ? "" : "s"} to the launcher skin folder. Opening launcher refresh.`, "ok");
+      requestLauncherSkinLibraryRefresh();
+      setStatus(`Copied ${imported} skin${imported === 1 ? "" : "s"} to the launcher skin folder. Opening launcher refresh.`, "ok");
     } catch (err) {
       if (err?.name === "AbortError") {
         setStatus("Launcher import canceled.", "error");
