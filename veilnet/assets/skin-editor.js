@@ -20,6 +20,9 @@
   const clearCanvasBtn = document.getElementById("skinClearCanvasBtn");
   const saveBtn = document.getElementById("skinSaveBtn");
   const clearRemoteBtn = document.getElementById("skinClearRemoteBtn");
+  const backupBtn = document.getElementById("skinBackupBtn");
+  const downloadLibraryBtn = document.getElementById("skinDownloadLibraryBtn");
+  const localLibraryList = document.getElementById("skinLocalLibraryList");
 
   if (!root || !signInPanel || !editCanvas || !previewCanvas) return;
 
@@ -29,6 +32,10 @@
   const FUNCTIONS_BASE = `${String(window.VEILNET_CONFIG?.SUPABASE_URL || "").replace(/\/+$/, "")}/functions/v1`;
   const GET_URL = `${FUNCTIONS_BASE}/player-skin-get`;
   const SET_URL = `${FUNCTIONS_BASE}/player-skin-set`;
+  const LOCAL_LIBRARY_DB = "veilnet-skin-library";
+  const LOCAL_LIBRARY_STORE = "skins";
+  const LOCAL_LIBRARY_MAX = 24;
+  const LOCAL_DRAFT_ID = "__draft__";
 
   const editCtx = editCanvas.getContext("2d", { willReadFrequently: true });
   const previewCtx = previewCanvas.getContext("2d", { willReadFrequently: true });
@@ -43,6 +50,8 @@
   let lastCloudHash = "";
   let lastCloudUpdatedAt = "";
   let remoteRefreshInFlight = false;
+  let localLibraryDbPromise = null;
+  let localDraftTimer = 0;
   let playerPreview = null;
   const REMOTE_REFRESH_MS = 9000;
 
@@ -273,10 +282,11 @@
 
   function markDirty() {
     hasUnsavedChanges = true;
+    queueLocalDraftBackup();
   }
 
   function setBusy(isBusy) {
-    [loadBtn, clearCanvasBtn, saveBtn, clearRemoteBtn, importInput, penBtn, eraseBtn].forEach((el) => {
+    [loadBtn, clearCanvasBtn, saveBtn, clearRemoteBtn, importInput, penBtn, eraseBtn, backupBtn, downloadLibraryBtn].forEach((el) => {
       if (el) el.disabled = !!isBusy;
     });
   }
@@ -491,6 +501,240 @@
     return bytesToHex(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)));
   }
 
+  function openLocalLibraryDb() {
+    if (localLibraryDbPromise) return localLibraryDbPromise;
+    localLibraryDbPromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(LOCAL_LIBRARY_DB, 1);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(LOCAL_LIBRARY_STORE)) {
+          const store = db.createObjectStore(LOCAL_LIBRARY_STORE, { keyPath: "id" });
+          store.createIndex("updatedAt", "updatedAt");
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("Could not open local skin library."));
+    });
+    return localLibraryDbPromise;
+  }
+
+  async function runLibraryStore(mode, work) {
+    const db = await openLocalLibraryDb();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(LOCAL_LIBRARY_STORE, mode);
+      const store = tx.objectStore(LOCAL_LIBRARY_STORE);
+      let result;
+      tx.oncomplete = () => resolve(result);
+      tx.onerror = () => reject(tx.error || new Error("Local skin library failed."));
+      tx.onabort = () => reject(tx.error || new Error("Local skin library was aborted."));
+      result = work(store);
+    });
+  }
+
+  function requestToPromise(request) {
+    return new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("Local skin library request failed."));
+    });
+  }
+
+  async function listLocalSkins() {
+    try {
+      const entries = await runLibraryStore("readonly", (store) => requestToPromise(store.getAll()));
+      return (entries || []).sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+    } catch (err) {
+      console.warn("Local skin library list failed", err);
+      return [];
+    }
+  }
+
+  function getLocalBackupName(source, name) {
+    const normalized = normalizeDisplayName(name || displayNameInput?.value || "Website Skin");
+    if (source === "draft") return `${normalized} Draft`;
+    if (source === "cloud") return `${normalized} Cloud`;
+    if (source === "launcher-sync") return `${normalized} Launcher`;
+    return normalized;
+  }
+
+  async function saveLocalSkinBackup(source, name, options = {}) {
+    try {
+      const bytes = options.bytes || await blobToBytes(await canvasToBlob(editCanvas));
+      if (!bytes || bytes.length <= 0 || bytes.length > MAX_BYTES) return null;
+      const hash = await sha256Hex(bytes);
+      const now = new Date().toISOString();
+      const draft = !!options.draft;
+      const entry = {
+        id: draft ? LOCAL_DRAFT_ID : hash,
+        hash,
+        displayName: getLocalBackupName(source, name),
+        source,
+        pngBase64: bytesToBase64(bytes),
+        bytesLength: bytes.length,
+        hasLayers: hasVisibleSecondLayer(),
+        updatedAt: now
+      };
+
+      await runLibraryStore("readwrite", (store) => {
+        store.put(entry);
+      });
+      await trimLocalLibrary();
+      await renderLocalLibrary();
+      return entry;
+    } catch (err) {
+      console.warn("Local skin backup failed", err);
+      return null;
+    }
+  }
+
+  async function trimLocalLibrary() {
+    const entries = await listLocalSkins();
+    const history = entries.filter((entry) => entry.id !== LOCAL_DRAFT_ID);
+    const remove = history.slice(LOCAL_LIBRARY_MAX);
+    if (remove.length === 0) return;
+    await runLibraryStore("readwrite", (store) => {
+      remove.forEach((entry) => store.delete(entry.id));
+    });
+  }
+
+  function queueLocalDraftBackup() {
+    window.clearTimeout(localDraftTimer);
+    localDraftTimer = window.setTimeout(() => {
+      saveLocalSkinBackup("draft", displayNameInput?.value, { draft: true });
+    }, 1400);
+  }
+
+  function formatLibraryDate(value) {
+    const date = value ? new Date(value) : null;
+    return date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : "-";
+  }
+
+  function safeFilePart(value) {
+    return String(value || "skin")
+      .trim()
+      .replace(/[^a-z0-9._-]+/gi, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "skin";
+  }
+
+  async function restoreLocalSkin(entry) {
+    try {
+      await loadOverlayBytes(base64ToBytes(entry.pngBase64), entry.displayName);
+      markDirty();
+      setStatus("Local library skin loaded. Save to update the cloud skin.", "ok");
+    } catch (err) {
+      setStatus(err?.message || "Could not load local backup.", "error");
+    }
+  }
+
+  async function deleteLocalSkin(id) {
+    await runLibraryStore("readwrite", (store) => {
+      store.delete(id);
+    });
+    await renderLocalLibrary();
+  }
+
+  async function renderLocalLibrary() {
+    if (!localLibraryList) return;
+    const entries = await listLocalSkins();
+    localLibraryList.innerHTML = "";
+    if (entries.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "small";
+      empty.textContent = "No local backups yet.";
+      localLibraryList.appendChild(empty);
+      return;
+    }
+
+    entries.forEach((entry) => {
+      const row = document.createElement("div");
+      row.className = "skin-library-entry";
+
+      const img = document.createElement("img");
+      img.alt = "";
+      img.src = `data:image/png;base64,${entry.pngBase64}`;
+      row.appendChild(img);
+
+      const main = document.createElement("div");
+      main.className = "skin-library-entry-main";
+
+      const title = document.createElement("div");
+      title.className = "skin-library-entry-title";
+      title.textContent = entry.displayName || "Skin Backup";
+      main.appendChild(title);
+
+      const meta = document.createElement("div");
+      meta.className = "skin-library-entry-meta";
+      meta.textContent = `${entry.source || "backup"} • ${String(entry.hash || "").slice(0, 12)} • ${formatLibraryDate(entry.updatedAt)}`;
+      main.appendChild(meta);
+
+      const actions = document.createElement("div");
+      actions.className = "skin-library-entry-actions";
+
+      const restore = document.createElement("button");
+      restore.type = "button";
+      restore.className = "btn ghost";
+      restore.textContent = "Restore";
+      restore.addEventListener("click", () => restoreLocalSkin(entry));
+      actions.appendChild(restore);
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "btn ghost";
+      remove.textContent = "Delete";
+      remove.addEventListener("click", () => deleteLocalSkin(entry.id));
+      actions.appendChild(remove);
+
+      main.appendChild(actions);
+      row.appendChild(main);
+      localLibraryList.appendChild(row);
+    });
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function downloadLocalLibrary() {
+    const entries = (await listLocalSkins()).filter((entry) => entry.pngBase64);
+    if (entries.length === 0) {
+      setStatus("No local backups to download.", "error");
+      return;
+    }
+
+    try {
+      if (!window.JSZip) throw new Error("ZIP export library did not load.");
+      setStatus("Packing local skin library...");
+      const zip = new JSZip();
+      const manifest = entries.map((entry) => ({
+        filename: `${safeFilePart(entry.displayName)}-${String(entry.hash || "skin").slice(0, 12)}.png`,
+        displayName: entry.displayName,
+        hash: entry.hash,
+        source: entry.source,
+        updatedAt: entry.updatedAt,
+        hasLayers: !!entry.hasLayers
+      }));
+
+      entries.forEach((entry, index) => {
+        zip.file(manifest[index].filename, base64ToBytes(entry.pngBase64));
+      });
+      zip.file("manifest.json", JSON.stringify(manifest, null, 2));
+      const blob = await zip.generateAsync({ type: "blob" });
+      downloadBlob(blob, `latticeveil-skin-library-${new Date().toISOString().slice(0, 10)}.zip`);
+      setStatus("Local skin library downloaded.", "ok");
+    } catch (err) {
+      const first = entries[0];
+      downloadBlob(new Blob([base64ToBytes(first.pngBase64)], { type: "image/png" }), `${safeFilePart(first.displayName)}-${String(first.hash || "skin").slice(0, 12)}.png`);
+      setStatus(err?.message || "ZIP unavailable. Downloaded the newest backup as PNG.", "error");
+    }
+  }
+
   function canvasToBlob(canvas) {
     return new Promise((resolve, reject) => {
       canvas.toBlob((blob) => {
@@ -559,7 +803,8 @@
     }
 
     const skin = payload.skin;
-    await loadOverlayBytes(base64ToBytes(skin.pngBase64), skin.displayName);
+    const skinBytes = base64ToBytes(skin.pngBase64);
+    await loadOverlayBytes(skinBytes, skin.displayName);
     initialCloudLoadComplete = true;
     hasUnsavedChanges = false;
     lastCloudHash = String(skin.hash || "");
@@ -567,6 +812,7 @@
     setCloudState(skin.displayName || "Cloud skin loaded");
     if (hashTextEl) hashTextEl.textContent = String(skin.hash || "-").slice(0, 16);
     if (updatedTextEl) updatedTextEl.textContent = skin.updatedAt ? new Date(skin.updatedAt).toLocaleString() : "-";
+    await saveLocalSkinBackup(message?.includes("launcher") ? "launcher-sync" : "cloud", skin.displayName, { bytes: skinBytes });
     setStatus(message || "Cloud skin loaded.", "ok");
   }
 
@@ -649,6 +895,7 @@
       lastCloudUpdatedAt = new Date().toISOString();
       if (hashTextEl) hashTextEl.textContent = hash.slice(0, 16);
       if (updatedTextEl) updatedTextEl.textContent = new Date().toLocaleString();
+      await saveLocalSkinBackup("cloud-save", displayNameInput?.value, { bytes });
       setStatus("Game skin saved. The game will sync this account skin online.", "ok");
     } catch (err) {
       setStatus(err?.message || "Failed to save skin.", "error");
@@ -757,7 +1004,9 @@
     if (!file) return;
     try {
       if (file.type !== "image/png") throw new Error("Import must be a PNG file.");
-      await loadOverlayBytes(new Uint8Array(await file.arrayBuffer()), file.name.replace(/\.[^.]+$/, ""));
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      await loadOverlayBytes(bytes, file.name.replace(/\.[^.]+$/, ""));
+      await saveLocalSkinBackup("import", file.name.replace(/\.[^.]+$/, ""), { bytes });
       markDirty();
       setStatus("PNG imported. Save to store it online.", "ok");
     } catch (err) {
@@ -767,9 +1016,16 @@
     }
   });
 
+  backupBtn?.addEventListener("click", async () => {
+    const entry = await saveLocalSkinBackup("manual", displayNameInput?.value);
+    setStatus(entry ? "Local backup saved in this browser." : "Could not save local backup.", entry ? "ok" : "error");
+  });
+  downloadLibraryBtn?.addEventListener("click", downloadLocalLibrary);
+
   setTool("pen");
   updateBrushReadout();
   refreshPreview();
+  renderLocalLibrary();
   document.addEventListener("DOMContentLoaded", refreshAuthState);
   window.addEventListener("focus", () => {
     refreshAuthState();
