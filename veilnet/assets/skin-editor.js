@@ -569,6 +569,8 @@
       const bytes = options.bytes || await blobToBytes(await canvasToBlob(editCanvas));
       if (!bytes || bytes.length <= 0 || bytes.length > MAX_BYTES) return null;
       const hash = await sha256Hex(bytes);
+      const existingEntries = await runLibraryStore("readonly", (store) => requestToPromise(store.getAll()));
+      const sameHashEntries = (existingEntries || []).filter((entry) => String(entry?.hash || "").toLowerCase() === hash);
       const now = new Date().toISOString();
       const entry = {
         id: hash,
@@ -582,10 +584,14 @@
       };
 
       await runLibraryStore("readwrite", (store) => {
+        sameHashEntries
+          .filter((existing) => existing?.id && existing.id !== hash)
+          .forEach((existing) => store.delete(existing.id));
         store.put(entry);
       });
       await trimLocalLibrary();
       await renderLocalLibrary();
+      entry.replaced = sameHashEntries.length > 0;
       return entry;
     } catch (err) {
       console.warn("Local skin backup failed", err);
@@ -1140,7 +1146,7 @@
 
   backupBtn?.addEventListener("click", async () => {
     const entry = await saveLocalSkinBackup("manual", displayNameInput?.value);
-    setStatus(entry ? "Local backup saved in this browser." : "Could not save local backup.", entry ? "ok" : "error");
+    setStatus(entry ? (entry.replaced ? "Matching local backup updated in this browser." : "Local backup saved in this browser.") : "Could not save local backup.", entry ? "ok" : "error");
   });
   downloadLibraryBtn?.addEventListener("click", importLocalLibraryToLauncher);
 
