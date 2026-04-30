@@ -115,8 +115,8 @@
 
       this.scene = new THREE.Scene();
       this.camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
-      this.camera.position.set(0, 1.05, 5.1);
-      this.camera.lookAt(0, 1.0, 0);
+      this.camera.position.set(0, 0.12, 5.1);
+      this.camera.lookAt(0, 0.0, 0);
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       this.renderer.setPixelRatio(window.devicePixelRatio || 1);
@@ -173,7 +173,7 @@
         group.add(overlayMesh);
       });
 
-      group.position.y = -0.95;
+      group.position.y = -0.78;
       return group;
     }
 
