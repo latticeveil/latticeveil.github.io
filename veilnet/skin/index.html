@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Veilnet • Game Skin</title>
+  <link rel="icon" href="../assets/Veilnet.png" type="image/png">
+  <link rel="apple-touch-icon" href="../assets/Veilnet.png">
+  <meta name="theme-color" content="#7c5cff">
+  <link rel="stylesheet" href="../assets/veilnet.css">
+  <style>
+    .skin-shell {
+      display: grid;
+      grid-template-columns: minmax(320px, 1fr) 360px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .skin-workbench {
+      padding: 16px;
+      display: grid;
+      grid-template-columns: minmax(280px, 512px) minmax(220px, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .skin-canvas-wrap {
+      display: grid;
+      gap: 10px;
+    }
+
+    .skin-canvas-frame {
+      width: min(100%, 512px);
+      aspect-ratio: 1;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-accent);
+      background-color: rgba(0,0,0,0.45);
+      background-image:
+        linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%),
+        linear-gradient(-45deg, rgba(255,255,255,0.06) 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.06) 75%),
+        linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.06) 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+    }
+
+    #skinEditCanvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+      cursor: crosshair;
+    }
+
+    .skin-toolbar {
+      display: grid;
+      gap: 12px;
+    }
+
+    .skin-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .skin-row label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .skin-row input[type="color"] {
+      width: 52px;
+      height: 38px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+    }
+
+    .skin-row input[type="range"] {
+      width: 130px;
+    }
+
+    .skin-action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .skin-file {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      border: 1px dashed var(--border-accent);
+      border-radius: 8px;
+      color: var(--muted);
+      background: rgba(0,0,0,0.18);
+    }
+
+    .skin-preview-card {
+      padding: 16px;
+    }
+
+    .skin-preview-canvas {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.3);
+      image-rendering: pixelated;
+    }
+
+    .skin-meta {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .skin-status {
+      min-height: 1.25em;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .skin-status.is-error {
+      color: var(--red);
+    }
+
+    .skin-status.is-ok {
+      color: var(--green);
+    }
+
+    .skin-signin {
+      display: none;
+      padding: 16px;
+    }
+
+    @media (max-width: 980px) {
+      .skin-shell,
+      .skin-workbench {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand">
+        <a href="../" style="display:flex; align-items:center; gap:12px">
+          <span style="font-weight:1000">LatticeVeil</span>
+          <span class="brand-badge">Veilnet</span>
+        </a>
+      </div>
+
+      <nav class="nav" aria-label="Primary">
+        <a href="../">Home</a>
+        <a href="../community/">Community</a>
+        <a href="../messages/">Messages</a>
+        <a href="./">Game Skin</a>
+      </nav>
+
+      <div class="right">
+        <div class="pfp-wrap">
+          <div class="avatar" data-veil-avatar title="Profile">
+            <img data-veil-avatar-img src="../assets/default_pfp.png" alt="profile">
+            <span id="vnUnreadBadgeProfile" class="vn-badge vn-badge--hidden"></span>
+          </div>
+          <div class="status-ring" data-veil-ring style="--ring: rgba(255,255,255,.25); opacity:.55"></div>
+
+          <div class="dropdown" data-veil-dropdown>
+            <div class="dd-head">
+              <img data-veil-dd-img src="../assets/default_pfp.png" alt="">
+              <div>
+                <div class="dd-title" data-veil-dd-title>Not signed in</div>
+                <div class="dd-sub" data-veil-dd-sub>Login to edit your game skin</div>
+              </div>
+            </div>
+
+            <div class="dd-item" onclick="location.href='../'">
+              <span>Go to Veilnet</span><small>Home</small>
+            </div>
+
+            <div class="dd-item" onclick="location.href='../profile/'">
+              <span>My Profile</span><small>/profile</small>
+            </div>
+
+            <div class="dd-item" onclick="location.href='../settings/'">
+              <span>Settings</span><small>Link + prefs</small>
+            </div>
+
+            <div class="dd-divider"></div>
+
+            <div class="dd-item" data-veil-login>
+              <span>Login with Google</span><small>Required</small>
+            </div>
+
+            <div class="dd-item" data-veil-logout style="display:none">
+              <span>Log Out</span><small>Sign out</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" style="padding: 18px 0 34px">
+    <div class="breadcrumbs"><a href="../index.html">Veilnet</a> / Game Skin</div>
+
+    <section class="panel" style="margin-top:12px">
+      <h3>Game Skin</h3>
+      <div class="inner">
+        <div class="small">Edit the account skin used by LatticeVeil in-game and in multiplayer. Saved changes are stored in the same cloud slot the game already reads.</div>
+      </div>
+    </section>
+
+    <section id="skinSignInPanel" class="panel skin-signin" style="margin-top:12px">
+      <h3>Sign In Required</h3>
+      <div class="inner">
+        <div class="small">Log in with your Veilnet account before editing your game skin.</div>
+        <button id="skinSignInBtn" class="btn" type="button" style="margin-top:12px">Login with Google</button>
+      </div>
+    </section>
+
+    <div id="skinEditorRoot" class="skin-shell" style="margin-top:12px; display:none">
+      <section class="panel">
+        <h3>Editor</h3>
+        <div class="skin-workbench">
+          <div class="skin-canvas-wrap">
+            <div class="skin-canvas-frame">
+              <canvas id="skinEditCanvas" width="64" height="64" aria-label="Skin pixel editor"></canvas>
+            </div>
+            <div class="skin-status" id="skinStatus" aria-live="polite"></div>
+          </div>
+
+          <div class="skin-toolbar">
+            <div class="skin-row">
+              <label>Color <input id="skinColor" type="color" value="#7c5cff"></label>
+              <label>Brush <input id="skinBrushSize" type="range" min="1" max="8" value="1"></label>
+              <span class="small" id="skinBrushReadout">1 px</span>
+            </div>
+
+            <div class="skin-action-grid">
+              <button id="skinPenBtn" class="btn" type="button">Pen</button>
+              <button id="skinEraseBtn" class="btn ghost" type="button">Erase</button>
+              <button id="skinLoadBtn" class="btn ghost" type="button">Reload Cloud</button>
+              <button id="skinClearCanvasBtn" class="btn ghost" type="button">Clear Canvas</button>
+            </div>
+
+            <label class="small" for="skinDisplayName">Display name</label>
+            <input id="skinDisplayName" type="text" maxlength="32" value="Website Skin" style="width:100%; padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
+
+            <label class="small" for="skinImportFile">Import PNG</label>
+            <input id="skinImportFile" class="skin-file" type="file" accept="image/png">
+            <div class="small">64x64 PNG is preferred. Legacy 64x32 PNGs are accepted and padded to 64x64.</div>
+
+            <div class="skin-action-grid">
+              <button id="skinSaveBtn" class="btn gold" type="button">Save Game Skin</button>
+              <button id="skinClearRemoteBtn" class="btn ghost" type="button">Clear Cloud Skin</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel skin-preview-card">
+        <h3>Preview</h3>
+        <canvas id="skinPreviewCanvas" class="skin-preview-canvas" width="64" height="64" aria-label="Composited skin preview"></canvas>
+        <div class="skin-meta">
+          <div><b>Status:</b> <span id="skinCloudState">Checking cloud skin...</span></div>
+          <div><b>Hash:</b> <span id="skinHashText">-</span></div>
+          <div><b>Updated:</b> <span id="skinUpdatedText">-</span></div>
+          <div class="small">Transparent pixels keep the built-in default body underneath. Opaque pixels override the game model atlas.</div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      Veilnet game skin editor • Uses the live player skin cloud endpoint
+    </div>
+  </footer>
+
+  <script src="https://accounts.google.com/gsi/client"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../assets/config.js"></script>
+  <script src="../assets/auth.js"></script>
+  <script src="../assets/veilnet.js"></script>
+  <script src="../assets/skin-editor.js"></script>
+</body>
+</html>
