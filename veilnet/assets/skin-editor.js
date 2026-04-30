@@ -4,6 +4,7 @@
   const signInBtn = document.getElementById("skinSignInBtn");
   const editCanvas = document.getElementById("skinEditCanvas");
   const previewCanvas = document.getElementById("skinPreviewCanvas");
+  const preview3dHost = document.getElementById("skinPreview3d");
   const statusEl = document.getElementById("skinStatus");
   const cloudStateEl = document.getElementById("skinCloudState");
   const hashTextEl = document.getElementById("skinHashText");
@@ -24,6 +25,7 @@
 
   const SKIN_SIZE = 64;
   const MAX_BYTES = 32 * 1024;
+  const LAYER_INFLATE = 0.026;
   const FUNCTIONS_BASE = `${String(window.VEILNET_CONFIG?.SUPABASE_URL || "").replace(/\/+$/, "")}/functions/v1`;
   const GET_URL = `${FUNCTIONS_BASE}/player-skin-get`;
   const SET_URL = `${FUNCTIONS_BASE}/player-skin-set`;
@@ -38,6 +40,221 @@
   let lastPointer = null;
   let initialCloudLoadComplete = false;
   let hasUnsavedChanges = false;
+  let playerPreview = null;
+
+  const PLAYER_PARTS = [
+    {
+      size: { x: 0.42, y: 0.42, z: 0.42 },
+      position: { x: 0.0, y: 1.59, z: 0.0 },
+      base: boxMap([8, 0, 8, 8], [16, 0, 8, 8], [0, 8, 8, 8], [8, 8, 8, 8], [16, 8, 8, 8], [24, 8, 8, 8]),
+      overlay: boxMap([40, 0, 8, 8], [48, 0, 8, 8], [32, 8, 8, 8], [40, 8, 8, 8], [48, 8, 8, 8], [56, 8, 8, 8])
+    },
+    {
+      size: { x: 0.52, y: 0.70, z: 0.30 },
+      position: { x: 0.0, y: 1.07, z: 0.0 },
+      base: boxMap([20, 16, 8, 4], [28, 16, 8, 4], [16, 20, 4, 12], [20, 20, 8, 12], [28, 20, 4, 12], [32, 20, 8, 12]),
+      overlay: boxMap([20, 32, 8, 4], [28, 32, 8, 4], [16, 36, 4, 12], [20, 36, 8, 12], [28, 36, 4, 12], [32, 36, 8, 12])
+    },
+    {
+      size: { x: 0.24, y: 0.72, z: 0.24 },
+      position: { x: -0.38, y: 1.06, z: 0.0 },
+      base: boxMap([36, 48, 4, 4], [40, 48, 4, 4], [32, 52, 4, 12], [36, 52, 4, 12], [40, 52, 4, 12], [44, 52, 4, 12]),
+      overlay: boxMap([52, 48, 4, 4], [56, 48, 4, 4], [48, 52, 4, 12], [52, 52, 4, 12], [56, 52, 4, 12], [60, 52, 4, 12])
+    },
+    {
+      size: { x: 0.24, y: 0.72, z: 0.24 },
+      position: { x: 0.38, y: 1.06, z: 0.0 },
+      base: boxMap([44, 16, 4, 4], [48, 16, 4, 4], [40, 20, 4, 12], [44, 20, 4, 12], [48, 20, 4, 12], [52, 20, 4, 12]),
+      overlay: boxMap([44, 32, 4, 4], [48, 32, 4, 4], [40, 36, 4, 12], [44, 36, 4, 12], [48, 36, 4, 12], [52, 36, 4, 12])
+    },
+    {
+      size: { x: 0.22, y: 0.72, z: 0.24 },
+      position: { x: -0.13, y: 0.36, z: 0.0 },
+      base: boxMap([20, 48, 4, 4], [24, 48, 4, 4], [16, 52, 4, 12], [20, 52, 4, 12], [24, 52, 4, 12], [28, 52, 4, 12]),
+      overlay: boxMap([4, 48, 4, 4], [8, 48, 4, 4], [0, 52, 4, 12], [4, 52, 4, 12], [8, 52, 4, 12], [12, 52, 4, 12])
+    },
+    {
+      size: { x: 0.22, y: 0.72, z: 0.24 },
+      position: { x: 0.13, y: 0.36, z: 0.0 },
+      base: boxMap([4, 16, 4, 4], [8, 16, 4, 4], [0, 20, 4, 12], [4, 20, 4, 12], [8, 20, 4, 12], [12, 20, 4, 12]),
+      overlay: boxMap([4, 32, 4, 4], [8, 32, 4, 4], [0, 36, 4, 12], [4, 36, 4, 12], [8, 36, 4, 12], [12, 36, 4, 12])
+    }
+  ];
+
+  function rect(values) {
+    return { x: values[0], y: values[1], w: values[2], h: values[3] };
+  }
+
+  function boxMap(top, bottom, left, front, right, back) {
+    return {
+      top: rect(top),
+      bottom: rect(bottom),
+      left: rect(left),
+      front: rect(front),
+      right: rect(right),
+      back: rect(back)
+    };
+  }
+
+  class PlayerSkin3DPreview {
+    constructor(host) {
+      this.host = host;
+      this.scene = null;
+      this.camera = null;
+      this.renderer = null;
+      this.texture = null;
+      this.group = null;
+      this.animationId = 0;
+      this.isDragging = false;
+      this.previousPointer = { x: 0, y: 0 };
+      this.boundResize = () => this.resize();
+    }
+
+    init() {
+      if (!this.host || !window.THREE || this.renderer) return;
+
+      this.scene = new THREE.Scene();
+      this.camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+      this.camera.position.set(0, 1.05, 5.1);
+      this.camera.lookAt(0, 1.0, 0);
+
+      this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      this.renderer.setPixelRatio(window.devicePixelRatio || 1);
+      this.renderer.setClearColor(0x000000, 0);
+      this.renderer.outputEncoding = THREE.sRGBEncoding;
+      this.host.innerHTML = "";
+      this.host.appendChild(this.renderer.domElement);
+
+      this.texture = new THREE.CanvasTexture(previewCanvas);
+      this.texture.magFilter = THREE.NearestFilter;
+      this.texture.minFilter = THREE.NearestFilter;
+      this.texture.generateMipmaps = false;
+      this.texture.encoding = THREE.sRGBEncoding;
+
+      this.group = this.createPlayerGroup();
+      this.group.rotation.set(-0.08, 0.56, 0);
+      this.scene.add(this.group);
+      this.bindInteraction();
+      this.resize();
+      window.addEventListener("resize", this.boundResize);
+      this.animate();
+    }
+
+    createPlayerGroup() {
+      const group = new THREE.Group();
+      const baseMaterial = new THREE.MeshBasicMaterial({
+        map: this.texture,
+        transparent: true,
+        alphaTest: 0.04,
+        side: THREE.FrontSide
+      });
+      const overlayMaterial = new THREE.MeshBasicMaterial({
+        map: this.texture,
+        transparent: true,
+        alphaTest: 0.04,
+        side: THREE.FrontSide
+      });
+
+      PLAYER_PARTS.forEach((part) => {
+        const baseGeometry = new THREE.BoxGeometry(part.size.x, part.size.y, part.size.z);
+        this.applySkinUv(baseGeometry, part.base);
+        const baseMesh = new THREE.Mesh(baseGeometry, baseMaterial);
+        baseMesh.position.set(part.position.x, part.position.y, part.position.z);
+        group.add(baseMesh);
+
+        const overlayGeometry = new THREE.BoxGeometry(
+          part.size.x + (LAYER_INFLATE * 2),
+          part.size.y + (LAYER_INFLATE * 2),
+          part.size.z + (LAYER_INFLATE * 2)
+        );
+        this.applySkinUv(overlayGeometry, part.overlay);
+        const overlayMesh = new THREE.Mesh(overlayGeometry, overlayMaterial);
+        overlayMesh.position.copy(baseMesh.position);
+        group.add(overlayMesh);
+      });
+
+      group.position.y = -0.95;
+      return group;
+    }
+
+    applySkinUv(geometry, rects) {
+      const faceRects = [
+        rects.right,
+        rects.left,
+        rects.top,
+        rects.bottom,
+        rects.front,
+        rects.back
+      ];
+      const uv = geometry.attributes.uv;
+      faceRects.forEach((r, i) => {
+        const u0 = r.x / SKIN_SIZE;
+        const u1 = (r.x + r.w) / SKIN_SIZE;
+        const v0 = 1 - ((r.y + r.h) / SKIN_SIZE);
+        const v1 = 1 - (r.y / SKIN_SIZE);
+        this.writeFaceUv(uv, i, u0, v0, u1, v1);
+      });
+      uv.needsUpdate = true;
+    }
+
+    writeFaceUv(uv, faceIndex, u0, v0, u1, v1) {
+      const base = faceIndex * 4;
+      const epsilon = 0.0008;
+      const left = u0 + epsilon;
+      const right = u1 - epsilon;
+      const bottom = v0 + epsilon;
+      const top = v1 - epsilon;
+      uv.setXY(base, left, top);
+      uv.setXY(base + 1, right, top);
+      uv.setXY(base + 2, left, bottom);
+      uv.setXY(base + 3, right, bottom);
+    }
+
+    bindInteraction() {
+      this.host.addEventListener("pointerdown", (event) => {
+        this.isDragging = true;
+        this.previousPointer = { x: event.clientX, y: event.clientY };
+        this.host.setPointerCapture(event.pointerId);
+      });
+      this.host.addEventListener("pointermove", (event) => {
+        if (!this.isDragging || !this.group) return;
+        const dx = event.clientX - this.previousPointer.x;
+        const dy = event.clientY - this.previousPointer.y;
+        this.group.rotation.y += dx * 0.01;
+        this.group.rotation.x = Math.max(-0.55, Math.min(0.35, this.group.rotation.x + dy * 0.006));
+        this.previousPointer = { x: event.clientX, y: event.clientY };
+      });
+      const stop = () => { this.isDragging = false; };
+      this.host.addEventListener("pointerup", stop);
+      this.host.addEventListener("pointercancel", stop);
+      this.host.addEventListener("wheel", (event) => {
+        if (!this.camera) return;
+        event.preventDefault();
+        this.camera.position.z = Math.max(3.2, Math.min(7.2, this.camera.position.z + Math.sign(event.deltaY) * 0.28));
+      }, { passive: false });
+    }
+
+    resize() {
+      if (!this.host || !this.renderer || !this.camera) return;
+      const rect = this.host.getBoundingClientRect();
+      const width = Math.max(1, Math.floor(rect.width));
+      const height = Math.max(1, Math.floor(rect.height));
+      this.renderer.setSize(width, height, false);
+      this.camera.aspect = width / height;
+      this.camera.updateProjectionMatrix();
+    }
+
+    updateTexture() {
+      this.init();
+      if (this.texture) this.texture.needsUpdate = true;
+    }
+
+    animate() {
+      this.animationId = requestAnimationFrame(() => this.animate());
+      if (!this.renderer || !this.scene || !this.camera) return;
+      this.renderer.render(this.scene, this.camera);
+    }
+  }
 
   function setStatus(message, tone) {
     if (!statusEl) return;
@@ -173,6 +390,15 @@
     previewCtx.clearRect(0, 0, SKIN_SIZE, SKIN_SIZE);
     previewCtx.putImageData(createDefaultSkinImageData(), 0, 0);
     previewCtx.drawImage(editCanvas, 0, 0);
+    ensure3DPreview();
+    if (playerPreview) playerPreview.updateTexture();
+  }
+
+  function ensure3DPreview() {
+    if (!preview3dHost || !window.THREE) return;
+    if (!playerPreview) playerPreview = new PlayerSkin3DPreview(preview3dHost);
+    playerPreview.init();
+    playerPreview.resize();
   }
 
   function setTool(tool) {
@@ -433,6 +659,7 @@
     const signedIn = !!user;
     signInPanel.style.display = signedIn ? "none" : "block";
     root.style.display = signedIn ? "grid" : "none";
+    if (signedIn) ensure3DPreview();
     if (signedIn && !initialCloudLoadComplete && !hasUnsavedChanges) fetchCloudSkin();
   }
 
