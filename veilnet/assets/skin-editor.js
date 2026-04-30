@@ -35,7 +35,6 @@
   const LOCAL_LIBRARY_DB = "veilnet-skin-library";
   const LOCAL_LIBRARY_STORE = "skins";
   const LOCAL_LIBRARY_MAX = 24;
-  const LOCAL_DRAFT_ID = "__draft__";
 
   const editCtx = editCanvas.getContext("2d", { willReadFrequently: true });
   const previewCtx = previewCanvas.getContext("2d", { willReadFrequently: true });
@@ -48,10 +47,10 @@
   let initialCloudLoadComplete = false;
   let hasUnsavedChanges = false;
   let lastCloudHash = "";
+  let lastCloudDisplayName = "";
   let lastCloudUpdatedAt = "";
   let remoteRefreshInFlight = false;
   let localLibraryDbPromise = null;
-  let localDraftTimer = 0;
   let playerPreview = null;
   const REMOTE_REFRESH_MS = 9000;
 
@@ -282,7 +281,6 @@
 
   function markDirty() {
     hasUnsavedChanges = true;
-    queueLocalDraftBackup();
   }
 
   function setBusy(isBusy) {
@@ -541,7 +539,9 @@
   async function listLocalSkins() {
     try {
       const entries = await runLibraryStore("readonly", (store) => requestToPromise(store.getAll()));
-      return (entries || []).sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+      return (entries || [])
+        .filter((entry) => entry?.source !== "draft" && entry?.id !== "__draft__")
+        .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
     } catch (err) {
       console.warn("Local skin library list failed", err);
       return [];
@@ -561,7 +561,6 @@
 
   function getLocalBackupName(source, name) {
     const normalized = normalizeDisplayName(name || displayNameInput?.value || "Website Skin");
-    if (source === "draft") return `${normalized} Draft`;
     return normalized;
   }
 
@@ -571,9 +570,8 @@
       if (!bytes || bytes.length <= 0 || bytes.length > MAX_BYTES) return null;
       const hash = await sha256Hex(bytes);
       const now = new Date().toISOString();
-      const draft = !!options.draft;
       const entry = {
-        id: draft ? LOCAL_DRAFT_ID : hash,
+        id: hash,
         hash,
         displayName: getLocalBackupName(source, name),
         source,
@@ -597,19 +595,11 @@
 
   async function trimLocalLibrary() {
     const entries = await listLocalSkins();
-    const history = entries.filter((entry) => entry.id !== LOCAL_DRAFT_ID);
-    const remove = history.slice(LOCAL_LIBRARY_MAX);
+    const remove = entries.slice(LOCAL_LIBRARY_MAX);
     if (remove.length === 0) return;
     await runLibraryStore("readwrite", (store) => {
       remove.forEach((entry) => store.delete(entry.id));
     });
-  }
-
-  function queueLocalDraftBackup() {
-    window.clearTimeout(localDraftTimer);
-    localDraftTimer = window.setTimeout(() => {
-      saveLocalSkinBackup("draft", displayNameInput?.value, { draft: true });
-    }, 1400);
   }
 
   function formatLibraryDate(value) {
@@ -913,6 +903,7 @@
       initialCloudLoadComplete = true;
       hasUnsavedChanges = false;
       lastCloudHash = "";
+      lastCloudDisplayName = "";
       lastCloudUpdatedAt = "";
       setCloudState("No cloud skin saved. Game will use default.");
       if (hashTextEl) hashTextEl.textContent = "-";
@@ -928,6 +919,7 @@
     initialCloudLoadComplete = true;
     hasUnsavedChanges = false;
     lastCloudHash = String(skin.hash || "");
+    lastCloudDisplayName = normalizeDisplayName(skin.displayName);
     lastCloudUpdatedAt = String(skin.updatedAt || "");
     setCloudState(skin.displayName || "Cloud skin loaded");
     if (hashTextEl) hashTextEl.textContent = String(skin.hash || "-").slice(0, 16);
@@ -983,10 +975,8 @@
   }
 
   async function saveCloudSkin() {
-    setBusy(true);
     setStatus("Encoding skin...");
     try {
-      const token = await getTokenOrThrow();
       const blob = await canvasToBlob(editCanvas);
       const bytes = await blobToBytes(blob);
       if (bytes.length <= 0 || bytes.length > MAX_BYTES) {
@@ -994,6 +984,17 @@
       }
 
       const hash = await sha256Hex(bytes);
+      const displayName = normalizeDisplayName(displayNameInput?.value);
+      const unchanged = !!lastCloudHash
+        && hash === String(lastCloudHash || "").toLowerCase()
+        && displayName === normalizeDisplayName(lastCloudDisplayName);
+      if (unchanged && !confirm("This skin is already saved online with no changes. Save it again anyway?")) {
+        setStatus("Save canceled. No skin changes were detected.", "ok");
+        return;
+      }
+
+      setBusy(true);
+      const token = await getTokenOrThrow();
       setStatus("Saving skin...");
       const res = await fetch(SET_URL, {
         method: "POST",
@@ -1002,16 +1003,17 @@
           action: "set",
           hash,
           pngBase64: bytesToBase64(bytes),
-          displayName: normalizeDisplayName(displayNameInput?.value),
+          displayName,
           hasLayers: hasVisibleSecondLayer()
         })
       });
       const payload = await res.json().catch(() => ({}));
       if (!res.ok || payload.ok === false) throw new Error(payload.error || `HTTP ${res.status}`);
 
-      setCloudState(`${normalizeDisplayName(displayNameInput?.value)} saved`);
+      setCloudState(`${displayName} saved`);
       hasUnsavedChanges = false;
       lastCloudHash = hash;
+      lastCloudDisplayName = displayName;
       lastCloudUpdatedAt = new Date().toISOString();
       if (hashTextEl) hashTextEl.textContent = hash.slice(0, 16);
       if (updatedTextEl) updatedTextEl.textContent = new Date().toLocaleString();
@@ -1061,6 +1063,7 @@
       setCloudState("No cloud skin saved. Game will use default.");
       initialCloudLoadComplete = true;
       lastCloudHash = "";
+      lastCloudDisplayName = "";
       lastCloudUpdatedAt = "";
       if (hashTextEl) hashTextEl.textContent = "-";
       if (updatedTextEl) updatedTextEl.textContent = "-";
@@ -1126,7 +1129,6 @@
       if (file.type !== "image/png") throw new Error("Import must be a PNG file.");
       const bytes = new Uint8Array(await file.arrayBuffer());
       await loadOverlayBytes(bytes, file.name.replace(/\.[^.]+$/, ""));
-      await saveLocalSkinBackup("import", file.name.replace(/\.[^.]+$/, ""), { bytes });
       markDirty();
       setStatus("PNG imported. Save to store it online.", "ok");
     } catch (err) {
