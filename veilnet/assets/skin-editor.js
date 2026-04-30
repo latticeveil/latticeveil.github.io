@@ -816,8 +816,12 @@
         imported += 1;
       }
 
-      openLauncher();
-      setStatus(`Imported ${imported} skin${imported === 1 ? "" : "s"} to the launcher skin folder.`, "ok");
+      try {
+        await requestLauncherClipboardImport(entries);
+      } catch {
+        openLauncher();
+      }
+      setStatus(`Imported ${imported} skin${imported === 1 ? "" : "s"} to the launcher skin folder. Opening launcher refresh.`, "ok");
     } catch (err) {
       if (err?.name === "AbortError") {
         setStatus("Launcher import canceled.", "error");
