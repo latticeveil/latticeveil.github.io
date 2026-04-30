@@ -114,17 +114,17 @@
 
     .skin-library-list {
       display: grid;
-      gap: 8px;
-      max-height: 260px;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      max-height: 360px;
       overflow: auto;
       padding-right: 2px;
     }
 
     .skin-library-entry {
       display: grid;
-      grid-template-columns: 44px minmax(0, 1fr);
-      gap: 9px;
-      align-items: center;
+      gap: 8px;
+      align-items: start;
       padding: 8px;
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -132,12 +132,14 @@
     }
 
     .skin-library-entry img {
-      width: 44px;
-      height: 44px;
+      width: 100%;
+      aspect-ratio: 1;
+      height: auto;
       border-radius: 6px;
       image-rendering: pixelated;
       background: rgba(0,0,0,0.35);
       border: 1px solid var(--border);
+      object-fit: contain;
     }
 
     .skin-library-entry-main {
@@ -173,6 +175,12 @@
       padding: 6px 8px;
       font-size: 11px;
       border-radius: 7px;
+    }
+
+    .skin-library-folder-note {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
     }
 
     .skin-file {
@@ -370,8 +378,9 @@
               </div>
               <div class="skin-action-grid">
                 <button id="skinBackupBtn" class="btn ghost" type="button">Save Local Backup</button>
-                <button id="skinDownloadLibraryBtn" class="btn ghost" type="button">Download Library</button>
+                <button id="skinDownloadLibraryBtn" class="btn ghost" type="button">Import To Launcher</button>
               </div>
+              <div class="skin-library-folder-note">When prompted, choose your LatticeVeil skins folder: AppData / Roaming / LatticeVeil / Runtime / skins.</div>
               <div id="skinLocalLibraryList" class="skin-library-list" aria-live="polite"></div>
             </div>
           </div>

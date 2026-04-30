@@ -616,6 +616,23 @@
       .slice(0, 40) || "skin";
   }
 
+  function createLvskinMetadata(entry) {
+    return {
+      Format: "lvskin",
+      Version: 1,
+      SkinFormat: "skin-64x64",
+      Sha256: entry.hash || "",
+      DisplayName: normalizeDisplayName(entry.displayName),
+      SourceFileName: normalizeDisplayName(entry.displayName),
+      Width: SKIN_SIZE,
+      Height: SKIN_SIZE,
+      HasLayers: !!entry.hasLayers,
+      Mime: "image/png",
+      UpdatedAtUtc: entry.updatedAt || new Date().toISOString(),
+      PngBase64: entry.pngBase64 || ""
+    };
+  }
+
   async function restoreLocalSkin(entry) {
     try {
       await loadOverlayBytes(base64ToBytes(entry.pngBase64), entry.displayName);
@@ -684,6 +701,18 @@
       remove.addEventListener("click", () => deleteLocalSkin(entry.id));
       actions.appendChild(remove);
 
+      const download = document.createElement("button");
+      download.type = "button";
+      download.className = "btn ghost";
+      download.textContent = "PNG";
+      download.addEventListener("click", () => {
+        downloadBlob(
+          new Blob([base64ToBytes(entry.pngBase64)], { type: "image/png" }),
+          `${safeFilePart(entry.displayName)}-${String(entry.hash || "skin").slice(0, 12)}.png`
+        );
+      });
+      actions.appendChild(download);
+
       main.appendChild(actions);
       row.appendChild(main);
       localLibraryList.appendChild(row);
@@ -701,37 +730,113 @@
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  async function downloadLocalLibrary() {
+  function openLauncher() {
+    window.location.href = "latticeveil://launch";
+  }
+
+  function createLauncherClipboardPayload(entries) {
+    return JSON.stringify({
+      Format: "latticeveil-browser-skin-library",
+      Version: 1,
+      ExportedAtUtc: new Date().toISOString(),
+      Skins: entries.map((entry) => ({
+        Hash: String(entry.hash || "").toLowerCase(),
+        DisplayName: normalizeDisplayName(entry.displayName),
+        PngBase64: entry.pngBase64 || ""
+      }))
+    });
+  }
+
+  async function copyLibraryPayloadToClipboard(entries) {
+    if (!navigator.clipboard?.writeText) throw new Error("Clipboard import is unavailable in this browser.");
+    await navigator.clipboard.writeText(createLauncherClipboardPayload(entries));
+  }
+
+  async function requestLauncherClipboardImport(entries) {
+    await copyLibraryPayloadToClipboard(entries);
+    window.location.href = "latticeveil://skin-import-clipboard";
+  }
+
+  async function downloadLocalLibraryZip(entries) {
+    if (!window.JSZip) throw new Error("ZIP export library did not load.");
+    const zip = new JSZip();
+    const manifest = entries.map((entry) => ({
+      filename: `${safeFilePart(entry.displayName)}-${String(entry.hash || "skin").slice(0, 12)}.png`,
+      displayName: entry.displayName,
+      hash: entry.hash,
+      source: entry.source,
+      updatedAt: entry.updatedAt,
+      hasLayers: !!entry.hasLayers
+    }));
+
+    entries.forEach((entry, index) => {
+      zip.file(manifest[index].filename, base64ToBytes(entry.pngBase64));
+      zip.file(`${String(entry.hash || `skin-${index}`).toLowerCase()}.lvskin`, JSON.stringify(createLvskinMetadata(entry), null, 2));
+    });
+    zip.file("manifest.json", JSON.stringify(manifest, null, 2));
+    const blob = await zip.generateAsync({ type: "blob" });
+    downloadBlob(blob, `latticeveil-skin-library-${new Date().toISOString().slice(0, 10)}.zip`);
+  }
+
+  async function importLocalLibraryToLauncher() {
     const entries = (await listLocalSkins()).filter((entry) => entry.pngBase64);
     if (entries.length === 0) {
-      setStatus("No local backups to download.", "error");
+      setStatus("No local backups to import.", "error");
       return;
     }
 
     try {
-      if (!window.JSZip) throw new Error("ZIP export library did not load.");
-      setStatus("Packing local skin library...");
-      const zip = new JSZip();
-      const manifest = entries.map((entry) => ({
-        filename: `${safeFilePart(entry.displayName)}-${String(entry.hash || "skin").slice(0, 12)}.png`,
-        displayName: entry.displayName,
-        hash: entry.hash,
-        source: entry.source,
-        updatedAt: entry.updatedAt,
-        hasLayers: !!entry.hasLayers
-      }));
+      if (!window.showDirectoryPicker) {
+        await requestLauncherClipboardImport(entries);
+        setStatus("Copied browser skins for launcher import. Approve the browser prompt to open LatticeVeil.", "ok");
+        return;
+      }
 
-      entries.forEach((entry, index) => {
-        zip.file(manifest[index].filename, base64ToBytes(entry.pngBase64));
+      setStatus("Choose the LatticeVeil Runtime skins folder...");
+      const dir = await window.showDirectoryPicker({
+        id: "latticeveil-skins",
+        mode: "readwrite",
+        startIn: "documents"
       });
-      zip.file("manifest.json", JSON.stringify(manifest, null, 2));
-      const blob = await zip.generateAsync({ type: "blob" });
-      downloadBlob(blob, `latticeveil-skin-library-${new Date().toISOString().slice(0, 10)}.zip`);
-      setStatus("Local skin library downloaded.", "ok");
+
+      let imported = 0;
+      for (const entry of entries) {
+        const hash = String(entry.hash || "").toLowerCase();
+        if (!/^[a-f0-9]{64}$/.test(hash)) continue;
+
+        const pngHandle = await dir.getFileHandle(`${hash}.png`, { create: true });
+        const pngWritable = await pngHandle.createWritable();
+        await pngWritable.write(new Blob([base64ToBytes(entry.pngBase64)], { type: "image/png" }));
+        await pngWritable.close();
+
+        const lvskinHandle = await dir.getFileHandle(`${hash}.lvskin`, { create: true });
+        const lvskinWritable = await lvskinHandle.createWritable();
+        await lvskinWritable.write(JSON.stringify(createLvskinMetadata(entry), null, 2));
+        await lvskinWritable.close();
+        imported += 1;
+      }
+
+      openLauncher();
+      setStatus(`Imported ${imported} skin${imported === 1 ? "" : "s"} to the launcher skin folder.`, "ok");
     } catch (err) {
-      const first = entries[0];
-      downloadBlob(new Blob([base64ToBytes(first.pngBase64)], { type: "image/png" }), `${safeFilePart(first.displayName)}-${String(first.hash || "skin").slice(0, 12)}.png`);
-      setStatus(err?.message || "ZIP unavailable. Downloaded the newest backup as PNG.", "error");
+      if (err?.name === "AbortError") {
+        setStatus("Launcher import canceled.", "error");
+        return;
+      }
+      try {
+        await requestLauncherClipboardImport(entries);
+        setStatus("Could not write directly. Copied browser skins for launcher import instead.", "ok");
+      } catch {
+        try {
+          await downloadLocalLibraryZip(entries);
+          openLauncher();
+          setStatus("Could not hand off directly. Downloaded a ZIP and opened the launcher.", "error");
+        } catch {
+          const first = entries[0];
+          downloadBlob(new Blob([base64ToBytes(first.pngBase64)], { type: "image/png" }), `${safeFilePart(first.displayName)}-${String(first.hash || "skin").slice(0, 12)}.png`);
+          setStatus(err?.message || "Could not import. Downloaded the newest backup as PNG.", "error");
+        }
+      }
     }
   }
 
@@ -1020,7 +1125,7 @@
     const entry = await saveLocalSkinBackup("manual", displayNameInput?.value);
     setStatus(entry ? "Local backup saved in this browser." : "Could not save local backup.", entry ? "ok" : "error");
   });
-  downloadLibraryBtn?.addEventListener("click", downloadLocalLibrary);
+  downloadLibraryBtn?.addEventListener("click", importLocalLibraryToLauncher);
 
   setTool("pen");
   updateBrushReadout();
