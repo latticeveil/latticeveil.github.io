@@ -40,7 +40,11 @@
   let lastPointer = null;
   let initialCloudLoadComplete = false;
   let hasUnsavedChanges = false;
+  let lastCloudHash = "";
+  let lastCloudUpdatedAt = "";
+  let remoteRefreshInFlight = false;
   let playerPreview = null;
+  const REMOTE_REFRESH_MS = 9000;
 
   const PLAYER_PARTS = [
     {
@@ -529,43 +533,86 @@
     refreshPreview();
   }
 
+  async function readRemoteSkin(token) {
+    const res = await fetch(GET_URL, {
+      method: "GET",
+      headers: authHeaders(token)
+    });
+    const payload = await res.json().catch(() => ({}));
+    if (!res.ok || payload.ok === false) throw new Error(payload.error || `HTTP ${res.status}`);
+    return payload;
+  }
+
+  async function applyCloudSkinPayload(payload, message) {
+    if (!payload.hasSkin || !payload.skin) {
+      editCtx.clearRect(0, 0, SKIN_SIZE, SKIN_SIZE);
+      refreshPreview();
+      initialCloudLoadComplete = true;
+      hasUnsavedChanges = false;
+      lastCloudHash = "";
+      lastCloudUpdatedAt = "";
+      setCloudState("No cloud skin saved. Game will use default.");
+      if (hashTextEl) hashTextEl.textContent = "-";
+      if (updatedTextEl) updatedTextEl.textContent = "-";
+      setStatus(message || "Ready. Start drawing or import a PNG.", "ok");
+      return;
+    }
+
+    const skin = payload.skin;
+    await loadOverlayBytes(base64ToBytes(skin.pngBase64), skin.displayName);
+    initialCloudLoadComplete = true;
+    hasUnsavedChanges = false;
+    lastCloudHash = String(skin.hash || "");
+    lastCloudUpdatedAt = String(skin.updatedAt || "");
+    setCloudState(skin.displayName || "Cloud skin loaded");
+    if (hashTextEl) hashTextEl.textContent = String(skin.hash || "-").slice(0, 16);
+    if (updatedTextEl) updatedTextEl.textContent = skin.updatedAt ? new Date(skin.updatedAt).toLocaleString() : "-";
+    setStatus(message || "Cloud skin loaded.", "ok");
+  }
+
   async function fetchCloudSkin() {
     setBusy(true);
     setStatus("Loading cloud skin...");
     try {
       const token = await getTokenOrThrow();
-      const res = await fetch(GET_URL, {
-        method: "GET",
-        headers: authHeaders(token)
-      });
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok || payload.ok === false) throw new Error(payload.error || `HTTP ${res.status}`);
-
-      if (!payload.hasSkin || !payload.skin) {
-        editCtx.clearRect(0, 0, SKIN_SIZE, SKIN_SIZE);
-        refreshPreview();
-        initialCloudLoadComplete = true;
-        hasUnsavedChanges = false;
-        setCloudState("No cloud skin saved. Game will use default.");
-        if (hashTextEl) hashTextEl.textContent = "-";
-        if (updatedTextEl) updatedTextEl.textContent = "-";
-        setStatus("Ready. Start drawing or import a PNG.", "ok");
-        return;
-      }
-
-      const skin = payload.skin;
-      await loadOverlayBytes(base64ToBytes(skin.pngBase64), skin.displayName);
-      initialCloudLoadComplete = true;
-      hasUnsavedChanges = false;
-      setCloudState(skin.displayName || "Cloud skin loaded");
-      if (hashTextEl) hashTextEl.textContent = String(skin.hash || "-").slice(0, 16);
-      if (updatedTextEl) updatedTextEl.textContent = skin.updatedAt ? new Date(skin.updatedAt).toLocaleString() : "-";
-      setStatus("Cloud skin loaded.", "ok");
+      const payload = await readRemoteSkin(token);
+      await applyCloudSkinPayload(payload, payload.hasSkin ? "Cloud skin loaded." : "Ready. Start drawing or import a PNG.");
     } catch (err) {
       setStatus(err?.message || "Failed to load skin.", "error");
       setCloudState("Could not load cloud skin.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function checkForRemoteSkinUpdate() {
+    if (remoteRefreshInFlight || document.hidden || !initialCloudLoadComplete) return;
+
+    const signedIn = signInPanel.style.display === "none";
+    if (!signedIn) return;
+
+    remoteRefreshInFlight = true;
+    try {
+      const token = await getTokenOrThrow();
+      const payload = await readRemoteSkin(token);
+      const skin = payload.hasSkin && payload.skin ? payload.skin : null;
+      const nextHash = skin ? String(skin.hash || "") : "";
+      const nextUpdatedAt = skin ? String(skin.updatedAt || "") : "";
+      const changed = nextHash !== lastCloudHash || nextUpdatedAt !== lastCloudUpdatedAt;
+      if (!changed) return;
+
+      if (hasUnsavedChanges) {
+        lastCloudHash = nextHash;
+        lastCloudUpdatedAt = nextUpdatedAt;
+        setStatus("Cloud skin changed elsewhere. Use Reload Cloud when you are ready to replace local edits.", "error");
+        return;
+      }
+
+      await applyCloudSkinPayload(payload, skin ? "Cloud skin updated from launcher." : "Cloud skin cleared from launcher.");
+    } catch (err) {
+      console.warn("Cloud skin refresh failed", err);
+    } finally {
+      remoteRefreshInFlight = false;
     }
   }
 
@@ -598,6 +645,8 @@
 
       setCloudState(`${normalizeDisplayName(displayNameInput?.value)} saved`);
       hasUnsavedChanges = false;
+      lastCloudHash = hash;
+      lastCloudUpdatedAt = new Date().toISOString();
       if (hashTextEl) hashTextEl.textContent = hash.slice(0, 16);
       if (updatedTextEl) updatedTextEl.textContent = new Date().toLocaleString();
       setStatus("Game skin saved. The game will sync this account skin online.", "ok");
@@ -644,6 +693,8 @@
 
       setCloudState("No cloud skin saved. Game will use default.");
       initialCloudLoadComplete = true;
+      lastCloudHash = "";
+      lastCloudUpdatedAt = "";
       if (hashTextEl) hashTextEl.textContent = "-";
       if (updatedTextEl) updatedTextEl.textContent = "-";
       setStatus("Cloud skin cleared.", "ok");
@@ -720,5 +771,14 @@
   updateBrushReadout();
   refreshPreview();
   document.addEventListener("DOMContentLoaded", refreshAuthState);
-  window.addEventListener("focus", refreshAuthState);
+  window.addEventListener("focus", () => {
+    refreshAuthState();
+    checkForRemoteSkinUpdate();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) return;
+    refreshAuthState();
+    checkForRemoteSkinUpdate();
+  });
+  window.setInterval(checkForRemoteSkinUpdate, REMOTE_REFRESH_MS);
 })();
