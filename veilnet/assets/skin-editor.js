@@ -499,6 +499,47 @@
     return bytesToHex(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)));
   }
 
+  function canvasPixelBytes(canvas) {
+    return canvas.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, SKIN_SIZE, SKIN_SIZE).data;
+  }
+
+  function imageFromBytes(bytes) {
+    return new Promise((resolve, reject) => {
+      const blob = new Blob([bytes], { type: "image/png" });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve(img);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not decode skin image."));
+      };
+      img.src = url;
+    });
+  }
+
+  async function skinIdentityHashFromBytes(bytes) {
+    const img = await imageFromBytes(bytes);
+    const canvas = document.createElement("canvas");
+    canvas.width = SKIN_SIZE;
+    canvas.height = SKIN_SIZE;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    ctx.clearRect(0, 0, SKIN_SIZE, SKIN_SIZE);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
+    return sha256Hex(canvasPixelBytes(canvas));
+  }
+
+  function getEntryIdentityHash(entry) {
+    return String(entry?.identityHash || entry?.pixelHash || "").trim().toLowerCase();
+  }
+
+  function sameBackupName(entry, name) {
+    return normalizeDisplayName(entry?.displayName) === normalizeDisplayName(name);
+  }
+
   function openLocalLibraryDb() {
     if (localLibraryDbPromise) return localLibraryDbPromise;
     localLibraryDbPromise = new Promise((resolve, reject) => {
@@ -569,13 +610,40 @@
       const bytes = options.bytes || await blobToBytes(await canvasToBlob(editCanvas));
       if (!bytes || bytes.length <= 0 || bytes.length > MAX_BYTES) return null;
       const hash = await sha256Hex(bytes);
+      const identityHash = await skinIdentityHashFromBytes(bytes);
       const existingEntries = await runLibraryStore("readonly", (store) => requestToPromise(store.getAll()));
-      const sameHashEntries = (existingEntries || []).filter((entry) => String(entry?.hash || "").toLowerCase() === hash);
+      const sameIdentityEntries = [];
+      for (const existing of existingEntries || []) {
+        if (!existing || existing.source === "draft" || existing.id === "__draft__") continue;
+        let existingIdentity = getEntryIdentityHash(existing);
+        if (!existingIdentity && existing.pngBase64) {
+          try {
+            existingIdentity = await skinIdentityHashFromBytes(base64ToBytes(existing.pngBase64));
+          } catch {
+            existingIdentity = "";
+          }
+        }
+        if (existingIdentity === identityHash) sameIdentityEntries.push(existing);
+      }
+
+      const displayName = getLocalBackupName(source, name);
+      const unchangedEntry = sameIdentityEntries.find((existing) => sameBackupName(existing, displayName));
+      if (unchangedEntry) {
+        await runLibraryStore("readwrite", (store) => {
+          sameIdentityEntries
+            .filter((existing) => existing?.id && existing.id !== unchangedEntry.id)
+            .forEach((existing) => store.delete(existing.id));
+        });
+        await renderLocalLibrary();
+        return { ...unchangedEntry, unchanged: true, replaced: sameIdentityEntries.length > 1 };
+      }
+
       const now = new Date().toISOString();
       const entry = {
-        id: hash,
+        id: `skin:${identityHash}`,
         hash,
-        displayName: getLocalBackupName(source, name),
+        identityHash,
+        displayName,
         source,
         pngBase64: bytesToBase64(bytes),
         bytesLength: bytes.length,
@@ -584,14 +652,14 @@
       };
 
       await runLibraryStore("readwrite", (store) => {
-        sameHashEntries
-          .filter((existing) => existing?.id && existing.id !== hash)
+        sameIdentityEntries
+          .filter((existing) => existing?.id && existing.id !== entry.id)
           .forEach((existing) => store.delete(existing.id));
         store.put(entry);
       });
       await trimLocalLibrary();
       await renderLocalLibrary();
-      entry.replaced = sameHashEntries.length > 0;
+      entry.replaced = sameIdentityEntries.length > 0;
       return entry;
     } catch (err) {
       console.warn("Local skin backup failed", err);
@@ -1146,7 +1214,7 @@
 
   backupBtn?.addEventListener("click", async () => {
     const entry = await saveLocalSkinBackup("manual", displayNameInput?.value);
-    setStatus(entry ? (entry.replaced ? "Matching local backup updated in this browser." : "Local backup saved in this browser.") : "Could not save local backup.", entry ? "ok" : "error");
+    setStatus(entry ? (entry.unchanged ? "No changes detected. Existing local backup kept." : (entry.replaced ? "Matching local backup updated in this browser." : "Local backup saved in this browser.")) : "Could not save local backup.", entry ? "ok" : "error");
   });
   downloadLibraryBtn?.addEventListener("click", importLocalLibraryToLauncher);
 
