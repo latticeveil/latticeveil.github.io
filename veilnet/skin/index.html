@@ -19,7 +19,7 @@
     .skin-workbench {
       padding: 16px;
       display: grid;
-      grid-template-columns: minmax(280px, 512px) minmax(220px, 1fr);
+      grid-template-columns: minmax(180px, 220px) minmax(300px, 1fr) minmax(190px, 220px);
       gap: 16px;
       align-items: start;
     }
@@ -95,15 +95,12 @@
     .skin-local-library {
       display: grid;
       gap: 10px;
-      padding-top: 6px;
-      border-top: 1px solid var(--border);
+      align-self: start;
     }
 
     .skin-library-head {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+      display: grid;
+      gap: 4px;
     }
 
     .skin-library-title {
@@ -114,9 +111,9 @@
 
     .skin-library-list {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      grid-template-columns: 1fr;
       gap: 10px;
-      max-height: 360px;
+      max-height: 520px;
       overflow: auto;
       padding-right: 2px;
     }
@@ -250,6 +247,10 @@
       .skin-workbench {
         grid-template-columns: 1fr;
       }
+
+      .skin-local-library {
+        order: 3;
+      }
     }
   </style>
 </head>
@@ -336,6 +337,21 @@
       <section class="panel">
         <h3>Editor</h3>
         <div class="skin-workbench">
+          <div class="skin-local-library">
+            <div class="skin-library-head">
+              <div>
+                <div class="skin-library-title">Local Library</div>
+                <div class="small">Browser backup skins only.</div>
+              </div>
+            </div>
+            <div class="skin-action-grid">
+              <button id="skinBackupBtn" class="btn ghost" type="button">Save Local Backup</button>
+              <button id="skinDownloadLibraryBtn" class="btn ghost" type="button">Import To Launcher</button>
+            </div>
+            <div class="skin-library-folder-note">When prompted, choose your LatticeVeil skins folder: AppData / Roaming / LatticeVeil / Runtime / skins.</div>
+            <div id="skinLocalLibraryList" class="skin-library-list" aria-live="polite"></div>
+          </div>
+
           <div class="skin-canvas-wrap">
             <div class="skin-canvas-frame">
               <canvas id="skinEditCanvas" width="64" height="64" aria-label="Skin pixel editor"></canvas>
@@ -367,21 +383,6 @@
             <div class="skin-action-grid">
               <button id="skinSaveBtn" class="btn gold" type="button">Save Game Skin</button>
               <button id="skinClearRemoteBtn" class="btn ghost" type="button">Clear Cloud Skin</button>
-            </div>
-
-            <div class="skin-local-library">
-              <div class="skin-library-head">
-                <div>
-                  <div class="skin-library-title">Local Library</div>
-                  <div class="small">Stored in this browser as backup skins.</div>
-                </div>
-              </div>
-              <div class="skin-action-grid">
-                <button id="skinBackupBtn" class="btn ghost" type="button">Save Local Backup</button>
-                <button id="skinDownloadLibraryBtn" class="btn ghost" type="button">Import To Launcher</button>
-              </div>
-              <div class="skin-library-folder-note">When prompted, choose your LatticeVeil skins folder: AppData / Roaming / LatticeVeil / Runtime / skins.</div>
-              <div id="skinLocalLibraryList" class="skin-library-list" aria-live="polite"></div>
             </div>
           </div>
         </div>

@@ -548,6 +548,17 @@
     }
   }
 
+  function isCurrentCloudSkinEntry(entry) {
+    const entryHash = String(entry?.hash || "").trim().toLowerCase();
+    const cloudHash = String(lastCloudHash || "").trim().toLowerCase();
+    return !!entryHash && !!cloudHash && entryHash === cloudHash;
+  }
+
+  async function listVisibleLocalSkins() {
+    const entries = await listLocalSkins();
+    return entries.filter((entry) => !isCurrentCloudSkinEntry(entry));
+  }
+
   function getLocalBackupName(source, name) {
     const normalized = normalizeDisplayName(name || displayNameInput?.value || "Website Skin");
     if (source === "draft") return `${normalized} Draft`;
@@ -650,12 +661,13 @@
 
   async function renderLocalLibrary() {
     if (!localLibraryList) return;
-    const entries = await listLocalSkins();
+    const allEntries = await listLocalSkins();
+    const entries = allEntries.filter((entry) => !isCurrentCloudSkinEntry(entry));
     localLibraryList.innerHTML = "";
     if (entries.length === 0) {
       const empty = document.createElement("div");
       empty.className = "small";
-      empty.textContent = "No local backups yet.";
+      empty.textContent = allEntries.length > 0 ? "Only the current online skin is saved here." : "No local backups yet.";
       localLibraryList.appendChild(empty);
       return;
     }
@@ -781,9 +793,9 @@
   }
 
   async function importLocalLibraryToLauncher() {
-    const entries = (await listLocalSkins()).filter((entry) => entry.pngBase64);
+    const entries = (await listVisibleLocalSkins()).filter((entry) => entry.pngBase64);
     if (entries.length === 0) {
-      setStatus("No local backups to import.", "error");
+      setStatus("No backup skins to import. The current online skin is already the launcher source.", "error");
       return;
     }
 
@@ -905,6 +917,7 @@
       setCloudState("No cloud skin saved. Game will use default.");
       if (hashTextEl) hashTextEl.textContent = "-";
       if (updatedTextEl) updatedTextEl.textContent = "-";
+      await renderLocalLibrary();
       setStatus(message || "Ready. Start drawing or import a PNG.", "ok");
       return;
     }
@@ -919,7 +932,7 @@
     setCloudState(skin.displayName || "Cloud skin loaded");
     if (hashTextEl) hashTextEl.textContent = String(skin.hash || "-").slice(0, 16);
     if (updatedTextEl) updatedTextEl.textContent = skin.updatedAt ? new Date(skin.updatedAt).toLocaleString() : "-";
-    await saveLocalSkinBackup(message?.includes("launcher") ? "launcher-sync" : "cloud", skin.displayName, { bytes: skinBytes });
+    await renderLocalLibrary();
     setStatus(message || "Cloud skin loaded.", "ok");
   }
 
@@ -1002,7 +1015,7 @@
       lastCloudUpdatedAt = new Date().toISOString();
       if (hashTextEl) hashTextEl.textContent = hash.slice(0, 16);
       if (updatedTextEl) updatedTextEl.textContent = new Date().toLocaleString();
-      await saveLocalSkinBackup("cloud-save", displayNameInput?.value, { bytes });
+      await renderLocalLibrary();
       setStatus("Game skin saved. The game will sync this account skin online.", "ok");
     } catch (err) {
       setStatus(err?.message || "Failed to save skin.", "error");
