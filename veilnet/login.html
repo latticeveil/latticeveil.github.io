@@ -53,6 +53,12 @@
   <script>
     window.addEventListener("load", async () => {
       try {
+        const params = new URLSearchParams(window.location.search);
+        const returnPath = params.get("return") || "/veilnet/";
+        const safeReturnPath = returnPath.startsWith("/") && !returnPath.startsWith("//")
+          ? returnPath
+          : "/veilnet/";
+
         if (!window.google || !google.accounts || !google.accounts.id) {
           throw new Error("Google Identity Services failed to load.");
         }
@@ -66,7 +72,7 @@
               document.getElementById("login-error").style.display = "block";
               return;
             }
-            window.location.href = "/veilnet/";
+            window.location.href = safeReturnPath;
           }
         });
 

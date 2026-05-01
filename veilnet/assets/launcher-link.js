@@ -2,6 +2,7 @@
   const signedOutBox = document.getElementById("launcherLinkSignedOut");
   const usernameRequiredBox = document.getElementById("launcherLinkUsernameRequired");
   const readyBox = document.getElementById("launcherLinkReady");
+  const successBox = document.getElementById("launcherLinkSuccess");
   const statusEl = document.getElementById("launcherLinkStatus");
   const signInBtn = document.getElementById("launcherLinkSignInBtn");
   const pickUsernameBtn = document.getElementById("launcherLinkPickUsernameBtn");
@@ -18,6 +19,7 @@
     !signedOutBox ||
     !usernameRequiredBox ||
     !readyBox ||
+    !successBox ||
     !statusEl ||
     !signInBtn ||
     !pickUsernameBtn ||
@@ -39,10 +41,12 @@
     if ((window.location.pathname || "").includes("/veilnet/")) return "/veilnet/";
     return "/";
   })();
+  const AUTO_START = new URLSearchParams(window.location.search).get("autostart") === "1";
 
   let countdownInterval = null;
   let expiresAtMs = 0;
   let activeCode = "";
+  let autoLaunchAttempted = false;
 
   function setStatus(message, isError) {
     statusEl.textContent = message || "";
@@ -53,6 +57,12 @@
     signedOutBox.style.display = section === "signed_out" ? "flex" : "none";
     usernameRequiredBox.style.display = section === "username_required" ? "flex" : "none";
     readyBox.style.display = section === "ready" ? "flex" : "none";
+    successBox.style.display = section === "success" ? "flex" : "none";
+  }
+
+  function redirectToLogin() {
+    const returnPath = `${window.location.pathname}${window.location.search || ""}`;
+    window.location.href = `/veilnet/login.html?return=${encodeURIComponent(returnPath)}`;
   }
 
   function clearCodeBlock() {
@@ -199,7 +209,8 @@
 
       // --- New flow: redirect to protocol handler ---
       const redirectUrl = `latticeveil://link?code=${encodeURIComponent(code)}`;
-      setStatus("Success! Redirecting to launcher...", false);
+      setSection("success");
+      setStatus("LOGIN SUCCESS. Opening LatticeVeil Launcher...", false);
 
       // Update UI to reflect the redirect.
       issueCodeBtn.style.display = "none";
@@ -213,11 +224,24 @@
 
       // Perform the redirect to trigger the launcher.
       window.location.href = redirectUrl;
+      setTimeout(() => {
+        try { window.close(); } catch {}
+      }, 900);
+      setTimeout(() => {
+        if (!document.hidden) window.location.href = LAUNCHER_FALLBACK_URL;
+      }, 3500);
     } catch (err) {
+      autoLaunchAttempted = false;
       setStatus(err?.message || "Failed to generate code.", true);
     } finally {
       issueCodeBtn.disabled = false;
     }
+  }
+
+  function maybeAutoLaunch() {
+    if (!AUTO_START || autoLaunchAttempted) return;
+    autoLaunchAttempted = true;
+    issueCode();
   }
 
   async function refreshState() {
@@ -226,6 +250,10 @@
       if (!user) {
         clearCodeBlock();
         setSection("signed_out");
+        if (AUTO_START) {
+          setStatus("Redirecting to Veilnet login...", false);
+          redirectToLogin();
+        }
         return;
       }
 
@@ -242,6 +270,7 @@
       usernameText.textContent = username;
       setSection("ready");
       setStatus("", false);
+      maybeAutoLaunch();
     } catch (err) {
       setSection("signed_out");
       setStatus(err?.message || "Failed to load session.", true);
@@ -258,6 +287,10 @@
   });
 
   issueCodeBtn.addEventListener("click", issueCode);
+
+  if (AUTO_START) {
+    issueCodeBtn.textContent = "OPENING LAUNCHER...";
+  }
 
   copyCodeBtn.addEventListener("click", async () => {
     const code = codeText.textContent || "";
