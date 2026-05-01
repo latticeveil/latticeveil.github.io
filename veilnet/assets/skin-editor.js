@@ -47,6 +47,7 @@
   let initialCloudLoadComplete = false;
   let hasUnsavedChanges = false;
   let lastCloudHash = "";
+  let lastCloudIdentityHash = "";
   let lastCloudDisplayName = "";
   let lastCloudUpdatedAt = "";
   let remoteRefreshInFlight = false;
@@ -557,6 +558,16 @@
     return normalizeDisplayName(entry?.displayName) === normalizeDisplayName(name);
   }
 
+  function findBackupByName(entries, name, ignoreIdentity = "") {
+    const normalizedName = normalizeDisplayName(name);
+    const normalizedIgnore = String(ignoreIdentity || "").trim().toLowerCase();
+    return (entries || []).find((entry) => {
+      if (!sameBackupName(entry, normalizedName)) return false;
+      if (!normalizedIgnore) return true;
+      return getEntryIdentityHash(entry) !== normalizedIgnore;
+    });
+  }
+
   function openLocalLibraryDb() {
     if (localLibraryDbPromise) return localLibraryDbPromise;
     localLibraryDbPromise = new Promise((resolve, reject) => {
@@ -637,34 +648,75 @@
     try {
       const bytes = options.bytes || await blobToBytes(await canvasToBlob(editCanvas));
       if (!bytes || bytes.length <= 0 || bytes.length > MAX_BYTES) return null;
-      const hash = await sha256Hex(bytes);
       const identityHash = options.bytes ? await skinIdentityHashFromBytes(bytes) : await skinIdentityHashFromCanvas(editCanvas);
+      const hash = identityHash === lastCloudIdentityHash && lastCloudHash
+        ? String(lastCloudHash).toLowerCase()
+        : await sha256Hex(bytes);
       const existingEntries = await runLibraryStore("readonly", (store) => requestToPromise(store.getAll()));
+      const normalizedExistingEntries = [];
       const sameIdentityEntries = [];
       for (const existing of existingEntries || []) {
         if (!existing || existing.source === "draft" || existing.id === "__draft__") continue;
         const existingIdentity = await getEntryComputedIdentityHash(existing);
-        if (existingIdentity === identityHash) sameIdentityEntries.push(existing);
+        const normalizedExisting = { ...existing, identityHash: existingIdentity || getEntryIdentityHash(existing) };
+        normalizedExistingEntries.push(normalizedExisting);
+        if (existingIdentity === identityHash) sameIdentityEntries.push(normalizedExisting);
       }
 
+      const displayName = getLocalBackupName(source, name);
       if (sameIdentityEntries.length > 0) {
         const keep = sameIdentityEntries
           .slice()
           .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0];
+        const replace = confirm(`This exact skin is already saved as "${keep.displayName || "Skin Backup"}". Replace that existing backup instead of creating a duplicate?`);
+        if (!replace) {
+          await runLibraryStore("readwrite", (store) => {
+            sameIdentityEntries
+              .filter((existing) => existing?.id && existing.id !== keep.id)
+              .forEach((existing) => store.delete(existing.id));
+          });
+          await renderLocalLibrary();
+          return { ...keep, unchanged: true, canceled: true, replaced: sameIdentityEntries.length > 1 };
+        }
+
+        const nameConflict = findBackupByName(normalizedExistingEntries, displayName, identityHash);
+        if (nameConflict) {
+          alert(`A different local backup is already named "${displayName}". Rename this skin before saving a backup.`);
+          await renderLocalLibrary();
+          return { ...keep, unchanged: true, nameConflict: true };
+        }
+
+        const now = new Date().toISOString();
+        const updated = {
+          ...keep,
+          id: `skin:${identityHash}`,
+          hash,
+          identityHash,
+          displayName,
+          source,
+          pngBase64: bytesToBase64(bytes),
+          bytesLength: bytes.length,
+          hasLayers: hasVisibleSecondLayer(),
+          updatedAt: now
+        };
         await runLibraryStore("readwrite", (store) => {
           sameIdentityEntries
             .filter((existing) => existing?.id && existing.id !== keep.id)
             .forEach((existing) => store.delete(existing.id));
-          if (keep.id !== `skin:${identityHash}` || getEntryIdentityHash(keep) !== identityHash) {
-            store.put({ ...keep, id: `skin:${identityHash}`, identityHash });
-            if (keep.id && keep.id !== `skin:${identityHash}`) store.delete(keep.id);
-          }
+          store.put(updated);
+          if (keep.id && keep.id !== updated.id) store.delete(keep.id);
         });
         await renderLocalLibrary();
-        return { ...keep, unchanged: true, replaced: sameIdentityEntries.length > 1 };
+        return { ...updated, replaced: true };
       }
 
-      const displayName = getLocalBackupName(source, name);
+      const nameConflict = findBackupByName(normalizedExistingEntries, displayName);
+      if (nameConflict) {
+        alert(`A local backup is already named "${displayName}". Change the display name before saving a different skin.`);
+        await renderLocalLibrary();
+        return { nameConflict: true };
+      }
+
       const now = new Date().toISOString();
       const entry = {
         id: `skin:${identityHash}`,
@@ -1042,6 +1094,7 @@
       initialCloudLoadComplete = true;
       hasUnsavedChanges = false;
       lastCloudHash = "";
+      lastCloudIdentityHash = "";
       lastCloudDisplayName = "";
       lastCloudUpdatedAt = "";
       setCloudState("No cloud skin saved. Game will use default.");
@@ -1058,6 +1111,7 @@
     initialCloudLoadComplete = true;
     hasUnsavedChanges = false;
     lastCloudHash = String(skin.hash || "");
+    lastCloudIdentityHash = await skinIdentityHashFromBytes(skinBytes);
     lastCloudDisplayName = normalizeDisplayName(skin.displayName);
     lastCloudUpdatedAt = String(skin.updatedAt || "");
     setCloudState(skin.displayName || "Cloud skin loaded");
@@ -1152,6 +1206,7 @@
       setCloudState(`${displayName} saved`);
       hasUnsavedChanges = false;
       lastCloudHash = hash;
+      lastCloudIdentityHash = await skinIdentityHashFromBytes(bytes);
       lastCloudDisplayName = displayName;
       lastCloudUpdatedAt = new Date().toISOString();
       if (hashTextEl) hashTextEl.textContent = hash.slice(0, 16);
@@ -1202,6 +1257,7 @@
       setCloudState("No cloud skin saved. Game will use default.");
       initialCloudLoadComplete = true;
       lastCloudHash = "";
+      lastCloudIdentityHash = "";
       lastCloudDisplayName = "";
       lastCloudUpdatedAt = "";
       if (hashTextEl) hashTextEl.textContent = "-";
@@ -1279,7 +1335,17 @@
 
   backupBtn?.addEventListener("click", async () => {
     const entry = await saveLocalSkinBackup("manual", displayNameInput?.value);
-    setStatus(entry ? (entry.unchanged ? "No changes detected. Existing local backup kept." : (entry.replaced ? "Matching local backup updated in this browser." : "Local backup saved in this browser.")) : "Could not save local backup.", entry ? "ok" : "error");
+    setStatus(
+      entry
+        ? (entry.nameConflict
+          ? "Rename this skin before saving a local backup."
+          : (entry.canceled
+            ? "No changes saved. Existing local backup kept."
+            : (entry.unchanged
+              ? "No changes detected. Existing local backup kept."
+              : (entry.replaced ? "Matching local backup replaced in this browser." : "Local backup saved in this browser."))))
+        : "Could not save local backup.",
+      entry && !entry.nameConflict ? "ok" : "error");
   });
   downloadLibraryBtn?.addEventListener("click", importLocalLibraryToLauncher);
 
