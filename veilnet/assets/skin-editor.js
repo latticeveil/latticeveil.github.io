@@ -618,15 +618,14 @@
   }
 
   async function getEntryComputedIdentityHash(entry) {
-    let identity = getEntryIdentityHash(entry);
-    if (!identity && entry?.pngBase64) {
+    if (entry?.pngBase64) {
       try {
-        identity = await skinIdentityHashFromBytes(base64ToBytes(entry.pngBase64));
+        return await skinIdentityHashFromBytes(base64ToBytes(entry.pngBase64));
       } catch {
-        identity = "";
+        // Fall through to stored legacy identity only if the PNG cannot be decoded.
       }
     }
-    return identity;
+    return getEntryIdentityHash(entry);
   }
 
   function getLocalBackupName(source, name) {
@@ -648,18 +647,24 @@
         if (existingIdentity === identityHash) sameIdentityEntries.push(existing);
       }
 
-      const displayName = getLocalBackupName(source, name);
-      const unchangedEntry = sameIdentityEntries.find((existing) => sameBackupName(existing, displayName));
-      if (unchangedEntry) {
+      if (sameIdentityEntries.length > 0) {
+        const keep = sameIdentityEntries
+          .slice()
+          .sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")))[0];
         await runLibraryStore("readwrite", (store) => {
           sameIdentityEntries
-            .filter((existing) => existing?.id && existing.id !== unchangedEntry.id)
+            .filter((existing) => existing?.id && existing.id !== keep.id)
             .forEach((existing) => store.delete(existing.id));
+          if (keep.id !== `skin:${identityHash}` || getEntryIdentityHash(keep) !== identityHash) {
+            store.put({ ...keep, id: `skin:${identityHash}`, identityHash });
+            if (keep.id && keep.id !== `skin:${identityHash}`) store.delete(keep.id);
+          }
         });
         await renderLocalLibrary();
-        return { ...unchangedEntry, unchanged: true, replaced: sameIdentityEntries.length > 1 };
+        return { ...keep, unchanged: true, replaced: sameIdentityEntries.length > 1 };
       }
 
+      const displayName = getLocalBackupName(source, name);
       const now = new Date().toISOString();
       const entry = {
         id: `skin:${identityHash}`,
@@ -707,16 +712,16 @@
       const identity = await getEntryComputedIdentityHash(entry);
       if (!identity) continue;
       if (!groups.has(identity)) groups.set(identity, []);
-      groups.get(identity).push(entry);
+      groups.get(identity).push({ entry, identity });
     }
 
     const deleteIds = [];
     const keepEntries = [];
     for (const group of groups.values()) {
-      const sorted = group.slice().sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+      const sorted = group.slice().sort((a, b) => String(b.entry.updatedAt || "").localeCompare(String(a.entry.updatedAt || "")));
       const keep = sorted[0];
       keepEntries.push(keep);
-      sorted.slice(1).forEach((entry) => {
+      sorted.slice(1).forEach(({ entry }) => {
         if (entry?.id) deleteIds.push(entry.id);
       });
     }
@@ -724,9 +729,8 @@
     if (deleteIds.length > 0) {
       await runLibraryStore("readwrite", (store) => {
         deleteIds.forEach((id) => store.delete(id));
-        keepEntries.forEach((entry) => {
-          const identity = getEntryIdentityHash(entry);
-          if (identity && entry.id === `skin:${identity}`) return;
+        keepEntries.forEach(({ entry, identity }) => {
+          if (identity && entry.id === `skin:${identity}` && getEntryIdentityHash(entry) === identity) return;
           if (!identity) return;
           store.put({ ...entry, id: `skin:${identity}`, identityHash: identity });
           if (entry.id && entry.id !== `skin:${identity}`) store.delete(entry.id);
