@@ -503,6 +503,19 @@
     return canvas.getContext("2d", { willReadFrequently: true }).getImageData(0, 0, SKIN_SIZE, SKIN_SIZE).data;
   }
 
+  function normalizeSkinPixelBytes(pixelBytes) {
+    const normalized = new Uint8ClampedArray(pixelBytes.length);
+    normalized.set(pixelBytes);
+    for (let i = 0; i < normalized.length; i += 4) {
+      if (normalized[i + 3] === 0) {
+        normalized[i] = 0;
+        normalized[i + 1] = 0;
+        normalized[i + 2] = 0;
+      }
+    }
+    return normalized;
+  }
+
   function imageFromBytes(bytes) {
     return new Promise((resolve, reject) => {
       const blob = new Blob([bytes], { type: "image/png" });
@@ -529,7 +542,11 @@
     ctx.clearRect(0, 0, SKIN_SIZE, SKIN_SIZE);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, img.width, img.height);
-    return sha256Hex(canvasPixelBytes(canvas));
+    return sha256Hex(normalizeSkinPixelBytes(canvasPixelBytes(canvas)));
+  }
+
+  async function skinIdentityHashFromCanvas(canvas) {
+    return sha256Hex(normalizeSkinPixelBytes(canvasPixelBytes(canvas)));
   }
 
   function getEntryIdentityHash(entry) {
@@ -600,6 +617,18 @@
     return entries.filter((entry) => !isCurrentCloudSkinEntry(entry));
   }
 
+  async function getEntryComputedIdentityHash(entry) {
+    let identity = getEntryIdentityHash(entry);
+    if (!identity && entry?.pngBase64) {
+      try {
+        identity = await skinIdentityHashFromBytes(base64ToBytes(entry.pngBase64));
+      } catch {
+        identity = "";
+      }
+    }
+    return identity;
+  }
+
   function getLocalBackupName(source, name) {
     const normalized = normalizeDisplayName(name || displayNameInput?.value || "Website Skin");
     return normalized;
@@ -610,19 +639,12 @@
       const bytes = options.bytes || await blobToBytes(await canvasToBlob(editCanvas));
       if (!bytes || bytes.length <= 0 || bytes.length > MAX_BYTES) return null;
       const hash = await sha256Hex(bytes);
-      const identityHash = await skinIdentityHashFromBytes(bytes);
+      const identityHash = options.bytes ? await skinIdentityHashFromBytes(bytes) : await skinIdentityHashFromCanvas(editCanvas);
       const existingEntries = await runLibraryStore("readonly", (store) => requestToPromise(store.getAll()));
       const sameIdentityEntries = [];
       for (const existing of existingEntries || []) {
         if (!existing || existing.source === "draft" || existing.id === "__draft__") continue;
-        let existingIdentity = getEntryIdentityHash(existing);
-        if (!existingIdentity && existing.pngBase64) {
-          try {
-            existingIdentity = await skinIdentityHashFromBytes(base64ToBytes(existing.pngBase64));
-          } catch {
-            existingIdentity = "";
-          }
-        }
+        const existingIdentity = await getEntryComputedIdentityHash(existing);
         if (existingIdentity === identityHash) sameIdentityEntries.push(existing);
       }
 
@@ -676,6 +698,45 @@
     });
   }
 
+  async function compactLocalLibraryDuplicates() {
+    const entries = await listLocalSkins();
+    if (entries.length < 2) return entries;
+
+    const groups = new Map();
+    for (const entry of entries) {
+      const identity = await getEntryComputedIdentityHash(entry);
+      if (!identity) continue;
+      if (!groups.has(identity)) groups.set(identity, []);
+      groups.get(identity).push(entry);
+    }
+
+    const deleteIds = [];
+    const keepEntries = [];
+    for (const group of groups.values()) {
+      const sorted = group.slice().sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
+      const keep = sorted[0];
+      keepEntries.push(keep);
+      sorted.slice(1).forEach((entry) => {
+        if (entry?.id) deleteIds.push(entry.id);
+      });
+    }
+
+    if (deleteIds.length > 0) {
+      await runLibraryStore("readwrite", (store) => {
+        deleteIds.forEach((id) => store.delete(id));
+        keepEntries.forEach((entry) => {
+          const identity = getEntryIdentityHash(entry);
+          if (identity && entry.id === `skin:${identity}`) return;
+          if (!identity) return;
+          store.put({ ...entry, id: `skin:${identity}`, identityHash: identity });
+          if (entry.id && entry.id !== `skin:${identity}`) store.delete(entry.id);
+        });
+      });
+    }
+
+    return listLocalSkins();
+  }
+
   function formatLibraryDate(value) {
     const date = value ? new Date(value) : null;
     return date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : "-";
@@ -725,7 +786,7 @@
 
   async function renderLocalLibrary() {
     if (!localLibraryList) return;
-    const allEntries = await listLocalSkins();
+    const allEntries = await compactLocalLibraryDuplicates();
     const entries = allEntries.filter((entry) => !isCurrentCloudSkinEntry(entry));
     localLibraryList.innerHTML = "";
     if (entries.length === 0) {
