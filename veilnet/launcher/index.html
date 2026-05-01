@@ -76,7 +76,7 @@
       <h3>Link Launcher</h3>
       <div class="inner" style="display:flex; flex-direction:column; gap:14px">
         <div class="small">
-          Sign in with Veilnet, generate a one-time code, then paste it in the launcher.
+          Sign in with Veilnet and the launcher link will complete automatically.
         </div>
 
         <div id="launcherLinkSignedOut" style="display:none; gap:10px; flex-direction:column;">
@@ -96,7 +96,7 @@
         <div id="launcherLinkReady" style="display:none; gap:12px; flex-direction:column;">
           <div class="small">Signed in as <b id="launcherLinkUsernameText"></b></div>
           <div>
-            <button id="launcherIssueCodeBtn" class="btn" type="button">Generate Link Code</button>
+            <button id="launcherIssueCodeBtn" class="btn" type="button">Open LatticeVeil Launcher</button>
           </div>
           <div id="launcherCodeBlock" style="display:none; gap:10px; flex-direction:column;">
             <div class="small">Paste this code in the launcher:</div>
@@ -111,6 +111,12 @@
               <a href="../">Veilnet Home</a>.
             </div>
           </div>
+        </div>
+
+        <div id="launcherLinkSuccess" style="display:none; gap:10px; flex-direction:column;">
+          <h2 style="margin:0; color:#58d68d;">LOGIN SUCCESS</h2>
+          <div class="small">LatticeVeil Launcher is opening now.</div>
+          <div class="small">This tab will close automatically when the browser allows it.</div>
         </div>
 
         <div id="launcherLinkStatus" class="small" aria-live="polite"></div>
