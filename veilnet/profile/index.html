@@ -65,6 +65,48 @@
       background-position: center;
       z-index: 1;
     }
+
+    .banner-crop-preview {
+      width: 100%;
+      aspect-ratio: 4 / 1;
+      border-radius: 8px;
+      border: 2px solid var(--border);
+      overflow: hidden;
+      background: var(--bg);
+      display: none;
+    }
+
+    .banner-crop-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 50%;
+      display: block;
+    }
+
+    .banner-crop-controls {
+      display: none;
+      margin-top: 0.75rem;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: rgba(0,0,0,0.16);
+    }
+
+    .banner-crop-controls label {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      color: var(--text);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .banner-crop-controls input[type="range"] {
+      width: 100%;
+      margin-top: 0.5rem;
+      accent-color: var(--accent);
+    }
     
     .profile-nameplate {
       position: absolute;
@@ -459,7 +501,17 @@
       </div>
       
       <div style="margin-bottom: 1.5rem;">
-        <img id="bannerPreview" src="" alt="Banner Preview" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 6px; border: 2px solid var(--border); display: none;">
+        <div id="bannerPreviewWrap" class="banner-crop-preview">
+          <img id="bannerPreview" src="" alt="Banner Preview">
+        </div>
+        <div id="bannerCropControls" class="banner-crop-controls">
+          <label for="bannerFocusY">
+            <span>Visible area</span>
+            <span id="bannerFocusValue">50%</span>
+          </label>
+          <input id="bannerFocusY" type="range" min="0" max="100" value="50" step="1">
+          <small style="color: var(--muted); font-size: 0.85rem;">Slide this until the banner preview shows the exact part of the image you want saved.</small>
+        </div>
         <button id="resetBannerBtn" style="margin-top: 0.5rem; padding: 0.5rem 1rem; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">Remove Banner</button>
       </div>
       
@@ -522,6 +574,58 @@
       const u = url || "../assets/default_pfp.png";
       const bust = (u.includes("?") ? "&" : "?") + "v=" + Date.now();
       imgEl.src = u + bust;
+    }
+
+    function updateBannerCropPreview(imgEl, focusInput, focusValueEl) {
+      if (!imgEl || !focusInput) return;
+      const y = Math.max(0, Math.min(100, Number(focusInput.value) || 50));
+      imgEl.style.objectPosition = `center ${y}%`;
+      if (focusValueEl) focusValueEl.textContent = `${Math.round(y)}%`;
+    }
+
+    function cropBannerFile(file, focusYPercent) {
+      return new Promise((resolve, reject) => {
+        if (!file || !file.type || !file.type.startsWith('image/')) {
+          reject(new Error('Banner must be an image file'));
+          return;
+        }
+
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(objectUrl);
+
+          const targetWidth = 1600;
+          const targetHeight = 400;
+          const scale = Math.max(targetWidth / img.naturalWidth, targetHeight / img.naturalHeight);
+          const sourceWidth = targetWidth / scale;
+          const sourceHeight = targetHeight / scale;
+          const focus = Math.max(0, Math.min(100, Number(focusYPercent) || 50)) / 100;
+          const sourceX = Math.max(0, (img.naturalWidth - sourceWidth) / 2);
+          const sourceY = Math.max(0, (img.naturalHeight - sourceHeight) * focus);
+
+          const canvas = document.createElement('canvas');
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, targetWidth, targetHeight);
+
+          const type = file.type === 'image/png' || file.type === 'image/webp' ? file.type : 'image/jpeg';
+          const ext = type === 'image/png' ? 'png' : type === 'image/webp' ? 'webp' : 'jpg';
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('Failed to prepare banner crop'));
+              return;
+            }
+            resolve(new File([blob], `banner-crop.${ext}`, { type }));
+          }, type, type === 'image/jpeg' ? 0.92 : undefined);
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error('Failed to read banner image'));
+        };
+        img.src = objectUrl;
+      });
     }
 
     // Apply banner with cache-busting and proper styling
@@ -978,6 +1082,34 @@
     })();
 
     // Setup username editing functionality
+    function prefillProfileMediaEditor(profile) {
+      const editPictureInput = document.getElementById('editPictureInput');
+      const editBannerInput = document.getElementById('editBannerInput');
+      const picturePreview = document.getElementById('picturePreview');
+      const bannerPreview = document.getElementById('bannerPreview');
+      const bannerPreviewWrap = document.getElementById('bannerPreviewWrap');
+      const bannerCropControls = document.getElementById('bannerCropControls');
+      const bannerFocusY = document.getElementById('bannerFocusY');
+      const bannerFocusValue = document.getElementById('bannerFocusValue');
+      const editProfileError = document.getElementById('editProfileError');
+
+      if (editPictureInput) {
+        editPictureInput.value = '';
+        editPictureInput.dataset.clearAvatar = 'false';
+      }
+      if (editBannerInput) {
+        editBannerInput.value = '';
+        editBannerInput.dataset.clearBanner = 'false';
+      }
+      if (picturePreview) picturePreview.src = profile?.picture || '../assets/default_pfp.png';
+      if (bannerPreview) bannerPreview.src = '';
+      if (bannerPreviewWrap) bannerPreviewWrap.style.display = 'none';
+      if (bannerCropControls) bannerCropControls.style.display = 'none';
+      if (bannerFocusY) bannerFocusY.value = '50';
+      updateBannerCropPreview(bannerPreview, bannerFocusY, bannerFocusValue);
+      if (editProfileError) editProfileError.style.display = 'none';
+    }
+
     function setupUsernameEditing(profile) {
       const editUsernameBtn = document.getElementById('editUsernameBtn');
       const editProfileModal = document.getElementById('editProfileModal');
@@ -991,6 +1123,7 @@
       newEditUsernameBtn.addEventListener('click', () => {
         // Pre-fill the edit modal with current username
         editUsernameInput.value = profile.username || '';
+        prefillProfileMediaEditor(profile);
         editProfileModal.style.display = 'flex';
       });
       
@@ -1031,6 +1164,10 @@
       const editBannerInput = document.getElementById('editBannerInput');
       const picturePreview = document.getElementById('picturePreview');
       const bannerPreview = document.getElementById('bannerPreview');
+      const bannerPreviewWrap = document.getElementById('bannerPreviewWrap');
+      const bannerCropControls = document.getElementById('bannerCropControls');
+      const bannerFocusY = document.getElementById('bannerFocusY');
+      const bannerFocusValue = document.getElementById('bannerFocusValue');
       const saveProfileBtn = document.getElementById('saveProfileBtn');
       const cancelEditBtn = document.getElementById('cancelEditBtn');
       const resetPictureBtn = document.getElementById('resetPictureBtn');
@@ -1038,11 +1175,15 @@
       const editProfileError = document.getElementById('editProfileError');
       
       if (!saveProfileBtn || !cancelEditBtn) return;
+
+      if (editPictureInput) editPictureInput.dataset.clearAvatar = 'false';
+      if (editBannerInput) editBannerInput.dataset.clearBanner = 'false';
       
       // Setup file input previews
       if (editPictureInput && picturePreview) {
         editPictureInput.addEventListener('change', (e) => {
           const file = e.target.files[0];
+          editPictureInput.dataset.clearAvatar = 'false';
           if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -1056,14 +1197,24 @@
       if (editBannerInput && bannerPreview) {
         editBannerInput.addEventListener('change', (e) => {
           const file = e.target.files[0];
+          editBannerInput.dataset.clearBanner = 'false';
           if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
               bannerPreview.src = e.target.result;
-              bannerPreview.style.display = 'block';
+              if (bannerFocusY) bannerFocusY.value = '50';
+              updateBannerCropPreview(bannerPreview, bannerFocusY, bannerFocusValue);
+              if (bannerPreviewWrap) bannerPreviewWrap.style.display = 'block';
+              if (bannerCropControls) bannerCropControls.style.display = 'block';
             };
             reader.readAsDataURL(file);
           }
+        });
+      }
+
+      if (bannerFocusY && bannerPreview) {
+        bannerFocusY.addEventListener('input', () => {
+          updateBannerCropPreview(bannerPreview, bannerFocusY, bannerFocusValue);
         });
       }
       
@@ -1073,6 +1224,7 @@
           // Clear UI
           picturePreview.src = '../assets/default_pfp.png';
           if (editPictureInput) editPictureInput.value = '';
+          if (editPictureInput) editPictureInput.dataset.clearAvatar = 'true';
           
           // Clear database immediately
           try {
@@ -1096,9 +1248,13 @@
         resetBannerBtn.addEventListener('click', async () => {
           // Clear UI
           bannerPreview.src = '';
-          bannerPreview.style.display = 'none';
+          if (bannerPreviewWrap) bannerPreviewWrap.style.display = 'none';
+          if (bannerCropControls) bannerCropControls.style.display = 'none';
+          if (bannerFocusY) bannerFocusY.value = '50';
+          updateBannerCropPreview(bannerPreview, bannerFocusY, bannerFocusValue);
           if (editBannerInput) editBannerInput.value = '';
-          
+          if (editBannerInput) editBannerInput.dataset.clearBanner = 'true';
+
           // Clear database immediately
           try {
             await VeilnetAuth.updateProfileBanner(null);
@@ -1144,11 +1300,11 @@
           let clearAvatar = false;
           let clearBanner = false;
           
-          // Check if reset was clicked (no file selected but preview shows default)
-          if (!editPictureInput.files[0] && picturePreview.src.includes('default_pfp.png')) {
+          // Only clear media when the user explicitly clicked a reset/remove button.
+          if (!editPictureInput.files[0] && editPictureInput.dataset.clearAvatar === 'true') {
             clearAvatar = true;
           }
-          if (!editBannerInput.files[0] && (!bannerPreview.src || bannerPreview.style.display === 'none')) {
+          if (!editBannerInput.files[0] && editBannerInput.dataset.clearBanner === 'true') {
             clearBanner = true;
           }
           
@@ -1177,7 +1333,8 @@
           // Handle banner upload if file selected
           if (editBannerInput.files[0]) {
             try {
-              bannerUrl = await VeilnetAuth.uploadBanner(editBannerInput.files[0]);
+              const bannerFile = await cropBannerFile(editBannerInput.files[0], bannerFocusY ? bannerFocusY.value : 50);
+              bannerUrl = await VeilnetAuth.uploadBanner(bannerFile);
               // Apply banner immediately after successful upload
               applyBanner(bannerUrl);
             } catch (error) {
