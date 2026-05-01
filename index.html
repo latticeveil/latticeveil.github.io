@@ -1879,6 +1879,47 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             
             <div id="log-game" class="sub-content active">
                 <div class="log-entry">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Veilnet Skinlink">
+                    <div class="log-header">
+                        <h3>🎨 V16.0.0 "Veilnet Skinlink" - Web Skins, Launcher Tray, and Account Sync</h3>
+                        <span class="log-date">MAY 01, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p><strong>Veilnet Skinlink is the official V16.0.0 release.</strong> This pass connects the website, launcher, and game around the same active cloud skin while adding launcher tray controls and a cleaner Veilnet login handoff.</p>
+
+                        <h4>🎨 Game Skins + Website Editor</h4>
+                        <ul>
+                            <li><strong>Cloud Skin Editing:</strong> The Veilnet website can now edit the same account skin slot that the launcher and multiplayer game already read.</li>
+                            <li><strong>Layered Preview:</strong> The skin page preview uses the game-style player model and applies transparent skin layers over the default body atlas.</li>
+                            <li><strong>Local Browser Library:</strong> Browser backups now show visual skin cards, prevent exact visual duplicates, and support restore/delete flows without silent draft saves.</li>
+                            <li><strong>Launcher Import Flow:</strong> Website backups can be imported into the launcher skin folder while avoiding duplicate copies of the live cloud skin.</li>
+                        </ul>
+
+                        <h4>🧩 Launcher Skin Sync</h4>
+                        <ul>
+                            <li><strong>Fresh Skin Reloads:</strong> The launcher Skins button now reloads skin state instead of only checking once at launcher startup.</li>
+                            <li><strong>Shared Active Skin:</strong> The launcher, website, local skin folder, and Supabase active selection stay aligned by hash/name so the selected skin remains consistent.</li>
+                            <li><strong>Open GUI Refresh:</strong> If the skin screen is already open, imported or changed skins refresh into view without needing to reopen the launcher.</li>
+                        </ul>
+
+                        <h4>🪟 Launcher Tray + Login</h4>
+                        <ul>
+                            <li><strong>Tray Menu:</strong> The launcher tray menu can open the launcher, launch or kill LatticeVeil, open the skin GUI, open the signed-in profile, login/logout, or exit.</li>
+                            <li><strong>Theme Matching:</strong> Tray controls now match the user's dark/light launcher theme and keep the profile row at the top of the menu.</li>
+                            <li><strong>Close/Minimize Preferences:</strong> X-button close behavior and minimize-to-tray behavior are separate saved choices.</li>
+                            <li><strong>Login Handoff:</strong> Veilnet login returns to the launcher without a manual generate-code step and can show a logged-in prompt with OK or Launch.</li>
+                        </ul>
+
+                        <h4>⬆️ Release + Update Contract</h4>
+                        <ul>
+                            <li><strong>Version Bump:</strong> Game metadata now reads as V16.0.0 so launcher update checks can identify this as the current release.</li>
+                            <li><strong>Release Split:</strong> The game repo release carries the EXE, while the assets repo release carries the assets ZIP.</li>
+                        </ul>
+
+                        <p><strong>Downloads:</strong> <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v16.0.0" style="color: var(--primary);">Game V16.0.0</a> | <a href="https://github.com/latticeveil/Assets/releases/tag/v16.0.0" style="color: var(--primary);">Assets V16.0.0</a> | <a href="https://github.com/latticeveil/latticeveil.github.io/releases/download/v12.0.0/LatticeVeilInstaller.exe" style="color: var(--primary);">LatticeVeil Installer</a></p>
+                    </div>
+                </div>
+                <div class="log-entry">
                     <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Soulbound Signals">
                     <div class="log-header">
                         <h3>V15.0.0 "Soulbound Signals" - Souls, Multiplayer Polish, and Social UI Cleanup</h3>
@@ -2491,6 +2532,23 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             <!-- WEBSITE UPDATES -->
 
             <div id="log-website" class="sub-content">
+                <div class="log-entry">
+                    <div class="log-header">
+                        <h3>Website: V16.0.0 "Veilnet Skinlink" - Skin Editor + Roadmap Sync</h3>
+                        <span class="log-date">MAY 01, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p>The website now reflects V16.0.0 as the current public release and exposes the Veilnet game-skin workflow as a real account tool instead of a launcher-only feature.</p>
+                        <ul>
+                            <li><strong>Skin Editor Page:</strong> The Veilnet skin page edits the account's active game skin, previews it on a layered game-style player model, and saves only through explicit user actions.</li>
+                            <li><strong>Local Skin Library:</strong> Browser backups now appear as visual cards, block exact visual duplicates, require clearer name/change handling, and can restore skins without creating extra cloud copies.</li>
+                            <li><strong>Launcher Import Bridge:</strong> The website can hand saved browser skins to the launcher import flow so users can sync browser backups into the launcher skin folder.</li>
+                            <li><strong>Cloud Slot Alignment:</strong> Website copy and behavior now describe the same Supabase-backed active skin slot used by the launcher and multiplayer game.</li>
+                            <li><strong>Roadmap Update:</strong> The roadmap now moves the skin pipeline into the shipped/current V16 lane and moves world import/admin cleanup forward as the next work.</li>
+                        </ul>
+                        <p><strong>Skin Editor:</strong> <a href="/veilnet/skin/" style="color: var(--primary);">Open Veilnet Game Skin</a></p>
+                    </div>
+                </div>
                 <div class="log-entry">
                     <div class="log-header">
                         <h3>Website: V14.0.1 "Pauseglass Patch" - Release Feed + Version Sync</h3>
