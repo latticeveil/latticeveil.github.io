@@ -68,11 +68,15 @@
 
     .banner-crop-preview {
       width: 100%;
-      aspect-ratio: 4 / 1;
-      border-radius: 8px;
-      border: 2px solid var(--border);
+      aspect-ratio: 80 / 17;
+      border-radius: 22px;
+      border: 1px solid rgba(56,225,255,.18);
       overflow: hidden;
-      background: var(--bg);
+      background:
+        radial-gradient(600px 240px at 30% 20%, rgba(56,225,255,.25), transparent 70%),
+        radial-gradient(700px 260px at 70% 40%, rgba(242,193,78,.10), transparent 70%),
+        linear-gradient(180deg, rgba(15,22,34,.75), rgba(15,22,34,.35));
+      box-shadow: var(--shadow);
       display: none;
     }
 
@@ -81,6 +85,7 @@
       height: 100%;
       object-fit: cover;
       object-position: center 50%;
+      filter: saturate(1.05);
       display: block;
     }
 
@@ -109,12 +114,14 @@
     }
     
     .profile-nameplate {
-      position: absolute;
-      left: 180px;
-      top: 32px;
+      position: relative;
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 12px;
+      width: fit-content;
+      max-width: 100%;
+      margin: 0 0 1.25rem;
       padding: 10px 14px;
       border-radius: 14px;
       background: rgba(0,0,0,0.35);
@@ -122,11 +129,10 @@
       -webkit-backdrop-filter: blur(10px);
       border: 1px solid var(--border-accent);
       box-shadow: 0 10px 30px rgba(0,0,0,0.35), 0 0 0 1px var(--border-accent), 0 0 26px var(--accent-soft);
-      z-index: 6;
     }
-    
+
     .profile-nameplate .profile-name {
-      font-size: 42px;
+      font-size: clamp(28px, 5vw, 42px);
       font-weight: 800;
       line-height: 1;
       text-shadow: 0 6px 18px rgba(0,0,0,0.55);
@@ -150,6 +156,10 @@
     
     .profile-content {
       padding: 2rem;
+    }
+
+    .profile-content .profile-nameplate {
+      margin-top: 0;
     }
     
     .profile-section {
@@ -401,6 +411,17 @@
     <div class="profile-container">
       <div class="profile-hero">
         <div id="profileBanner" class="profile-banner"></div>
+        <div class="profile-header">
+          <div class="profile-avatar">
+            <img id="profileAvatar" src="../assets/default_pfp.png" alt="Profile">
+          </div>
+          <div class="profile-info">
+            <p id="profileStatus">&nbsp;</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-content">
         <div class="profile-nameplate">
           <div class="profile-name" id="profileNameplateUsername">&nbsp;</div>
           <div class="profile-actions">
@@ -415,17 +436,6 @@
             </button>
           </div>
         </div>
-        <div class="profile-header">
-          <div class="profile-avatar">
-            <img id="profileAvatar" src="../assets/default_pfp.png" alt="Profile">
-          </div>
-          <div class="profile-info">
-            <p id="profileStatus">&nbsp;</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="profile-content">
         <div class="profile-section">
           <h2>About Me</h2>
           <div id="profileAboutMeText" class="profile-aboutme-text" data-profile-aboutme>No about me yet.</div>
@@ -497,7 +507,7 @@
       <div style="margin-bottom: 1.5rem;">
         <label style="display: block; margin-bottom: 0.5rem; color: var(--text); font-weight: 600;">Profile Banner</label>
         <input type="file" id="editBannerInput" accept="image/*" style="width: 100%; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 6px; font-size: 1rem;">
-        <small style="color: var(--muted); font-size: 0.85rem;">Upload banner image (1600x400 recommended)</small>
+        <small style="color: var(--muted); font-size: 0.85rem;">Upload banner image (1600x340 recommended)</small>
       </div>
       
       <div style="margin-bottom: 1.5rem;">
@@ -596,7 +606,7 @@
           URL.revokeObjectURL(objectUrl);
 
           const targetWidth = 1600;
-          const targetHeight = 400;
+          const targetHeight = 340;
           const scale = Math.max(targetWidth / img.naturalWidth, targetHeight / img.naturalHeight);
           const sourceWidth = targetWidth / scale;
           const sourceHeight = targetHeight / scale;
