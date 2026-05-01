@@ -22,7 +22,7 @@
             </div>
             <h1>LatticeVeil Roadmap</h1>
             <p>
-                This roadmap reflects the current V15.0.0 state. It separates what is already shipped, what is being cleaned up next, and what is planned for later so the public build order is easier to follow.
+                This roadmap reflects the current V16.0.0 state. It separates what is already shipped, what is being cleaned up next, and what is planned for later so the public build order is easier to follow.
             </p>
         </section>
 
@@ -38,10 +38,10 @@
             <article class="roadmap-card">
                 <h2>Current Public State</h2>
                 <p>
-                    V15.0.0 "Soulbound Signals" is the current game release. The project now has real launcher updating, asset updating, world creation, terrain generation, multiplayer hosting and joining, friends/profile surfaces, survival HUD foundations, commands, PvP controls, death/respawn work, souls, installer delivery, and a refreshed uninstaller path.
+                    V16.0.0 "Veilnet Skinlink" is the current game release. The project now has real launcher updating, asset updating, world creation, terrain generation, multiplayer hosting and joining, friends/profile surfaces, survival HUD foundations, commands, PvP controls, death/respawn work, souls, website-edited account skins, launcher skin sync, tray controls, installer delivery, and a refreshed uninstaller path.
                 </p>
                 <div class="roadmap-note">
-                    The next major work is not another distribution reset. The next pass is focused on player appearance, skin upload/storage, world import quality-of-life, social/profile cleanup, and better host/admin tools.
+                    The next major work is not another distribution reset. The next pass is focused on validating the V16 skin pipeline in normal use, tightening world import quality-of-life, continuing social/profile cleanup, and building better host/admin tools.
                 </div>
             </article>
 
@@ -86,20 +86,12 @@
                         <span class="roadmap-step-num">1</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status testing">Current</span>
-                            <h3>Finish V15 validation</h3>
-                            <p>Validate souls, reclaiming, PvP, kill commands, invite flows, multiplayer join/leave messaging, installer world import, and uninstaller backup metadata in normal use.</p>
+                            <h3>Validate V16 skin pipeline</h3>
+                            <p>Validate website skin editing, active cloud skin selection, launcher imports, tray restore behavior, and multiplayer skin visibility in normal use.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">2</span>
-                        <div class="roadmap-step-body">
-                            <span class="roadmap-status needs-added">Next Up</span>
-                            <h3>Player model and skins</h3>
-                            <p>Add the launcher player model preview, working uploaded skins, account-linked active skin selection, local caching, and R2-backed image storage with Supabase metadata.</p>
-                        </div>
-                    </li>
-                    <li class="roadmap-step">
-                        <span class="roadmap-step-num">3</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status needs-added">Next Up</span>
                             <h3>Game-side world importing</h3>
@@ -107,11 +99,19 @@
                         </div>
                     </li>
                     <li class="roadmap-step">
+                        <span class="roadmap-step-num">3</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status needs-added">Next Up</span>
+                            <h3>Admin panel and host permissions</h3>
+                            <p>Replace the standalone invite button with a host/admin panel for invites, admins, ops, build-zone permissions, break/place permissions, and role tags in the TAB list.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
                         <span class="roadmap-step-num">4</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>Admin panel and host permissions</h3>
-                            <p>Replace the standalone invite button with a host/admin panel for invites, admins, ops, build-zone permissions, break/place permissions, and role tags in the TAB list.</p>
+                            <h3>Profile/friends cleanup</h3>
+                            <p>Keep avatar/banner fetching reliable, reduce social refresh cost, improve large-list behavior, and continue polishing profile presentation around Veilnet accounts.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
@@ -175,14 +175,31 @@
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status current">Shipped</span>
-                            <h3>Player model and local skin foundation</h3>
+                            <h3>Player model, website skins, and launcher sync</h3>
                         </div>
                         <ul class="roadmap-detail-list">
                             <li>In-game player model rendering exists for local and remote players.</li>
                             <li>The game loads the default player skin texture from the asset pack.</li>
                             <li>Player skin textures hot-reload locally when the skin file changes.</li>
                             <li>A generated fallback skin exists when the asset skin cannot be loaded.</li>
-                            <li>Raised skin overlay mesh data is still intentionally disabled until the next skin pass.</li>
+                            <li>The Veilnet website can edit and save the same active account skin used by the launcher and multiplayer.</li>
+                            <li>The website preview uses a game-style layered player model with transparent overlay support.</li>
+                            <li>Browser local backups show visual cards and block exact visual duplicate entries.</li>
+                            <li>The launcher can import browser-backed skins into the local skin folder and refresh an already-open skin GUI.</li>
+                            <li>The launcher Skins button reloads the current cloud/local skin state instead of only checking at startup.</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status current">Shipped</span>
+                            <h3>Launcher tray and Veilnet login handoff</h3>
+                        </div>
+                        <ul class="roadmap-detail-list">
+                            <li>Minimize and close-to-tray behavior exists with separate saved preferences.</li>
+                            <li>The tray menu can open the launcher, launch or kill LatticeVeil, open the skin GUI, open the signed-in profile, login/logout, or exit.</li>
+                            <li>The tray menu follows the launcher dark/light theme and keeps the profile controls at the top.</li>
+                            <li>Opening the launcher again restores the existing launcher window instead of showing an already-open warning.</li>
+                            <li>Veilnet login returns to the launcher without a manual generate-code button and can offer OK or Launch after login succeeds.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
@@ -249,33 +266,6 @@
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status needs-added">Next Up</span>
-                            <h3>Launcher player model and skin system</h3>
-                        </div>
-                        <ul class="roadmap-detail-list">
-                            <li>Add a live 3D player model preview to the launcher/profile area.</li>
-                            <li>Let players see their account-selected skin before launching.</li>
-                            <li>Add account-linked skin selection and local cached downloads on top of the existing default/local skin loader.</li>
-                            <li>Support raised cosmetic overlay layers as shallow 3D surfaces over the base player model.</li>
-                            <li>Keep the skin format and presentation branded as LatticeVeil's own system.</li>
-                        </ul>
-                    </div>
-                    <div class="roadmap-phase">
-                        <div class="roadmap-row-head">
-                            <span class="roadmap-status needs-added">Next Up</span>
-                            <h3>Veilnet skin uploads and R2 migration</h3>
-                        </div>
-                        <ul class="roadmap-detail-list">
-                            <li>Use Cloudflare R2 for profile images, banners, and skin textures.</li>
-                            <li>Use Supabase as the source of truth for ownership, active asset IDs, object keys/URLs, hashes, and timestamps.</li>
-                            <li>Allow skin uploads and skin switching from the Veilnet website.</li>
-                            <li>Migrate existing Supabase-hosted profile pictures and banners to R2 during the skin-system pass.</li>
-                            <li>Update the website, launcher, and game to fetch profile images, banners, and skins from the new R2-backed locations.</li>
-                            <li>Use hash/version checks so cached images and skins are invalidated reliably.</li>
-                        </ul>
-                    </div>
-                    <div class="roadmap-phase">
-                        <div class="roadmap-row-head">
-                            <span class="roadmap-status needs-added">Next Up</span>
                             <h3>.lvworld import quality-of-life</h3>
                         </div>
                         <ul class="roadmap-detail-list">
@@ -286,6 +276,20 @@
                             <li>Add an IMPORT WORLD button to the world/select screen.</li>
                             <li>Create a proper texture/icon for the import button.</li>
                             <li>Manual imports and launch-time imports should share validation, duplicate naming, and player-facing error handling.</li>
+                        </ul>
+                    </div>
+                    <div class="roadmap-phase">
+                        <div class="roadmap-row-head">
+                            <span class="roadmap-status needs-added">Next Up</span>
+                            <h3>Multiplayer admin panel</h3>
+                        </div>
+                        <ul class="roadmap-detail-list">
+                            <li>Replace the current pause-menu INVITE FRIENDS entry with an ADMIN PANEL entry for hosts and authorized admins.</li>
+                            <li>Keep friend invite/send-invite controls inside the admin panel.</li>
+                            <li>Support appointing admins separately from ops.</li>
+                            <li>Let hosts grant specific permissions instead of blanket power.</li>
+                            <li>Permission categories should cover build zones, breaking blocks, placing blocks, invites, and future moderation tools.</li>
+                            <li>TAB list role tags should show HOST, OP, and configured admin roles.</li>
                         </ul>
                     </div>
                     <div class="roadmap-phase">
@@ -319,20 +323,6 @@
             <article class="roadmap-card">
                 <h2>Planned Later Systems</h2>
                 <div class="roadmap-phase-list">
-                    <div class="roadmap-phase">
-                        <div class="roadmap-row-head">
-                            <span class="roadmap-status planned">Planned</span>
-                            <h3>Multiplayer admin panel</h3>
-                        </div>
-                        <ul class="roadmap-detail-list">
-                            <li>Replace the current pause-menu INVITE FRIENDS entry with an ADMIN PANEL entry for hosts and authorized admins.</li>
-                            <li>Keep friend invite/send-invite controls inside the admin panel.</li>
-                            <li>Support appointing admins separately from ops.</li>
-                            <li>Let hosts grant specific permissions instead of blanket power.</li>
-                            <li>Permission categories should cover build zones, breaking blocks, placing blocks, invites, and future moderation tools.</li>
-                            <li>TAB list role tags should show HOST, OP, and configured admin roles.</li>
-                        </ul>
-                    </div>
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
                             <span class="roadmap-status planned">Planned</span>
