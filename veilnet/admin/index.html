@@ -73,10 +73,10 @@
     <div class="breadcrumbs"><a href="../index.html">Veilnet</a> / Admin</div>
 
     <section class="panel" style="margin-top:14px;">
-      <h3>Official Build Hash Admin</h3>
+      <h3>Admin Panel</h3>
       <div class="inner" style="display:flex; flex-direction:column; gap:12px">
         <div class="notice" style="margin:0;">
-          <b style="color:var(--text)">Warning:</b> Hashes control official online builds. Keep secure.
+          <b style="color:var(--text)">Warning:</b> These controls affect official online access. Confirm platform and channel before publishing.
         </div>
 
         <div id="adminAuthState" class="small"></div>
@@ -91,86 +91,69 @@
         </div>
 
         <div id="adminMain" style="display:none; gap:16px; flex-direction:column;">
-          <div class="small" style="display:flex; align-items:center; gap:8px;">
-            <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-              <input id="hashAutoSubmitToggle" type="checkbox">
-              Auto-submit after compute
-            </label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn active" type="button" data-admin-section="hashing">GAME HASHING</button>
+            <button class="btn ghost" type="button" data-admin-section="users">USERS</button>
           </div>
 
-          <div class="panel" style="padding:12px;">
-            <div style="font-weight:900;">DEV (Active)</div>
-            <div class="small" style="margin-top:6px;">Hash: <code id="devCurrentHash">-</code></div>
-            <div class="small">Updated: <span id="devCurrentUpdated">-</span></div>
-            <div style="margin-top:8px;">
-              <button id="devCopyBtn" class="btn ghost" type="button">Copy DEV Hash</button>
+          <div data-admin-section-panel="hashing" style="display:flex; gap:14px; flex-direction:column;">
+            <div class="panel" style="padding:12px;">
+              <div style="font-weight:900;">Channel</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                <button class="btn active" type="button" data-hash-channel="dev">DEV</button>
+                <button class="btn ghost" type="button" data-hash-channel="release">RELEASE</button>
+              </div>
+            </div>
+
+            <div class="panel" style="padding:12px;">
+              <div style="font-weight:900;">Platform</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+                <button class="btn active" type="button" data-hash-platform="windows">WINDOWS</button>
+                <button class="btn ghost" type="button" data-hash-platform="android">ANDROID</button>
+              </div>
+            </div>
+
+            <div class="panel" style="padding:12px;">
+              <div id="hashCurrentTitle" style="font-weight:900;">WINDOWS DEV (Active)</div>
+              <div class="small" style="margin-top:6px;">Hash: <code id="hashCurrentValue">-</code></div>
+              <div class="small">Updated: <span id="hashCurrentUpdated">-</span></div>
+              <div style="margin-top:8px;">
+                <button id="hashCopyBtn" class="btn ghost" type="button">Copy Current Hash</button>
+              </div>
+            </div>
+
+            <div class="panel" style="padding:12px;">
+              <div style="font-weight:900;">Update <span id="hashSelectedLabel">WINDOWS DEV</span></div>
+              <div class="small" style="margin-top:4px;">This update only affects the selected platform/channel above.</div>
+              <input id="hashInput" type="text" placeholder="64-char sha256 hex" spellcheck="false" style="margin-top:8px;">
+              <div
+                id="hashDropZone"
+                data-hash-dropzone
+                role="button"
+                tabindex="0"
+                style="margin-top:10px;border:1px dashed rgba(255,255,255,.22);border-radius:12px;padding:14px 12px;text-align:center;background:rgba(255,255,255,.02);cursor:pointer;user-select:none;"
+              >
+                <div data-drop-title style="font-weight:800;">Drop WINDOWS DEV EXE here</div>
+                <div id="hashFileHint" class="small" style="margin-top:4px; opacity:.86;">Drop the final signed EXE, or click to choose.</div>
+              </div>
+              <input id="hashFileInput" type="file" accept=".exe,application/x-msdownload" style="display:none;">
+              <div id="hashComputeStatus" class="small" aria-live="polite" style="margin-top:6px;"></div>
+              <div class="small" style="display:flex; align-items:center; gap:8px; margin-top:10px;">
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+                  <input id="hashAutoSubmitToggle" type="checkbox">
+                  Auto-submit after compute
+                </label>
+              </div>
+              <div style="margin-top:10px;">
+                <button id="hashUpdateBtn" class="btn" type="button">Update WINDOWS DEV</button>
+              </div>
             </div>
           </div>
 
-          <div class="panel" style="padding:12px;">
-            <div style="font-weight:900;">RELEASE (Active)</div>
-            <div class="small" style="margin-top:6px;">Hash: <code id="releaseCurrentHash">-</code></div>
-            <div class="small">Updated: <span id="releaseCurrentUpdated">-</span></div>
-            <div style="margin-top:8px;">
-              <button id="releaseCopyBtn" class="btn ghost" type="button">Copy RELEASE Hash</button>
-            </div>
-          </div>
-
-          <div class="panel" style="padding:12px;">
-            <div style="font-weight:900;">Update DEV Hash</div>
-            <input id="devHashInput" type="text" placeholder="64-char sha256 hex" spellcheck="false" style="margin-top:8px;">
-            <div
-              id="devDropZone"
-              data-hash-dropzone="dev"
-              role="button"
-              tabindex="0"
-              style="
-                margin-top:10px;
-                border:1px dashed rgba(255,255,255,.22);
-                border-radius:12px;
-                padding:14px 12px;
-                text-align:center;
-                background:rgba(255,255,255,.02);
-                cursor:pointer;
-                user-select:none;
-              "
-            >
-              <div style="font-weight:800;">Drop DEV EXE here</div>
-              <div class="small" style="margin-top:4px; opacity:.86;">or click to choose</div>
-            </div>
-            <input id="devExeInput" type="file" accept=".exe,application/x-msdownload" style="display:none;">
-            <div id="devHashComputeStatus" class="small" aria-live="polite" style="margin-top:6px;"></div>
-            <div style="margin-top:10px;">
-              <button id="devUpdateBtn" class="btn" type="button">Update DEV</button>
-            </div>
-          </div>
-
-          <div class="panel" style="padding:12px;">
-            <div style="font-weight:900;">Update RELEASE Hash</div>
-            <input id="releaseHashInput" type="text" placeholder="64-char sha256 hex" spellcheck="false" style="margin-top:8px;">
-            <div
-              id="releaseDropZone"
-              data-hash-dropzone="release"
-              role="button"
-              tabindex="0"
-              style="
-                margin-top:10px;
-                border:1px dashed rgba(255,255,255,.22);
-                border-radius:12px;
-                padding:14px 12px;
-                text-align:center;
-                background:rgba(255,255,255,.02);
-                cursor:pointer;
-                user-select:none;
-              "
-            >
-              <div style="font-weight:800;">Drop RELEASE EXE here</div>
-              <div class="small" style="margin-top:4px; opacity:.86;">or click to choose</div>
-            </div>
-            <input id="releaseExeInput" type="file" accept=".exe,application/x-msdownload" style="display:none;">
-            <div id="releaseHashComputeStatus" class="small" aria-live="polite" style="margin-top:6px;"></div>
-            <div style="margin-top:10px;">
-              <button id="releaseUpdateBtn" class="btn" type="button">Update RELEASE</button>
+          <div id="adminUsersPanel" data-admin-section-panel="users" style="display:none;">
+            <div class="panel" style="padding:12px;">
+              <div style="font-weight:900;">USERS</div>
+              <div class="small" style="margin-top:6px;">User administration will be added here later.</div>
             </div>
           </div>
         </div>
