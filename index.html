@@ -1881,6 +1881,40 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
                 <div class="log-entry">
                     <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Veilnet Skinlink">
                     <div class="log-header">
+                        <h3>🔐 V16.1.0 "Veilnet Skinlink" - Validation, Privacy, and Release Banner Patch</h3>
+                        <span class="log-date">MAY 02, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p><strong>Veilnet Skinlink V16.1.0 is the current public game release.</strong> This patch tightens official-build validation, trims sensitive launcher logging, and makes the launcher update banner clearer when a build is current, stale, or unable to check for updates.</p>
+
+                        <h4>🔐 Launcher + Online Validation</h4>
+                        <ul>
+                            <li><strong>Platform-Aware Hashing:</strong> Official build validation now separates Windows and Android targets so future mobile builds cannot be mixed into PC release hashes.</li>
+                            <li><strong>Channel Separation:</strong> Dev and release hashes are handled as separate lanes, reducing the chance of publishing a dev hash into the public release channel.</li>
+                            <li><strong>Version Metadata:</strong> The game executable now reports V16.1.0 internally so launcher update checks and online validation can identify this patch correctly.</li>
+                        </ul>
+
+                        <h4>🧼 Logging + Privacy Cleanup</h4>
+                        <ul>
+                            <li><strong>Token Redaction:</strong> Online gate tickets are no longer written into normal launcher logs.</li>
+                            <li><strong>Safer Service Logs:</strong> Friend/profile responses log useful status details without dumping full user payloads.</li>
+                            <li><strong>Short Hash Display:</strong> Executable hash logs now show shortened values instead of full hashes, while validation still uses the full official hash internally.</li>
+                            <li><strong>Local Path Cleanup:</strong> Release startup logs avoid exposing full local user paths where filename-level detail is enough.</li>
+                        </ul>
+
+                        <h4>🪧 Launcher Update Banner</h4>
+                        <ul>
+                            <li><strong>Release Name Display:</strong> The launcher banner now shows the running release name instead of a generic updated label.</li>
+                            <li><strong>Clearer Warning State:</strong> New-update and release-check problem states use red banner text so old or incomplete update states are easier to spot.</li>
+                            <li><strong>Readability Pass:</strong> Banner text is slightly larger and bolder for better visibility.</li>
+                        </ul>
+
+                        <p><strong>Downloads:</strong> <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v16.1.0" style="color: var(--primary);">Game V16.1.0</a> | <a href="https://github.com/latticeveil/Assets/releases/tag/v16.0.0" style="color: var(--primary);">Assets V16.0.0</a> | <a href="https://github.com/latticeveil/latticeveil.github.io/releases/download/v12.0.0/LatticeVeilInstaller.exe" style="color: var(--primary);">LatticeVeil Installer</a></p>
+                    </div>
+                </div>
+                <div class="log-entry">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Veilnet Skinlink">
+                    <div class="log-header">
                         <h3>🎨 V16.0.0 "Veilnet Skinlink" - Web Skins, Launcher Tray, and Account Sync</h3>
                         <span class="log-date">MAY 01, 2026</span>
                     </div>
@@ -2532,6 +2566,20 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             <!-- WEBSITE UPDATES -->
 
             <div id="log-website" class="sub-content">
+                <div class="log-entry">
+                    <div class="log-header">
+                        <h3>Website: V16.1.0 "Veilnet Skinlink" - Release Entry Sync</h3>
+                        <span class="log-date">MAY 02, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p>The website now lists V16.1.0 as the current public game release while keeping the V16.0.0 Skinlink entry available as release history.</p>
+                        <ul>
+                            <li><strong>Release Feed:</strong> Added the V16.1.0 patch notes to the Game Updates log.</li>
+                            <li><strong>Download Link:</strong> The release entry points at the official V16.1.0 game release.</li>
+                            <li><strong>Installer Flow:</strong> The main download button remains the installer bootstrap, which checks the latest public game release.</li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="log-entry">
                     <div class="log-header">
                         <h3>Website: V16.0.0 "Veilnet Skinlink" - Skin Editor + Roadmap Sync</h3>
