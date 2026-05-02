@@ -223,12 +223,13 @@
       codeTimer.style.display = "none";
       
       launchHint.textContent = IS_ANDROID_LINK
-        ? "Your browser should ask for permission to open the LatticeVeil Android app. If it doesn't, open the app manually and try login again."
+        ? "Tap Continue when your browser asks to open the LatticeVeil Android app. This tab will stay open."
         : "Your browser should ask for permission to open the LatticeVeil Launcher. If it doesn't, you may need to launch the game manually first.";
       launchHint.style.display = "block";
 
       // Perform the redirect to trigger the launcher.
       window.location.href = redirectUrl;
+      if (IS_ANDROID_LINK) return;
       setTimeout(() => {
         try { window.close(); } catch {}
       }, 900);
