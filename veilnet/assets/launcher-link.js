@@ -41,7 +41,10 @@
     if ((window.location.pathname || "").includes("/veilnet/")) return "/veilnet/";
     return "/";
   })();
-  const AUTO_START = new URLSearchParams(window.location.search).get("autostart") === "1";
+  const query = new URLSearchParams(window.location.search);
+  const AUTO_START = query.get("autostart") === "1";
+  const PLATFORM = String(query.get("platform") || "").toLowerCase();
+  const IS_ANDROID_LINK = PLATFORM === "android" || /Android/i.test(navigator.userAgent || "");
 
   let countdownInterval = null;
   let expiresAtMs = 0;
@@ -208,9 +211,9 @@
       }
 
       // --- New flow: redirect to protocol handler ---
-      const redirectUrl = `latticeveil://link?code=${encodeURIComponent(code)}`;
+      const redirectUrl = `latticeveil://link?code=${encodeURIComponent(code)}${IS_ANDROID_LINK ? "&platform=android" : ""}`;
       setSection("success");
-      setStatus("LOGIN SUCCESS. Opening LatticeVeil Launcher...", false);
+      setStatus(`LOGIN SUCCESS. Opening LatticeVeil ${IS_ANDROID_LINK ? "Android" : "Launcher"}...`, false);
 
       // Update UI to reflect the redirect.
       issueCodeBtn.style.display = "none";
@@ -219,7 +222,9 @@
       launchGameBtn.style.display = "none";
       codeTimer.style.display = "none";
       
-      launchHint.textContent = "Your browser should ask for permission to open the LatticeVeil Launcher. If it doesn't, you may need to launch the game manually first.";
+      launchHint.textContent = IS_ANDROID_LINK
+        ? "Your browser should ask for permission to open the LatticeVeil Android app. If it doesn't, open the app manually and try login again."
+        : "Your browser should ask for permission to open the LatticeVeil Launcher. If it doesn't, you may need to launch the game manually first.";
       launchHint.style.display = "block";
 
       // Perform the redirect to trigger the launcher.
