@@ -247,6 +247,11 @@
   function maybeAutoLaunch() {
     if (!AUTO_START || autoLaunchAttempted) return;
     autoLaunchAttempted = true;
+    if (IS_ANDROID_LINK) {
+      issueCodeBtn.textContent = "OPEN ANDROID APP";
+      setStatus("Tap OPEN ANDROID APP to finish login. Your browser will ask before opening the app.", false);
+      return;
+    }
     issueCode();
   }
 
@@ -295,7 +300,7 @@
   issueCodeBtn.addEventListener("click", issueCode);
 
   if (AUTO_START) {
-    issueCodeBtn.textContent = "OPENING LAUNCHER...";
+    issueCodeBtn.textContent = IS_ANDROID_LINK ? "OPEN ANDROID APP" : "OPENING LAUNCHER...";
   }
 
   copyCodeBtn.addEventListener("click", async () => {
