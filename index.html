@@ -18,7 +18,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <link rel="stylesheet" href="assets/site.css?v=20260405c">
+    <link rel="stylesheet" href="assets/site.css?v=20260504a">
     <link rel="stylesheet" href="assets/tos-modal.css">
 
     <style>
@@ -757,7 +757,7 @@
     
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="assets/enhanced-ui.js?v=20260405c"></script>
+    <script src="assets/enhanced-ui.js?v=20260504a"></script>
     <script src="assets/tos-acceptance.js"></script>
     <script src="assets/asset-catalog-order.js?v=1"></script>
     <script src="assets/asset-3d-viewer.js?v=1"></script>
@@ -772,6 +772,7 @@
         <!-- Desktop Layout -->
         <button class="action-btn book-btn desktop-only" onclick="showBookModal()">
             <i class="fas fa-book"></i>
+            <span class="novel-release-badge" data-novel-new-count aria-label="Unread new frames"></span>
             <span class="btn-tooltip">READ NOVEL</span>
         </button>
         <button class="action-btn donate-btn desktop-only" onclick="showDonateModal()">
@@ -792,6 +793,7 @@
                 <button class="mobile-book-btn" onclick="closeMobileActionsMenu(); showBookModal();">
                     <i class="fas fa-book"></i>
                     <span>READ NOVEL</span>
+                    <span class="novel-release-badge" data-novel-new-count aria-label="Unread new frames"></span>
                 </button>
                 <button class="mobile-donate-btn" onclick="closeMobileActionsMenu(); showDonateModal();">
                     <i class="fas fa-heart"></i>

@@ -10,8 +10,67 @@ class EnhancedUIManager {
         this.setupDonateModal();
         this.setupMobileOptimizations();
         this.setupContinueReading();
+        this.setupNovelReleaseBadges();
         this.setupMobileMenu();
         this.setupJumpToTop();
+    }
+
+    getHighestSeenReaderChapter() {
+        const savedChapter = parseInt(localStorage.getItem('reader_chapter') || '0', 10) || 0;
+        const highestSeen = parseInt(localStorage.getItem('reader_highest_chapter_seen') || '0', 10) || 0;
+        return Math.max(savedChapter, highestSeen);
+    }
+
+    getLatestReaderChapter() {
+        return Array.from(document.querySelectorAll('#bookModal .chapter-item[href*="echoes.html?chapter="]'))
+            .map(link => {
+                const match = (link.getAttribute('href') || '').match(/chapter=(\d+)/);
+                return match ? parseInt(match[1], 10) : 0;
+            })
+            .reduce((max, chapter) => Math.max(max, chapter), 0);
+    }
+
+    setNovelBadgeValue(badge, value) {
+        if (!badge) return;
+        if (value) {
+            badge.textContent = value;
+            badge.classList.add('active');
+            badge.setAttribute('aria-hidden', 'false');
+        } else {
+            badge.textContent = '';
+            badge.classList.remove('active');
+            badge.setAttribute('aria-hidden', 'true');
+        }
+    }
+
+    setupNovelReleaseBadges() {
+        const latestChapter = this.getLatestReaderChapter();
+        if (!latestChapter) return;
+
+        const highestSeen = this.getHighestSeenReaderChapter();
+        const unreadCount = highestSeen > 0 ? Math.max(0, latestChapter - highestSeen) : 0;
+        const buttonBadgeText = unreadCount > 9 ? '9+' : String(unreadCount || '');
+
+        document.querySelectorAll('[data-novel-new-count]').forEach(badge => {
+            this.setNovelBadgeValue(badge, buttonBadgeText);
+        });
+
+        document.querySelectorAll('#bookModal .chapter-item[href*="echoes.html?chapter="]').forEach(link => {
+            const match = (link.getAttribute('href') || '').match(/chapter=(\d+)/);
+            const chapterNum = match ? parseInt(match[1], 10) : 0;
+            const isNew = highestSeen > 0 && chapterNum > highestSeen;
+            let badge = link.querySelector('.novel-release-badge');
+
+            if (!badge && isNew) {
+                badge = document.createElement('span');
+                badge.className = 'novel-release-badge';
+                badge.setAttribute('aria-label', 'New unread frame');
+                link.appendChild(badge);
+            }
+
+            link.classList.toggle('has-new-frame', isNew);
+            this.setNovelBadgeValue(badge, isNew ? 'NEW' : '');
+        });
     }
 
     setupContinueReading() {
@@ -32,8 +91,10 @@ class EnhancedUIManager {
         window.openReaderChapter = function(chapterNum) {
             const normalizedChapter = Math.max(1, parseInt(chapterNum, 10) || 1);
             const savedScroll = parseInt(localStorage.getItem(`reader_scroll_ch${normalizedChapter}`) || '0', 10) || 0;
+            const highestSeen = parseInt(localStorage.getItem('reader_highest_chapter_seen') || '0', 10) || 0;
 
             localStorage.setItem('reader_chapter', String(normalizedChapter));
+            localStorage.setItem('reader_highest_chapter_seen', String(Math.max(highestSeen, normalizedChapter)));
             localStorage.setItem('reader_return_context', JSON.stringify({
                 chapter: normalizedChapter,
                 scroll: savedScroll,
@@ -62,6 +123,9 @@ class EnhancedUIManager {
         
         // Make modal functions globally available
         window.showBookModal = function() {
+            if (window.enhancedUI && typeof window.enhancedUI.setupNovelReleaseBadges === 'function') {
+                window.enhancedUI.setupNovelReleaseBadges();
+            }
             const modal = document.getElementById('bookModal');
             if (modal) {
                 modal.classList.add('active');
@@ -253,6 +317,7 @@ class EnhancedUIManager {
 
         this.hideBookDataClearConfirm();
         this.hideBookModalIfOpen();
+        this.setupNovelReleaseBadges();
         this.showNotification('Novel reader data cleared for all frames', 'success');
         this.closeAllDropdowns();
     }
