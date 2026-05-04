@@ -507,36 +507,166 @@ window.openNotesPanel = function() {};
 
 // Old DOM-based functions removed - replaced by offset-based system
 
-window.downloadEbook = function(format) {
+const downloadScopeKey = 'reader_download_scope';
+
+function normalizeDownloadScope(scope) {
+    return scope === 'frame' ? 'frame' : 'book';
+}
+
+function getDownloadScope() {
+    const active = document.querySelector('[data-download-scope].active')?.dataset.downloadScope;
+    return normalizeDownloadScope(active || localStorage.getItem(downloadScopeKey));
+}
+
+function updateDownloadScopeButtons(scope = getDownloadScope()) {
+    const normalized = normalizeDownloadScope(scope);
+    document.querySelectorAll('[data-download-scope]').forEach(button => {
+        const isActive = button.dataset.downloadScope === normalized;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+    });
+}
+
+function setDownloadScope(scope) {
+    const normalized = normalizeDownloadScope(scope);
+    localStorage.setItem(downloadScopeKey, normalized);
+    updateDownloadScopeButtons(normalized);
+}
+
+function slugifyDownloadPart(value) {
+    return String(value || '')
+        .trim()
+        .replace(/&/g, 'and')
+        .replace(/[^a-z0-9]+/gi, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function getChapterExportLabel(section) {
+    const number = section?.querySelector('.chapter-number')?.textContent?.trim() || '';
+    const title = section?.querySelector('.chapter-title')?.textContent?.trim() || '';
+    return [number, title].filter(Boolean).join(' - ');
+}
+
+function getCurrentChapterSection() {
+    const byState = document.querySelector(`section[data-chapter="${state.chapter}"]`);
+    if (byState) return byState;
+    return Array.from(document.querySelectorAll('section[data-chapter]')).find(section => {
+        return window.getComputedStyle(section).display !== 'none';
+    }) || document.querySelector('section[data-chapter]');
+}
+
+function getDownloadPayload() {
     const bookContent = document.getElementById('bookContent');
-    if (!bookContent) return;
-    
-    const title = 'Echoes_of_the_Continuist';
-    
+    if (!bookContent) return null;
+
+    const scope = getDownloadScope();
+    const baseTitle = 'Echoes_of_the_Continuist';
+
+    if (scope === 'frame') {
+        const chapter = getCurrentChapterSection();
+        if (!chapter) return null;
+        const label = getChapterExportLabel(chapter) || `Frame ${state.chapter}`;
+        const filePart = slugifyDownloadPart(label) || `Frame_${state.chapter}`;
+        return {
+            scope,
+            title: `${baseTitle}_${filePart}`,
+            displayTitle: `Echoes of the Continuist - ${label}`,
+            content: chapter
+        };
+    }
+
+    return {
+        scope,
+        title: baseTitle,
+        displayTitle: 'Echoes of the Continuist',
+        content: bookContent
+    };
+}
+
+function unwrapExportElement(element) {
+    const parent = element.parentNode;
+    if (!parent) return;
+    while (element.firstChild) {
+        parent.insertBefore(element.firstChild, element);
+    }
+    parent.removeChild(element);
+}
+
+function cloneForExport(content) {
+    const clone = content.cloneNode(true);
+
+    if (clone.id === 'bookContent') {
+        const topTitle = Array.from(clone.children).find(child => child.tagName === 'H1');
+        if (topTitle) topTitle.remove();
+    }
+
+    clone.querySelectorAll('.chapter-nav-wrap, script, style').forEach(element => element.remove());
+    clone.querySelectorAll('.read-span, .user-highlight, .lore-link, .reading-highlight').forEach(unwrapExportElement);
+    clone.querySelectorAll('section[data-chapter]').forEach(section => {
+        section.removeAttribute('style');
+        section.classList.add('chapter-break');
+    });
+    clone.querySelectorAll('[id^="frame"][id$="Content"]').forEach(host => {
+        host.removeAttribute('id');
+    });
+
+    if (clone.matches?.('section[data-chapter]')) {
+        clone.removeAttribute('style');
+        clone.classList.add('chapter-break');
+    }
+
+    return clone;
+}
+
+function getExportSections(content) {
+    const clone = cloneForExport(content);
+    const sections = [];
+    if (clone.matches?.('section[data-chapter]')) sections.push(clone);
+    clone.querySelectorAll?.('section[data-chapter]').forEach(section => sections.push(section));
+    return sections;
+}
+
+function getCleanExportHtml(content) {
+    return cloneForExport(content).outerHTML || cloneForExport(content).innerHTML;
+}
+
+function downloadBlob(filename, blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+window.downloadEbook = function(format) {
+    const payload = getDownloadPayload();
+    if (!payload) return;
+
     switch(format) {
         case 'epub':
-            generateEPUB(title, bookContent);
+            generateEPUB(payload);
             break;
         case 'pdf':
-            generatePDF(title, bookContent);
+            generatePDF(payload);
             break;
         case 'txt':
-            generateTXT(title, bookContent);
+            generateTXT(payload);
             break;
         case 'html':
-            generateHTML(title, bookContent);
+            generateHTML(payload);
             break;
     }
 };
 
-function generateEPUB(title, content) {
-    // Create EPUB structure
+function generateEPUB(payload) {
+    const { title, displayTitle, content } = payload;
     const zip = new JSZip();
-    
-    // 1. mimetype (must be first)
+
     zip.file('mimetype', 'application/epub+zip');
-    
-    // 2. META-INF/container.xml
+
     const containerXml = `<?xml version="1.0"?>
 <container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">
     <rootfiles>
@@ -544,23 +674,25 @@ function generateEPUB(title, content) {
     </rootfiles>
 </container>`;
     zip.folder('META-INF').file('container.xml', containerXml);
-    
-    // 3. OEBPS/content.opf (manifest)
-    const chapters = content.querySelectorAll('section[data-chapter]');
+
+    const chapters = getExportSections(content);
     let manifestItems = '';
     let spineItems = '';
-    
+    let navPoints = '';
+
     chapters.forEach((ch, idx) => {
         const chId = `chapter${idx + 1}`;
+        const label = getChapterExportLabel(ch) || `Chapter ${idx + 1}`;
         manifestItems += `<item id="${chId}" href="${chId}.xhtml" media-type="application/xhtml+xml"/>\n`;
         spineItems += `<itemref idref="${chId}"/>\n`;
+        navPoints += `<navPoint id="navPoint-${idx + 1}" playOrder="${idx + 1}"><navLabel><text>${escapeHtml(label)}</text></navLabel><content src="${chId}.xhtml"/></navPoint>\n`;
     });
-    
+
     const contentOpf = `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" version="3.0">
     <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-        <dc:identifier id="bookid">${title}</dc:identifier>
-        <dc:title>${title.replace(/_/g, ' ')}</dc:title>
+        <dc:identifier id="bookid">${escapeHtml(title)}</dc:identifier>
+        <dc:title>${escapeHtml(displayTitle)}</dc:title>
         <dc:creator>LatticeVeil</dc:creator>
         <dc:language>en</dc:language>
         <dc:date>${new Date().toISOString().split('T')[0]}</dc:date>
@@ -574,12 +706,19 @@ function generateEPUB(title, content) {
         ${spineItems}
     </spine>
 </package>`;
-    
+
+    const tocNcx = `<?xml version="1.0" encoding="UTF-8"?>
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+    <head><meta name="dtb:uid" content="${escapeHtml(title)}"/></head>
+    <docTitle><text>${escapeHtml(displayTitle)}</text></docTitle>
+    <navMap>${navPoints}</navMap>
+</ncx>`;
+
     zip.folder('OEBPS').file('content.opf', contentOpf);
-    
-    // 4. CSS
+    zip.folder('OEBPS').file('toc.ncx', tocNcx);
+
     const css = `body {
-        font-family: 'Merriweather', serif;
+        font-family: Georgia, serif;
         line-height: 1.6;
         color: #333;
         max-width: 700px;
@@ -588,68 +727,61 @@ function generateEPUB(title, content) {
     }
     h1 { text-align: center; margin: 2em 0; }
     p { text-indent: 2em; margin: 1em 0; }
-    .chapter-title { text-align: center; margin: 3em 0 1em 0; }`;
-    
+    .chapter-title-wrap { text-align: center; margin: 3em 0 1em 0; }
+    .chapter-number { display: block; font-size: 0.85em; letter-spacing: 0.08em; }
+    .chapter-title { margin: 0.25em 0 1em; }`;
+
     zip.folder('OEBPS').file('styles.css', css);
-    
-    // 5. Chapter files
+
     chapters.forEach((ch, idx) => {
-        const chContent = ch.innerHTML
-            .replace(/<span[^>]*class="read-span"[^>]*>(.*?)<\/span>/g, '$1')
-            .replace(/<span[^>]*class="user-highlight"[^>]*>(.*?)<\/span>/g, '$1');
-        
+        const chContent = cloneForExport(ch).innerHTML;
+        const label = getChapterExportLabel(ch) || `Chapter ${idx + 1}`;
+
         const xhtml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-    <title>Chapter ${idx + 1}</title>
+    <title>${escapeHtml(label)}</title>
     <link rel="stylesheet" type="text/css" href="styles.css"/>
 </head>
 <body>
     ${chContent}
 </body>
 </html>`;
-        
+
         zip.folder('OEBPS').file(`chapter${idx + 1}.xhtml`, xhtml);
     });
-    
-    // 6. Generate and download
-    zip.generateAsync({type: 'blob'}).then(function(content) {
-        const url = URL.createObjectURL(content);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${title}.epub`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+
+    zip.generateAsync({type: 'blob'}).then(function(blob) {
+        downloadBlob(`${title}.epub`, blob);
     });
 }
 
-function generatePDF(title, content) {
-    // Simple PDF generation using browser print
+function generatePDF(payload) {
+    const { title, displayTitle, content } = payload;
     const printWindow = window.open('', '_blank');
-    const cleanContent = content.innerHTML
-        .replace(/<span[^>]*class="read-span"[^>]*>(.*?)<\/span>/g, '$1')
-        .replace(/<span[^>]*class="user-highlight"[^>]*>(.*?)<\/span>/g, '$1')
-        .replace(/<section[^>]*data-chapter="[^"]*"[^>]*>/g, '<div class="chapter-break">')
-        .replace(/<\/section>/g, '</div>');
-    
+    if (!printWindow) return;
+
+    const cleanContent = getCleanExportHtml(content);
+
     printWindow.document.write(`
         <!DOCTYPE html>
         <html>
         <head>
-            <title>${title.replace(/_/g, ' ')}</title>
+            <title>${escapeHtml(displayTitle)}</title>
             <style>
-                body { font-family: 'Merriweather', serif; line-height: 1.6; color: #000; max-width: 700px; margin: 0 auto; padding: 20px; }
+                body { font-family: Georgia, serif; line-height: 1.6; color: #000; max-width: 700px; margin: 0 auto; padding: 20px; }
                 h1 { text-align: center; margin: 2em 0; }
                 p { text-indent: 2em; margin: 1em 0; }
+                .chapter-title-wrap { text-align: center; margin: 3em 0 1em 0; }
+                .chapter-number { display: block; font-size: 0.85em; letter-spacing: 0.08em; }
                 .chapter-break { page-break-before: always; margin-top: 50px; }
+                .chapter-break:first-of-type { page-break-before: auto; }
                 @media print { body { margin: 0; } }
             </style>
         </head>
         <body>
-            <h1>${title.replace(/_/g, ' ')}</h1>
+            <h1>${escapeHtml(displayTitle)}</h1>
             ${cleanContent}
         </body>
         </html>
@@ -661,37 +793,45 @@ function generatePDF(title, content) {
     }, 100);
 }
 
-function generateTXT(title, content) {
-    const text = content.innerText
-        .replace(/\s+/g, ' ')
-        .replace(/\n\s*\n/g, '\n\n')
-        .trim();
-    
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${title}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+function generateTXT(payload) {
+    const { title, displayTitle, content } = payload;
+    const lines = [displayTitle];
+    const chapters = getExportSections(content);
+
+    chapters.forEach((chapter, chapterIndex) => {
+        const label = getChapterExportLabel(chapter);
+        if (label) {
+            if (chapterIndex > 0 || lines.length) lines.push('');
+            lines.push(label);
+            lines.push('');
+        }
+
+        chapter.querySelectorAll('p').forEach(paragraph => {
+            const text = paragraph.textContent.replace(/\s+/g, ' ').trim();
+            if (text) {
+                lines.push(text);
+                lines.push('');
+            }
+        });
+    });
+
+    const text = lines.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+    downloadBlob(`${title}.txt`, new Blob([text], { type: 'text/plain;charset=utf-8' }));
 }
 
-function generateHTML(title, content) {
-    const cleanContent = content.innerHTML
-        .replace(/<span[^>]*class="read-span"[^>]*>(.*?)<\/span>/g, '$1')
-        .replace(/<span[^>]*class="user-highlight"[^>]*>(.*?)<\/span>/g, '$1');
-    
+function generateHTML(payload) {
+    const { title, displayTitle, content } = payload;
+    const cleanContent = getCleanExportHtml(content);
+
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title.replace(/_/g, ' ')}</title>
+    <title>${escapeHtml(displayTitle)}</title>
     <style>
         body {
-            font-family: 'Merriweather', serif;
+            font-family: Georgia, serif;
             line-height: 1.6;
             color: #333;
             max-width: 700px;
@@ -701,24 +841,18 @@ function generateHTML(title, content) {
         }
         h1 { text-align: center; margin: 2em 0; }
         p { text-indent: 2em; margin: 1em 0; }
-        .chapter-title { text-align: center; margin: 3em 0 1em 0; }
+        .chapter-title-wrap { text-align: center; margin: 3em 0 1em 0; }
+        .chapter-number { display: block; font-size: 0.85em; letter-spacing: 0.08em; }
+        .chapter-break { margin-top: 50px; }
     </style>
 </head>
 <body>
-    <h1>${title.replace(/_/g, ' ')}</h1>
+    <h1>${escapeHtml(displayTitle)}</h1>
     ${cleanContent}
 </body>
 </html>`;
-    
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${title}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+
+    downloadBlob(`${title}.html`, new Blob([html], { type: 'text/html;charset=utf-8' }));
 }
     window.saveAndReturn = function() {
     // Save current scroll position and chapter
@@ -1298,6 +1432,10 @@ function setupEventListeners() {
     click('settingsBtn', () => window.togglePanel('settingsPanel'));
     click('helpBtn', () => window.togglePanel('helpPanel'));
     click('downloadBtn', () => window.togglePanel('downloadPanel'));
+    document.querySelectorAll('[data-download-scope]').forEach(button => {
+        button.onclick = () => setDownloadScope(button.dataset.downloadScope);
+    });
+    updateDownloadScopeButtons();
     document.querySelectorAll('.close-btn').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
     document.querySelectorAll('.settings-close').forEach(btn => { btn.onclick = () => window.togglePanel(null); });
 
