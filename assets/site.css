@@ -1631,7 +1631,10 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
 }
 
 .chapter-item {
-  display: block;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: center;
   text-decoration: none;
   color: var(--text);
   padding: 12px 14px;
@@ -1643,10 +1646,66 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
   cursor: pointer;
 }
 
+.chapter-item.has-new-frame {
+  background: rgba(56,225,255,0.09);
+  border-color: rgba(56,225,255,0.58);
+  box-shadow: 0 0 14px rgba(56,225,255,0.12);
+}
+
 .chapter-item:hover {
   background: rgba(56,225,255,0.1);
   border-color: var(--cyan);
   transform: translateX(5px);
+}
+
+.novel-release-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: var(--cyan);
+  color: #000;
+  border: 1px solid rgba(255,255,255,0.75);
+  box-shadow: 0 0 14px rgba(56,225,255,0.65);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.48rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.novel-release-badge.active {
+  display: inline-flex;
+}
+
+.book-btn .novel-release-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+}
+
+.mobile-book-btn {
+  position: relative;
+}
+
+.mobile-book-btn .novel-release-badge {
+  margin-left: 2px;
+}
+
+.chapter-item .novel-release-badge {
+  margin-left: auto;
+  flex-shrink: 0;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  font-size: 0.44rem;
+}
+
+.chapter-item .chapter-number,
+.chapter-item .chapter-name {
+  grid-column: 1;
+  min-width: 0;
 }
 
 .chapter-number {

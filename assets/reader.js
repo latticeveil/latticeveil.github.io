@@ -43,6 +43,12 @@ function loadChapterTtsState(chapterNum = state.chapter) {
     state.ttsPaused = localStorage.getItem(getTtsStorageKey('paused', chapterNum)) === 'true';
 }
 
+function markReaderChapterSeen(chapterNum = state.chapter) {
+    const normalizedChapter = Math.max(1, parseInt(chapterNum, 10) || 1);
+    const highestSeen = parseInt(localStorage.getItem('reader_highest_chapter_seen') || '0', 10) || 0;
+    localStorage.setItem('reader_highest_chapter_seen', String(Math.max(highestSeen, normalizedChapter)));
+}
+
 function saveChapterTtsState(chapterNum = state.chapter) {
     localStorage.setItem(getTtsStorageKey('span', chapterNum), state.ttsSpanId || '');
     localStorage.setItem(getTtsStorageKey('paused', chapterNum), String(!!state.ttsPaused));
@@ -968,6 +974,7 @@ window.switchChapter = function(num, autoScroll = false, options = {}) {
     state.chapter = num;
     loadChapterTtsState(num);
     localStorage.setItem('reader_chapter', String(num));
+    markReaderChapterSeen(num);
     try {
         const url = new URL(window.location);
         url.searchParams.set('chapter', num);
