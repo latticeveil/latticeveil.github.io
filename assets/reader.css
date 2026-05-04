@@ -264,6 +264,36 @@ body.panel-open {
     gap: 12px;
 }
 
+.download-scope-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.download-scope-options .btn-toggle {
+    min-height: 42px;
+    border: 1px solid rgba(56, 225, 255, 0.35);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--reader-text);
+    opacity: 0.78;
+}
+
+.download-scope-options .btn-toggle:hover {
+    border-color: var(--reader-accent);
+    background: rgba(56, 225, 255, 0.12);
+    color: var(--reader-accent);
+    opacity: 1;
+}
+
+.download-scope-options .btn-toggle.active {
+    background: var(--reader-accent) !important;
+    border-color: var(--reader-accent) !important;
+    color: #000 !important;
+    opacity: 1;
+    box-shadow: 0 0 0 2px rgba(56, 225, 255, 0.25), 0 0 18px rgba(56, 225, 255, 0.22);
+    font-weight: 700;
+}
+
 .download-option {
     display: flex;
     align-items: flex-start;
@@ -274,6 +304,11 @@ body.panel-open {
     cursor: pointer;
     transition: all 0.2s ease;
     background: rgba(255,255,255,0.02);
+}
+
+.download-option:focus-visible {
+    outline: 2px solid var(--reader-accent);
+    outline-offset: 2px;
 }
 
 .download-option:hover {
@@ -296,6 +331,10 @@ body.panel-open {
     flex-shrink: 0;
 }
 
+.download-info {
+    flex: 1;
+}
+
 .download-info h4 {
     margin: 0 0 8px 0;
     color: var(--reader-accent);
@@ -309,6 +348,26 @@ body.panel-open {
     font-size: 0.85rem;
     opacity: 0.8;
     line-height: 1.4;
+}
+
+.download-action-icon {
+    width: 34px;
+    height: 34px;
+    margin-left: auto;
+    border: 1px solid rgba(56, 225, 255, 0.32);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--reader-accent);
+    background: rgba(56, 225, 255, 0.08);
+    flex-shrink: 0;
+}
+
+.download-option:hover .download-action-icon {
+    background: var(--reader-accent);
+    border-color: var(--reader-accent);
+    color: #000;
 }
 
 .color-preset {
