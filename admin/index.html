@@ -149,9 +149,29 @@
           </div>
 
           <div id="adminUsersPanel" data-admin-section-panel="users" style="display:none;">
-            <div class="panel" style="padding:12px;">
-              <div style="font-weight:900;">USERS</div>
-              <div class="small" style="margin-top:6px;">User administration will be added here later.</div>
+            <div class="panel" style="padding:12px; display:flex; flex-direction:column; gap:10px;">
+              <div style="font-weight:900;">DEV Access</div>
+              <div class="small">Add Veilnet users by username or user id. Admins can manage this panel; testers can receive DEV files.</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn active" type="button" data-access-kind="tester">TESTER</button>
+                <button class="btn ghost" type="button" data-access-kind="admin">ADMIN</button>
+              </div>
+              <input id="devAccessUserInput" type="text" placeholder="Veilnet username or user id" spellcheck="false">
+              <input id="devAccessNoteInput" type="text" placeholder="Optional note" spellcheck="false">
+              <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <button id="devAccessAddBtn" class="btn" type="button">Add Tester</button>
+                <button id="devAccessRefreshBtn" class="btn ghost" type="button">Refresh List</button>
+              </div>
+            </div>
+
+            <div class="panel" style="padding:12px; margin-top:12px;">
+              <div style="font-weight:900;">Admins</div>
+              <div id="devAdminsList" style="display:flex; flex-direction:column; gap:8px; margin-top:10px;"></div>
+            </div>
+
+            <div class="panel" style="padding:12px; margin-top:12px;">
+              <div style="font-weight:900;">Testers</div>
+              <div id="devTestersList" style="display:flex; flex-direction:column; gap:8px; margin-top:10px;"></div>
             </div>
           </div>
         </div>

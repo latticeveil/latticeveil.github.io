@@ -2,6 +2,7 @@
   const base = `${String(VEILNET_CONFIG?.SUPABASE_URL || "").replace(/\/+$/, "")}/functions/v1`;
   const getUrl = `${base}/game-hashes-get`;
   const setUrl = `${base}/admin-set-build`;
+  const devAccessUrl = `${base}/dev-access`;
   const hashRe = /^[0-9a-f]{64}$/i;
   const platforms = ["windows", "android"];
   const channels = ["dev", "release"];
@@ -11,7 +12,8 @@
     hashes: {},
     isAdmin: false,
     hardBlocked: false,
-    isComputingHash: false
+    isComputingHash: false,
+    accessKind: "tester"
   };
   const MAX_HASH_FILE_BYTES = Math.floor(1.8 * 1024 * 1024 * 1024);
 
@@ -38,7 +40,14 @@
     autoSubmit: document.getElementById("hashAutoSubmitToggle"),
     selectedLabel: document.getElementById("hashSelectedLabel"),
     fileHint: document.getElementById("hashFileHint"),
-    usersPanel: document.getElementById("adminUsersPanel")
+    usersPanel: document.getElementById("adminUsersPanel"),
+    accessKindTabs: Array.from(document.querySelectorAll("[data-access-kind]")),
+    accessUserInput: document.getElementById("devAccessUserInput"),
+    accessNoteInput: document.getElementById("devAccessNoteInput"),
+    accessAddBtn: document.getElementById("devAccessAddBtn"),
+    accessRefreshBtn: document.getElementById("devAccessRefreshBtn"),
+    adminsList: document.getElementById("devAdminsList"),
+    testersList: document.getElementById("devTestersList")
   };
 
   if (!els.authState || !els.status || !els.loginBox || !els.main || !els.loginBtn || !els.hashInput || !els.updateBtn) return;
@@ -138,6 +147,27 @@
       tab.classList.toggle("active", active);
       tab.classList.toggle("ghost", !active);
     });
+  }
+
+  function escapeHtml(value) {
+    return String(value || "").replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#39;"
+    }[ch]));
+  }
+
+  function renderAccessKindTabs() {
+    els.accessKindTabs.forEach((tab) => {
+      const active = tab.dataset.accessKind === state.accessKind;
+      tab.classList.toggle("active", active);
+      tab.classList.toggle("ghost", !active);
+    });
+    if (els.accessAddBtn) {
+      els.accessAddBtn.textContent = state.accessKind === "admin" ? "Add Admin" : "Add Tester";
+    }
   }
 
   function setLoggedOutState() {
@@ -309,6 +339,95 @@
     }
   }
 
+  function accessRowHtml(row) {
+    const username = row.username ? `@${row.username}` : row.user_id;
+    const note = row.note ? `<div class="small" style="margin-top:2px;">${escapeHtml(row.note)}</div>` : "";
+    return `
+      <div class="panel" style="padding:10px; display:flex; gap:10px; justify-content:space-between; align-items:center;">
+        <div style="min-width:0;">
+          <div style="font-weight:900; overflow-wrap:anywhere;">${escapeHtml(username)}</div>
+          <div class="small" style="overflow-wrap:anywhere;">${escapeHtml(row.user_id || "")}</div>
+          ${note}
+        </div>
+        <button class="btn ghost" type="button" data-remove-access="${escapeHtml(row.kind)}" data-remove-user="${escapeHtml(row.user_id)}">Remove</button>
+      </div>`;
+  }
+
+  function renderAccessLists(payload) {
+    const admins = Array.isArray(payload?.admins) ? payload.admins : [];
+    const testers = Array.isArray(payload?.testers) ? payload.testers : [];
+    if (els.adminsList) {
+      els.adminsList.innerHTML = admins.length
+        ? admins.map(accessRowHtml).join("")
+        : `<div class="small">No table admins yet. ADMIN_EMAILS bootstrap admins still work.</div>`;
+    }
+    if (els.testersList) {
+      els.testersList.innerHTML = testers.length
+        ? testers.map(accessRowHtml).join("")
+        : `<div class="small">No DEV testers added.</div>`;
+    }
+  }
+
+  async function fetchAccessUsers(token) {
+    const res = await fetch(devAccessUrl, {
+      method: "POST",
+      headers: { ...authHeaders(token), "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "list" })
+    });
+    const { payload } = await parseResponse(res, "list dev access", { url: devAccessUrl, method: "POST" });
+    if (!res.ok) {
+      if (res.status === 403) return renderUnauthorizedOnlyPage();
+      throw new Error(payload?.message || payload?.error || "Failed to load DEV access users.");
+    }
+    renderAccessLists(payload);
+  }
+
+  async function mutateAccess(action, kind, user, note) {
+    if (!state.isAdmin) return setStatus("Not authorized.", true);
+    const token = await VeilnetAuth.getToken();
+    if (!token) throw new Error("Session expired. Log in again.");
+
+    const res = await fetch(devAccessUrl, {
+      method: "POST",
+      headers: { ...authHeaders(token), "Content-Type": "application/json" },
+      body: JSON.stringify({ action, kind, user, note })
+    });
+    const { payload } = await parseResponse(res, `${action} dev access`, { url: devAccessUrl, method: "POST" });
+    if (!res.ok) {
+      if (res.status === 403) return renderUnauthorizedOnlyPage();
+      throw new Error(payload?.message || payload?.error || `${action} failed.`);
+    }
+    await fetchAccessUsers(token);
+  }
+
+  async function addAccessUser() {
+    const user = String(els.accessUserInput?.value || "").trim();
+    if (!user) return setStatus("Enter a Veilnet username or user id.", true);
+    try {
+      if (els.accessAddBtn) els.accessAddBtn.disabled = true;
+      setStatus(`Adding DEV ${state.accessKind}...`);
+      await mutateAccess("add", state.accessKind, user, String(els.accessNoteInput?.value || "").trim());
+      if (els.accessUserInput) els.accessUserInput.value = "";
+      if (els.accessNoteInput) els.accessNoteInput.value = "";
+      setStatus(`DEV ${state.accessKind} added.`);
+    } catch (error) {
+      setStatus(error?.message || "Add failed.", true);
+    } finally {
+      if (els.accessAddBtn) els.accessAddBtn.disabled = !state.isAdmin;
+    }
+  }
+
+  async function removeAccessUser(kind, user) {
+    if (!kind || !user) return;
+    try {
+      setStatus(`Removing DEV ${kind}...`);
+      await mutateAccess("remove", kind, user, "");
+      setStatus(`DEV ${kind} removed.`);
+    } catch (error) {
+      setStatus(error?.message || "Remove failed.", true);
+    }
+  }
+
   async function refresh() {
     if (state.hardBlocked) return;
     try {
@@ -329,6 +448,7 @@
       setAdminUiEnabled(true);
       setStatus("");
       await fetchHashes(token);
+      await fetchAccessUsers(token);
     } catch (error) {
       setAdminUiEnabled(false);
       setStatus(error?.message || "Failed to load admin panel.", true);
@@ -354,6 +474,10 @@
     els.platformTabs.forEach((tab) => tab.addEventListener("click", () => {
       state.platform = tab.dataset.hashPlatform;
       renderHashPanel();
+    }));
+    els.accessKindTabs.forEach((tab) => tab.addEventListener("click", () => {
+      state.accessKind = tab.dataset.accessKind === "admin" ? "admin" : "tester";
+      renderAccessKindTabs();
     }));
   }
 
@@ -393,9 +517,26 @@
   els.loginBtn.addEventListener("click", async () => { await openLogin(); await refresh(); });
   els.copyBtn.addEventListener("click", async () => copyText(els.currentHash.textContent));
   els.updateBtn.addEventListener("click", updateSelectedHash);
+  els.accessAddBtn?.addEventListener("click", addAccessUser);
+  els.accessRefreshBtn?.addEventListener("click", async () => {
+    try {
+      const token = await VeilnetAuth.getToken();
+      if (!token) throw new Error("Session expired. Log in again.");
+      await fetchAccessUsers(token);
+      setStatus("DEV access list refreshed.");
+    } catch (error) {
+      setStatus(error?.message || "Refresh failed.", true);
+    }
+  });
+  els.usersPanel?.addEventListener("click", async (event) => {
+    const button = event.target?.closest?.("[data-remove-access]");
+    if (!button) return;
+    await removeAccessUser(button.dataset.removeAccess, button.dataset.removeUser);
+  });
   wireTabs();
   wireDropZone();
   renderHashPanel();
+  renderAccessKindTabs();
 
   window.addEventListener("focus", () => { if (!state.isComputingHash) refresh(); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden && !state.isComputingHash) refresh(); });
