@@ -1,7 +1,5 @@
 # FRAME 13
 
-# WHAT THE ROAD OWES
-
 The front bandit moved first.
 
 That was his second bad choice.
