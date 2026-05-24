@@ -40,6 +40,7 @@
                     <div class="chapter-item" onclick="switchToChapter(10)">FRAME 10</div>
                     <div class="chapter-item" onclick="switchToChapter(11)">FRAME 11</div>
                     <div class="chapter-item" onclick="switchToChapter(12)">FRAME 12</div>
+                    <div class="chapter-item" onclick="switchToChapter(13)">FRAME 13</div>
                 </div>
             </div>
         </div>
@@ -883,6 +884,14 @@
                 </div>
                 <div id="frame12Content"></div>
             </section>
+
+            <section data-chapter="13" id="ch-13" style="display:none;">
+                <div class="chapter-title-wrap">
+                    <span class="chapter-number">FRAME 13</span>
+                    <h2 class="chapter-title">WHAT THE ROAD OWES</h2>
+                </div>
+                <div id="frame13Content"></div>
+            </section>
         </div>
     </div>
 
@@ -1506,6 +1515,7 @@
         loadFrameMarkdown('frame10Content', 'assets/frame-10.md', 10);
         loadFrameMarkdown('frame11Content', 'assets/frame-11.md', 11);
         loadFrameMarkdown('frame12Content', 'assets/frame-12.md', 12);
+        loadFrameMarkdown('frame13Content', 'assets/frame-13.md', 13);
 
         const requestedChapter = getRequestedChapterNumber();
         updateChapterLabel(requestedChapter);
