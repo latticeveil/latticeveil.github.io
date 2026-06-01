@@ -779,6 +779,179 @@ body.focus-mode::before {
     margin: 0 0 16px;
 }
 
+.characters-panel {
+    width: min(94vw, 780px);
+    max-width: 780px;
+    height: min(86vh, 760px);
+    max-height: 760px;
+}
+
+.characters-panel-header {
+    min-height: 48px;
+    padding: 15px 56px 15px 20px;
+    border-bottom: 1px solid var(--reader-border);
+    box-sizing: border-box;
+}
+
+.characters-panel-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+    padding: 18px;
+    box-sizing: border-box;
+}
+
+.characters-search-label {
+    margin-bottom: 8px;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.48rem;
+    color: var(--reader-accent);
+}
+
+.characters-search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 0 12px;
+    border: 1px solid var(--reader-border);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.035);
+    color: var(--reader-accent);
+}
+
+.characters-search {
+    width: 100%;
+    min-width: 0;
+    padding: 12px 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--reader-text);
+    font: inherit;
+    font-size: 0.92rem;
+}
+
+.characters-search::placeholder {
+    color: var(--reader-text);
+    opacity: 0.55;
+}
+
+.characters-list {
+    display: grid;
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: start;
+    gap: 12px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding-right: 4px;
+}
+
+.character-index-card {
+    display: grid;
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 12px;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--reader-border);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.025);
+    color: var(--reader-text);
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.character-index-card:hover,
+.character-index-card:focus-visible {
+    border-color: var(--reader-accent);
+    background: rgba(56,225,255,0.07);
+    outline: none;
+}
+
+.character-index-visuals {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+}
+
+.character-index-slot {
+    display: flex;
+    min-width: 0;
+    min-height: 76px;
+}
+
+.character-index-img,
+.character-index-placeholder {
+    width: 100%;
+    min-width: 0;
+    height: 76px;
+    border: 1px solid var(--reader-accent);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.character-index-img {
+    object-fit: cover;
+    image-rendering: pixelated;
+}
+
+.character-index-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    color: var(--reader-accent);
+    background: rgba(56,225,255,0.05);
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.3rem;
+    line-height: 1.55;
+    text-align: center;
+}
+
+.character-index-copy {
+    min-width: 0;
+}
+
+.character-index-name {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--reader-accent);
+    font-family: 'Press Start 2P', cursive;
+    font-size: 0.54rem;
+    line-height: 1.55;
+}
+
+.character-index-role {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.72rem;
+    opacity: 0.68;
+    text-transform: uppercase;
+}
+
+.character-index-desc {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+}
+
+.characters-empty {
+    grid-column: 1 / -1;
+    padding: 28px 12px;
+    color: var(--reader-text);
+    font-size: 0.9rem;
+    opacity: 0.72;
+    text-align: center;
+}
+
 .lore-visual-slot {
     display: flex;
     min-height: 144px;
@@ -815,6 +988,14 @@ body.focus-mode::before {
 @media (max-width: 520px) {
     .lore-visuals {
         grid-template-columns: 1fr;
+    }
+
+    .characters-list {
+        grid-template-columns: 1fr;
+    }
+
+    .character-index-card {
+        grid-template-columns: 96px minmax(0, 1fr);
     }
 }
 
