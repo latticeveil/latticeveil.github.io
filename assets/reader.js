@@ -131,6 +131,11 @@ const loreData = {
     "Elijah": { role: "Character", desc: "Observant analyst whose instincts are often faster than his explanations. He notices patterns other people miss, even when he wishes he did not." },
     "Kaden Ave Williams": { role: "Character", desc: "Communications and signal specialist carrying more strain than he lets the others see. Useful, steady, and clearly tied to unusual equipment." },
     "Kaden": { role: "Character", desc: "Communications and signal specialist carrying more strain than he lets the others see. Useful, steady, and clearly tied to unusual equipment." },
+    "Neris": { role: "Character", desc: "A child from Sister Orin’s past. Her brief presence carries more questions than answers, and Orin’s reaction makes clear that the history matters." },
+    "Malrec": { role: "Character", desc: "An older route-worker with a patient hand for marks, braces, and difficult problems. The unfinished plans in his workshop suggest years spent trying to build a doorway no one around him fully understood." },
+    "Dain": { role: "Character", desc: "A hard-eyed route bandit who carries fear like a weapon. He is watchful, severe, and dangerous whenever uncertainty gives him an excuse to act first." },
+    "Tavin": { role: "Character", desc: "A cautious terrace-village boy with an observant stare and a practical sense of danger. He is young enough to be intimidated by the road, but not helpless." },
+    "Harn": { role: "Character", desc: "A one-eyed salvager with two pry bars and firm limits. He knows the cistern shelves well enough to recognize when a path is better left alone." },
     "Continuist": { role: "Faction", desc: "Continuists treat reality like a system you can stabilize: repeatable steps, logged observations, and the Rule of Three. They don’t worship artifacts; they trust process—especially when the Veil starts rewriting the rules." },
     "Veilkeepers": { role: "Faction", desc: "Veilkeepers are sealwrights, wardens, and boundary engineers. They prioritize containment over discovery: close the breach, cap the conduit, deny the loop—then argue about meaning later." },
     "Hearthward": { role: "Faction", desc: "Focuses on communal survival holds and practical discipline." },
@@ -161,6 +166,25 @@ const loreData = {
     "Artificer Bench": { role: "Item", img: "assets/img/artificer_bench.png", desc: "Canonical workstation for gatecraft." },
     "Embercoal": { role: "Block", img: "assets/img/coal.png", desc: "Fuel source that burns with a memory of heat." }
 };
+
+const publicCharacterKeys = [
+    "Avery",
+    "Eli",
+    "Sister Orin",
+    "Kade Rowan",
+    "Continuum Rook",
+    "Rook",
+    "Dr. Sarah Chen",
+    "Dr. Avery Chen",
+    "Elijah Jay Marcus",
+    "Kaden Ave Williams",
+    "Neris",
+    "Malrec",
+    "Dain",
+    "Tavin",
+    "Harn",
+    "Pebble"
+];
 
 let wakeLockObj = null;
 
@@ -479,7 +503,8 @@ window.togglePanel = function(id, options = {}) {
         if (id === 'settingsPanel') url.searchParams.set('settings', '1');
         else if (id === 'helpPanel') url.searchParams.set('help', '1');
         else if (id === 'downloadPanel') url.searchParams.set('download', '1');
-        else { url.searchParams.delete('settings'); url.searchParams.delete('help'); url.searchParams.delete('download'); url.searchParams.delete('highlight'); url.searchParams.delete('notes'); }
+        else if (id === 'charactersPanel') url.searchParams.set('characters', '1');
+        else { url.searchParams.delete('settings'); url.searchParams.delete('help'); url.searchParams.delete('download'); url.searchParams.delete('characters'); url.searchParams.delete('highlight'); url.searchParams.delete('notes'); }
         if (updateHistory) {
             window.history.pushState(getReaderHistoryState({ panel: id }), '', url);
         } else {
@@ -491,6 +516,7 @@ window.togglePanel = function(id, options = {}) {
         url.searchParams.delete('settings');
         url.searchParams.delete('help');
         url.searchParams.delete('download');
+        url.searchParams.delete('characters');
         url.searchParams.delete('highlight');
         url.searchParams.delete('notes');
         if (updateHistory) {
@@ -1100,6 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. Initial apply
     applySettings();
     setupLoreLinks(document.getElementById('bookContent'));
+    renderCharacterIndex();
     
     // 5. Load highlights
     loadHighlightUiState();
@@ -1111,6 +1138,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const setParam = urlParams.get('settings');
     const helpParam = urlParams.get('help');
     const downloadParam = urlParams.get('download');
+    const charactersParam = urlParams.get('characters');
     const notesParam = urlParams.get('notes');
     
     if (chParam) {
@@ -1166,9 +1194,10 @@ document.addEventListener('DOMContentLoaded', () => {
         initialUrl.searchParams.delete('settings');
         initialUrl.searchParams.delete('help');
         initialUrl.searchParams.delete('download');
+        initialUrl.searchParams.delete('characters');
         initialUrl.searchParams.delete('highlight');
         initialUrl.searchParams.delete('notes');
-        const initialPanel = setParam ? 'settingsPanel' : helpParam ? 'helpPanel' : downloadParam ? 'downloadPanel' : null;
+        const initialPanel = setParam ? 'settingsPanel' : helpParam ? 'helpPanel' : downloadParam ? 'downloadPanel' : charactersParam ? 'charactersPanel' : null;
         window.history.replaceState(getReaderHistoryState({ panel: initialPanel }), '', initialUrl);
         if (initialPanel) {
             window.togglePanel(initialPanel, { updateHistory: false });
@@ -1437,8 +1466,13 @@ function setupEventListeners() {
     document.querySelectorAll('.theme-btn[data-theme]').forEach(b => { b.onclick = () => { state.theme = b.dataset.theme; saveState(); applySettings(); }; });
 
     click('settingsBtn', () => window.togglePanel('settingsPanel'));
+    click('charactersBtn', () => window.togglePanel('charactersPanel'));
     click('helpBtn', () => window.togglePanel('helpPanel'));
     click('downloadBtn', () => window.togglePanel('downloadPanel'));
+    const charactersSearch = document.getElementById('charactersSearch');
+    if (charactersSearch) {
+        charactersSearch.oninput = (e) => renderCharacterIndex(e.target.value);
+    }
     document.querySelectorAll('[data-download-scope]').forEach(button => {
         button.onclick = () => setDownloadScope(button.dataset.downloadScope);
     });
@@ -1581,6 +1615,82 @@ function showLore(title, data) {
 
     window.togglePanel('lorePanel');
 }
+
+function createCharacterIndexVisual(src, alt, placeholderText) {
+    const slot = document.createElement('span');
+    slot.className = 'character-index-slot';
+
+    if (src) {
+        const img = document.createElement('img');
+        img.className = 'character-index-img';
+        img.src = src;
+        img.alt = alt;
+        slot.appendChild(img);
+    } else {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'character-index-placeholder';
+        placeholder.textContent = placeholderText;
+        slot.appendChild(placeholder);
+    }
+
+    return slot;
+}
+
+function renderCharacterIndex(query = '') {
+    const list = document.getElementById('charactersList');
+    if (!list) return;
+
+    const normalizedQuery = query.trim().toLowerCase();
+    const characterEntries = publicCharacterKeys
+        .map((name) => [name, loreData[name]])
+        .filter(([, data]) => data && String(data.role || '').toLowerCase() === 'character')
+        .filter(([name, data]) => `${name} ${data.role} ${data.desc}`.toLowerCase().includes(normalizedQuery))
+        .sort(([left], [right]) => left.localeCompare(right));
+
+    list.replaceChildren();
+
+    if (!characterEntries.length) {
+        const empty = document.createElement('p');
+        empty.className = 'characters-empty';
+        empty.textContent = 'No characters match that search.';
+        list.appendChild(empty);
+        return;
+    }
+
+    characterEntries.forEach(([name, data]) => {
+        const card = document.createElement('button');
+        card.className = 'character-index-card';
+        card.type = 'button';
+        card.setAttribute('aria-label', `Open ${name} character sheet`);
+        card.onclick = () => showLore(name, data);
+
+        const visuals = document.createElement('span');
+        visuals.className = 'character-index-visuals';
+        visuals.appendChild(createCharacterIndexVisual(data.img, `${name} primary character reference`, 'CHARACTER IMAGE'));
+        visuals.appendChild(createCharacterIndexVisual(data.imgAlt, `${name} alternate character reference`, 'ALT IMAGE'));
+
+        const copy = document.createElement('span');
+        copy.className = 'character-index-copy';
+
+        const title = document.createElement('span');
+        title.className = 'character-index-name';
+        title.textContent = name;
+
+        const role = document.createElement('span');
+        role.className = 'character-index-role';
+        role.textContent = data.role;
+
+        const description = document.createElement('span');
+        description.className = 'character-index-desc';
+        description.textContent = data.desc;
+
+        copy.append(title, role, description);
+        card.append(visuals, copy);
+        list.appendChild(card);
+    });
+}
+
+window.renderCharacterIndex = renderCharacterIndex;
 
 function populateVoices() {
     if(!window.speechSynthesis) return;
