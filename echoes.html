@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Merriweather:wght@300;400;700&family=Inter:wght@400;600&family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <link rel="stylesheet" href="assets/reader.css?v=20260601a">
+    <link rel="stylesheet" href="assets/reader.css?v=20260601c">
     <meta name="theme-color" content="#000000">
 </head>
 <body class="theme-oled font-serif">
@@ -48,7 +48,13 @@
             </div>
         </div>
         <div class="reader-controls">
-            <button class="icon-btn" id="charactersBtn" title="Characters" aria-label="Browse characters"><i class="fas fa-users"></i></button>
+                <button class="icon-btn" id="charactersBtn" title="Field Index" aria-label="Browse field index">
+                    <span class="field-journal-icon" aria-hidden="true">
+                        <span class="field-journal-cover"></span>
+                        <span class="field-journal-pages"></span>
+                        <span class="field-journal-latch"></span>
+                    </span>
+                </button>
             <button class="icon-btn" id="helpBtn" title="How to Use" aria-label="How to use reader"><i class="fas fa-question-circle"></i></button>
             <button class="icon-btn tts-control-btn" id="ttsPrevBtn" title="Previous line" aria-label="Previous spoken line"><i class="fas fa-step-backward"></i></button>
             <button class="icon-btn tts-control-btn" id="ttsBtn" title="TTS" aria-label="TTS play or pause"><i class="fas fa-play"></i></button>
@@ -1162,14 +1168,22 @@
     <div class="panel-overlay" id="charactersPanel">
         <div class="settings-panel characters-panel">
             <div class="panel-header characters-panel-header">
-                <span class="panel-title">CHARACTERS</span>
-                <button class="close-btn" onclick="window.togglePanel(null)" aria-label="Close characters">&times;</button>
+                <span class="panel-title">FIELD INDEX</span>
+                <button class="close-btn" onclick="window.togglePanel(null)" aria-label="Close field index">&times;</button>
             </div>
             <div class="characters-panel-body">
-                <label class="characters-search-label" for="charactersSearch">Find a character or creature</label>
+                <label class="characters-search-label" for="charactersSearch">Search field records</label>
                 <div class="characters-search-wrap">
                     <i class="fas fa-search" aria-hidden="true"></i>
-                    <input id="charactersSearch" class="characters-search" type="search" placeholder="Search characters and creatures" autocomplete="off">
+                    <input id="charactersSearch" class="characters-search" type="search" placeholder="Search field index" autocomplete="off">
+                </div>
+                <div class="field-index-tabs" role="tablist" aria-label="Field index categories">
+                    <button type="button" class="field-index-tab active" data-field-category="all" role="tab" aria-selected="true">ALL</button>
+                    <button type="button" class="field-index-tab" data-field-category="main" role="tab" aria-selected="false">MAIN CHARACTERS</button>
+                    <button type="button" class="field-index-tab" data-field-category="supporting" role="tab" aria-selected="false">OTHER CHARACTERS</button>
+                    <button type="button" class="field-index-tab" data-field-category="monster" role="tab" aria-selected="false">MONSTERS</button>
+                    <button type="button" class="field-index-tab" data-field-category="non-hostile" role="tab" aria-selected="false">NON-HOSTILE</button>
+                    <button type="button" class="field-index-tab" data-field-category="poi" role="tab" aria-selected="false">POI</button>
                 </div>
                 <div id="charactersList" class="characters-list" aria-live="polite"></div>
             </div>
@@ -1177,13 +1191,20 @@
     </div>
 
     <div class="panel-overlay" id="lorePanel">
-        <div class="settings-panel" style="max-width: 400px;">
-            <div class="panel-header" style="padding:15px 20px;"><span class="panel-title" id="loreTitle">LORE</span><button class="close-btn" onclick="window.togglePanel(null)" style="background:none; border:none; color:var(--reader-accent); cursor:pointer;">&times;</button></div>
+        <div class="settings-panel lore-panel">
+            <div class="panel-header lore-panel-header">
+                <button id="loreBackBtn" class="lore-back-btn" type="button" onclick="window.returnToFieldIndex()" aria-label="Back to field index">
+                    <i id="loreBackIcon" class="fas fa-arrow-left" aria-hidden="true"></i>
+                    <span id="loreBackLabel">BACK</span>
+                </button>
+                <span class="panel-title lore-panel-title" id="loreTitle">LORE</span>
+                <button id="loreCloseBtn" class="close-btn lore-close-btn" type="button" onclick="window.closeLorePanel()" aria-label="Close reference sheet">&times;</button>
+            </div>
             <div class="panel-body lore-panel-body" style="padding:20px;">
                 <div id="loreVisuals" class="lore-visuals" style="display:none;">
                     <div class="lore-visual-slot">
                         <img id="loreImg" class="lore-img" alt="Primary reference image" style="display:none;">
-                        <div id="loreImgPlaceholder" class="lore-img-placeholder">CHARACTER IMAGE</div>
+                        <div id="loreImgPlaceholder" class="lore-img-placeholder">IMAGE</div>
                     </div>
                     <div class="lore-visual-slot">
                         <img id="loreImgAlt" class="lore-img" alt="Secondary reference image" style="display:none;">
@@ -1574,6 +1595,6 @@
     });
     </script>
     
-    <script src="assets/reader.js?v=20260601c"></script>
+    <script src="assets/reader.js?v=20260602a"></script>
 </body>
 </html>
