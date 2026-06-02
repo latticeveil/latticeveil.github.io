@@ -43,6 +43,7 @@
                     <div class="chapter-item" onclick="switchToChapter(13)">FRAME 13</div>
                     <div class="chapter-item" onclick="switchToChapter(14)">FRAME 14</div>
                     <div class="chapter-item" onclick="switchToChapter(15)">FRAME 15</div>
+                    <div class="chapter-item" onclick="switchToChapter(16)">FRAME 16</div>
                 </div>
             </div>
         </div>
@@ -911,6 +912,14 @@
                 </div>
                 <div id="frame15Content"></div>
             </section>
+
+            <section data-chapter="16" id="ch-16" style="display:none;">
+                <div class="chapter-title-wrap">
+                    <span class="chapter-number">FRAME 16</span>
+                    <h2 class="chapter-title">THE FRAME LOOKS BACK</h2>
+                </div>
+                <div id="frame16Content"></div>
+            </section>
         </div>
     </div>
 
@@ -1157,10 +1166,10 @@
                 <button class="close-btn" onclick="window.togglePanel(null)" aria-label="Close characters">&times;</button>
             </div>
             <div class="characters-panel-body">
-                <label class="characters-search-label" for="charactersSearch">Find a character</label>
+                <label class="characters-search-label" for="charactersSearch">Find a character or creature</label>
                 <div class="characters-search-wrap">
                     <i class="fas fa-search" aria-hidden="true"></i>
-                    <input id="charactersSearch" class="characters-search" type="search" placeholder="Search characters" autocomplete="off">
+                    <input id="charactersSearch" class="characters-search" type="search" placeholder="Search characters and creatures" autocomplete="off">
                 </div>
                 <div id="charactersList" class="characters-list" aria-live="polite"></div>
             </div>
@@ -1173,11 +1182,11 @@
             <div class="panel-body lore-panel-body" style="padding:20px;">
                 <div id="loreVisuals" class="lore-visuals" style="display:none;">
                     <div class="lore-visual-slot">
-                        <img id="loreImg" class="lore-img" alt="Primary character reference" style="display:none;">
+                        <img id="loreImg" class="lore-img" alt="Primary reference image" style="display:none;">
                         <div id="loreImgPlaceholder" class="lore-img-placeholder">CHARACTER IMAGE</div>
                     </div>
                     <div class="lore-visual-slot">
-                        <img id="loreImgAlt" class="lore-img" alt="Secondary character reference" style="display:none;">
+                        <img id="loreImgAlt" class="lore-img" alt="Secondary reference image" style="display:none;">
                         <div id="loreImgAltPlaceholder" class="lore-img-placeholder">ALT IMAGE</div>
                     </div>
                 </div>
@@ -1554,6 +1563,7 @@
         loadFrameMarkdown('frame13Content', 'assets/frame-13.md', 13);
         loadFrameMarkdown('frame14Content', 'assets/frame-14.md', 14);
         loadFrameMarkdown('frame15Content', 'assets/frame-15.md', 15);
+        loadFrameMarkdown('frame16Content', 'assets/frame-16.md', 16);
 
         const requestedChapter = getRequestedChapterNumber();
         updateChapterLabel(requestedChapter);

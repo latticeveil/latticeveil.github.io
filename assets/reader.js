@@ -156,8 +156,11 @@ const loreData = {
     "lattice scars": { role: "Phenomenon", desc: "Pale geometric seams left where reality has been stressed, stitched, or forced to settle into a shape it did not choose naturally." },
     "survey slate": { role: "Item", desc: "A practical field tool for marks, notes, and procedures. In a place ruled by routes and repetition, writing things down can be a form of survival." },
     "Pebble": { role: "Character", desc: "A quiet Wayhound that matters more than a first glance suggests. Helpful, watchful, and clearly connected to routes and thresholds." },
-    "Wayhound": { role: "Creature", desc: "A route-sensitive animal species tied to guidance, movement, and safe passage through unstable parts of the world." },
-    "Braceback": { role: "Creature", desc: "A large territorial Continuum brute associated with broken braces, damaged routes, and disturbed stone. Heavy, fast in short bursts, and dangerous in tight terrain." },
+    "Wayhound": { role: "Creature", img: "assets/img/missing.png", imgAlt: "assets/img/missing.png", desc: "A route-sensitive animal species tied to guidance, movement, and safe passage through unstable parts of the world." },
+    "Braceback": { role: "Creature", img: "assets/img/missing.png", imgAlt: "assets/img/missing.png", desc: "A large territorial Continuum brute associated with broken braces, damaged routes, and disturbed stone. Heavy, fast in short bursts, and dangerous in tight terrain." },
+    "Brace Mite": { role: "Creature", img: "assets/img/missing.png", imgAlt: "assets/img/missing.png", desc: "A basket-sized six-legged scavenger with overlapping stone shell plates and metal-chewing teeth. Brace Mites nest in neglected workshops and damaged route structures, where a disturbed cluster can become a fast-moving repair hazard." },
+    "Mawling": { role: "Creature", img: "assets/img/missing.png", imgAlt: "assets/img/missing.png", desc: "A smaller stone-braced route predator with pale seams and a split biting mouth. Dangerous on its own, but more unsettling for what its presence may imply about the surrounding road." },
+    "Anchor Maw": { role: "Creature", img: "assets/img/missing.png", imgAlt: "assets/img/missing.png", desc: "A towering stone-braced predator built around route pressure, torn plates, and a split anchor-biting mouth. Its size makes the terrain part of the fight: legs become obstacles, seams become openings, and shelter walls stop feeling permanent." },
     "Crimson Veil": { role: "Dimension", desc: "A hostile voxel-only dimension deeper inside LatticeVeil’s cosmology. Dangerous, survivable, and treated like a real destination rather than a myth." },
     "Pale Archive": { role: "Dimension", desc: "A colder, quieter voxel-only dimension shaped by age, silence, and wrong spatial logic more than open aggression." },
     "Nullrock": { role: "Block", img: "assets/img/nullrock.png", desc: "World bottom (Y=0). 'Refusal made physical'." },
@@ -183,7 +186,12 @@ const publicCharacterKeys = [
     "Dain",
     "Tavin",
     "Harn",
-    "Pebble"
+    "Pebble",
+    "Wayhound",
+    "Braceback",
+    "Brace Mite",
+    "Mawling",
+    "Anchor Maw"
 ];
 
 let wakeLockObj = null;
@@ -1585,9 +1593,9 @@ function showLore(title, data) {
     const imgAlt = document.getElementById('loreImgAlt');
     const imgPlaceholder = document.getElementById('loreImgPlaceholder');
     const imgAltPlaceholder = document.getElementById('loreImgAltPlaceholder');
-    const isCharacter = String(data.role || '').toLowerCase() === 'character';
+    const isSheetEntry = ['character', 'creature'].includes(String(data.role || '').toLowerCase());
 
-    if (visuals) visuals.style.display = (isCharacter || data.img || data.imgAlt) ? 'grid' : 'none';
+    if (visuals) visuals.style.display = (isSheetEntry || data.img || data.imgAlt) ? 'grid' : 'none';
 
     if (img) {
         if (data.img) {
@@ -1597,7 +1605,7 @@ function showLore(title, data) {
         } else {
             img.removeAttribute('src');
             img.style.display = 'none';
-            if (imgPlaceholder) imgPlaceholder.style.display = isCharacter ? 'flex' : 'none';
+            if (imgPlaceholder) imgPlaceholder.style.display = isSheetEntry ? 'flex' : 'none';
         }
     }
 
@@ -1609,7 +1617,7 @@ function showLore(title, data) {
         } else {
             imgAlt.removeAttribute('src');
             imgAlt.style.display = 'none';
-            if (imgAltPlaceholder) imgAltPlaceholder.style.display = isCharacter ? 'flex' : 'none';
+            if (imgAltPlaceholder) imgAltPlaceholder.style.display = isSheetEntry ? 'flex' : 'none';
         }
     }
 
@@ -1643,7 +1651,7 @@ function renderCharacterIndex(query = '') {
     const normalizedQuery = query.trim().toLowerCase();
     const characterEntries = publicCharacterKeys
         .map((name) => [name, loreData[name]])
-        .filter(([, data]) => data && String(data.role || '').toLowerCase() === 'character')
+        .filter(([, data]) => data && ['character', 'creature'].includes(String(data.role || '').toLowerCase()))
         .filter(([name, data]) => `${name} ${data.role} ${data.desc}`.toLowerCase().includes(normalizedQuery))
         .sort(([left], [right]) => left.localeCompare(right));
 
@@ -1652,7 +1660,7 @@ function renderCharacterIndex(query = '') {
     if (!characterEntries.length) {
         const empty = document.createElement('p');
         empty.className = 'characters-empty';
-        empty.textContent = 'No characters match that search.';
+        empty.textContent = 'No characters or creatures match that search.';
         list.appendChild(empty);
         return;
     }
@@ -1661,13 +1669,13 @@ function renderCharacterIndex(query = '') {
         const card = document.createElement('button');
         card.className = 'character-index-card';
         card.type = 'button';
-        card.setAttribute('aria-label', `Open ${name} character sheet`);
+        card.setAttribute('aria-label', `Open ${name} reference sheet`);
         card.onclick = () => showLore(name, data);
 
         const visuals = document.createElement('span');
         visuals.className = 'character-index-visuals';
-        visuals.appendChild(createCharacterIndexVisual(data.img, `${name} primary character reference`, 'CHARACTER IMAGE'));
-        visuals.appendChild(createCharacterIndexVisual(data.imgAlt, `${name} alternate character reference`, 'ALT IMAGE'));
+        visuals.appendChild(createCharacterIndexVisual(data.img, `${name} primary reference`, data.role === 'Creature' ? 'CREATURE IMAGE' : 'CHARACTER IMAGE'));
+        visuals.appendChild(createCharacterIndexVisual(data.imgAlt, `${name} alternate reference`, 'ALT IMAGE'));
 
         const copy = document.createElement('span');
         copy.className = 'character-index-copy';
