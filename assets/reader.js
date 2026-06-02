@@ -112,30 +112,30 @@ function loadPersistentState() {
 }
 
 const loreData = {
-    "Avery": { role: "Character", img: "assets/img/hero_bg.png", desc: "A Continuum surveyor whose instincts are rooted in route discipline, salvage logic, and local field procedure. Careful, dry, and deeply adapted to the world’s rules." },
-    "Eli": { role: "Character", desc: "Eli, 'The Listener.' Sensitive to the Echo’s pressure and the way places try to complete themselves. He uses alcohol as a crude, risky limiter to blur the signal—buying clarity later at the cost of himself." },
-    "Sister Orin": { role: "Character", desc: "Principles Veilkeeper Sealwright. Believes an open door is a debt unpaid." },
+    "Avery": { role: "Character", fieldCategory: "main", desc: "A Continuum surveyor whose instincts are rooted in route discipline, salvage logic, and local field procedure. Careful, dry, and deeply adapted to the world’s rules." },
+    "Eli": { role: "Character", fieldCategory: "main", desc: "Eli, 'The Listener.' Sensitive to the Echo’s pressure and the way places try to complete themselves. He uses alcohol as a crude, risky limiter to blur the signal—buying clarity later at the cost of himself." },
+    "Sister Orin": { role: "Character", fieldCategory: "main", desc: "Principles Veilkeeper Sealwright. Believes an open door is a debt unpaid." },
     "Orin": { role: "Character", desc: "Principles Veilkeeper Sealwright. Believes an open door is a debt unpaid." },
-    "Kade Rowan": { role: "Character", desc: "Veteran Hearthward Guide. Specialist in safe routes and community discipline." },
-    "Continuum Rook": { role: "Character", desc: "A Continuum route-runner waiting at Anchorfall Cliffs. Clever, useful, and too fond of shortcuts. This is the voxel-side Rook, separate from the real-world Rook." },
-    "Rook": { role: "Character", desc: "Field specialist with sharp instincts and a bad habit of pushing timing right to the edge. Useful in a crisis, unsettling when the numbers stop behaving." },
-    "Dr. Sarah Chen": { role: "Character", desc: "Lead researcher on the real-world side of the breach. Precise, controlled, and deeply committed to getting her people home alive." },
+    "Kade Rowan": { role: "Character", fieldCategory: "supporting", desc: "Veteran Hearthward Guide. Specialist in safe routes and community discipline." },
+    "Continuum Rook": { role: "Character", fieldCategory: "main", desc: "A Continuum route-runner waiting at Anchorfall Cliffs. Clever, useful, and too fond of shortcuts. This is the voxel-side Rook, separate from the real-world Rook." },
+    "Rook": { role: "Character", fieldCategory: "main", desc: "Field specialist with sharp instincts and a bad habit of pushing timing right to the edge. Useful in a crisis, unsettling when the numbers stop behaving." },
+    "Dr. Sarah Chen": { role: "Character", fieldCategory: "main", desc: "Lead researcher on the real-world side of the breach. Precise, controlled, and deeply committed to getting her people home alive." },
     "Sarah Chen": { role: "Character", desc: "Lead researcher on the real-world side of the breach. Precise, controlled, and deeply committed to getting her people home alive." },
     "Sarah": { role: "Character", desc: "A scientist who treats uncertainty like something to be mapped, tested, and survived rather than feared." },
-    "Dr. Avery Chen": { role: "Character", desc: "A real-world engineer and researcher from Project Chimera. Methodical, protective, and trained to reduce chaos into sequence, signal, and workable decisions." },
+    "Dr. Avery Chen": { role: "Character", fieldCategory: "main", desc: "A real-world engineer and researcher from Project Chimera. Methodical, protective, and trained to reduce chaos into sequence, signal, and workable decisions." },
     "Dr. Avery": { role: "Character", desc: "A real-world engineer and researcher from Project Chimera. Methodical, protective, and trained to reduce chaos into sequence, signal, and workable decisions." },
     "Dr.Avery Chen": { role: "Character", desc: "A real-world engineer and researcher from Project Chimera. Methodical, protective, and trained to reduce chaos into sequence, signal, and workable decisions." },
     "Dr.Avery": { role: "Character", desc: "A real-world engineer and researcher from Project Chimera. Methodical, protective, and trained to reduce chaos into sequence, signal, and workable decisions." },
     "Avery Chen": { role: "Character", desc: "A real-world engineer and researcher from Project Chimera. Methodical, protective, and trained to reduce chaos into sequence, signal, and workable decisions." },
-    "Elijah Jay Marcus": { role: "Character", desc: "Observant analyst whose instincts are often faster than his explanations. He notices patterns other people miss, even when he wishes he did not." },
+    "Elijah Jay Marcus": { role: "Character", fieldCategory: "main", desc: "Observant analyst whose instincts are often faster than his explanations. He notices patterns other people miss, even when he wishes he did not." },
     "Elijah": { role: "Character", desc: "Observant analyst whose instincts are often faster than his explanations. He notices patterns other people miss, even when he wishes he did not." },
-    "Kaden Ave Williams": { role: "Character", desc: "Communications and signal specialist carrying more strain than he lets the others see. Useful, steady, and clearly tied to unusual equipment." },
+    "Kaden Ave Williams": { role: "Character", fieldCategory: "main", desc: "Communications and signal specialist carrying more strain than he lets the others see. Useful, steady, and clearly tied to unusual equipment." },
     "Kaden": { role: "Character", desc: "Communications and signal specialist carrying more strain than he lets the others see. Useful, steady, and clearly tied to unusual equipment." },
-    "Neris": { role: "Character", desc: "A child from Sister Orin’s past. Her brief presence carries more questions than answers, and Orin’s reaction makes clear that the history matters." },
-    "Malrec": { role: "Character", desc: "An older route-worker with a patient hand for marks, braces, and difficult problems. The unfinished plans in his workshop suggest years spent trying to build a doorway no one around him fully understood." },
-    "Dain": { role: "Character", desc: "A hard-eyed route bandit who carries fear like a weapon. He is watchful, severe, and dangerous whenever uncertainty gives him an excuse to act first." },
-    "Tavin": { role: "Character", desc: "A cautious terrace-village boy with an observant stare and a practical sense of danger. He is young enough to be intimidated by the road, but not helpless." },
-    "Harn": { role: "Character", desc: "A one-eyed salvager with two pry bars and firm limits. He knows the cistern shelves well enough to recognize when a path is better left alone." },
+    "Neris": { role: "Character", fieldCategory: "supporting", desc: "A child from Sister Orin’s past. Her brief presence carries more questions than answers, and Orin’s reaction makes clear that the history matters." },
+    "Malrec": { role: "Character", fieldCategory: "supporting", desc: "An older route-worker with a patient hand for marks, braces, and difficult problems. The unfinished plans in his workshop suggest years spent trying to build a doorway no one around him fully understood." },
+    "Dain": { role: "Character", fieldCategory: "supporting", desc: "A hard-eyed route bandit who carries fear like a weapon. He is watchful, severe, and dangerous whenever uncertainty gives him an excuse to act first." },
+    "Tavin": { role: "Character", fieldCategory: "supporting", desc: "A cautious terrace-village boy with an observant stare and a practical sense of danger. He is young enough to be intimidated by the road, but not helpless." },
+    "Harn": { role: "Character", fieldCategory: "supporting", desc: "A one-eyed salvager with two pry bars and firm limits. He knows the cistern shelves well enough to recognize when a path is better left alone." },
     "Continuist": { role: "Faction", desc: "Continuists treat reality like a system you can stabilize: repeatable steps, logged observations, and the Rule of Three. They don’t worship artifacts; they trust process—especially when the Veil starts rewriting the rules." },
     "Veilkeepers": { role: "Faction", desc: "Veilkeepers are sealwrights, wardens, and boundary engineers. They prioritize containment over discovery: close the breach, cap the conduit, deny the loop—then argue about meaning later." },
     "Hearthward": { role: "Faction", desc: "Focuses on communal survival holds and practical discipline." },
@@ -145,7 +145,11 @@ const loreData = {
     "Chimera": { role: "Program", desc: "A classified real-world dimensional research program trying to measure, track, and survive contact with places that do not behave like ordinary reality." },
     "Meridian Group": { role: "Company", desc: "The parent organization above Project Chimera: secretive, well-funded, and directly tied to the breach work returning from the field." },
     "Meridian": { role: "Company", desc: "The parent organization above Project Chimera: secretive, well-funded, and directly tied to the breach work returning from the field." },
-    "Continuum": { role: "Place", desc: "The voxel world at the center of the story: ancient, procedural, and full of routes, ruins, and rules that feel discovered rather than invented." },
+    "Continuum": { role: "Place", fieldCategory: "poi", desc: "The voxel world at the center of the story: ancient, procedural, and full of routes, ruins, and rules that feel discovered rather than invented." },
+    "Anchorfall Cliffs": { role: "POI", fieldCategory: "poi", desc: "A worked cliff route shaped by shelves, old survey lines, dangerous drops, and the remains of practical route infrastructure. Anchorfall is useful precisely because people have spent years arguing with its hazards." },
+    "Route-Hold": { role: "POI", fieldCategory: "poi", desc: "A Continuum shelter and repair station built to keep travelers alive between difficult routes. Its boards, braces, stores, and Underhold entrance make it both refuge and responsibility." },
+    "Underhold": { role: "POI", fieldCategory: "poi", desc: "A protected lower shelter beneath a route-hold. When the road above becomes unsafe, the Underhold is where civilians and supplies are moved first." },
+    "Malrec's Workshop": { role: "POI", fieldCategory: "poi", desc: "A concealed hand-built workshop of brace stones, cords, chalk diagrams, tools, and an unfinished frame. Its careful construction suggests a project kept hidden for years." },
     "Veil": { role: "Phenomenon", desc: "The Veil is the boundary between places, states, and routes—thin in some corridors, welded shut in others. When it loosens, the world starts offering ‘second doors’: outcomes that feel inevitable until you refuse to complete them." },
     "Echo": { role: "Phenomenon", desc: "The Echo is pattern-pressure: a pull toward completion. It rewards repetition, loops, and clean endings—usually by shaving away detail. People don’t vanish loudly here; they simplify." },
     "Limiter": { role: "Concept", desc: "A limiter is a termination condition—an enforced stop that prevents a system from escalating into self-reinforcing collapse. In the field, limiters are less about power and more about refusal." },
@@ -155,12 +159,13 @@ const loreData = {
     "portal": { role: "Structure", desc: "A threshold structure linking spaces or layers of the world. Stable ones can be used safely; unstable ones demand repair, caution, or both." },
     "lattice scars": { role: "Phenomenon", desc: "Pale geometric seams left where reality has been stressed, stitched, or forced to settle into a shape it did not choose naturally." },
     "survey slate": { role: "Item", desc: "A practical field tool for marks, notes, and procedures. In a place ruled by routes and repetition, writing things down can be a form of survival." },
-    "Pebble": { role: "Character", desc: "A quiet Wayhound that matters more than a first glance suggests. Helpful, watchful, and clearly connected to routes and thresholds." },
-    "Wayhound": { role: "Creature", img: "assets/img/missing.png", imgAlt: "assets/img/missing.png", desc: "A route-sensitive animal species tied to guidance, movement, and safe passage through unstable parts of the world." },
-    "Braceback": { role: "Creature", img: "assets/img/missing.png", imgAlt: "assets/img/missing.png", desc: "A large territorial Continuum brute associated with broken braces, damaged routes, and disturbed stone. Heavy, fast in short bursts, and dangerous in tight terrain." },
-    "Brace Mite": { role: "Creature", img: "assets/img/missing.png", imgAlt: "assets/img/missing.png", desc: "A basket-sized six-legged scavenger with overlapping stone shell plates and metal-chewing teeth. Brace Mites nest in neglected workshops and damaged route structures, where a disturbed cluster can become a fast-moving repair hazard." },
-    "Mawling": { role: "Creature", img: "assets/img/missing.png", imgAlt: "assets/img/missing.png", desc: "A smaller stone-braced route predator with pale seams and a split biting mouth. Dangerous on its own, but more unsettling for what its presence may imply about the surrounding road." },
-    "Anchor Maw": { role: "Creature", img: "assets/img/missing.png", imgAlt: "assets/img/missing.png", desc: "A towering stone-braced predator built around route pressure, torn plates, and a split anchor-biting mouth. Its size makes the terrain part of the fight: legs become obstacles, seams become openings, and shelter walls stop feeling permanent." },
+    "Pebble": { role: "Character", fieldCategory: "main", desc: "A quiet Wayhound that matters more than a first glance suggests. Helpful, watchful, and clearly connected to routes and thresholds." },
+    "Wayhound": { role: "Creature", fieldCategory: "non-hostile", desc: "A route-sensitive animal species tied to guidance, movement, and safe passage through unstable parts of the world." },
+    "Stoneback Hauler": { role: "Creature", fieldCategory: "non-hostile", desc: "A patient route-cart animal trusted by terrace villages and route workers. Stoneback Haulers are valued for steady travel through difficult ground rather than speed alone." },
+    "Braceback": { role: "Creature", fieldCategory: "monster", desc: "A large territorial Continuum brute associated with broken braces, damaged routes, and disturbed stone. Heavy, fast in short bursts, and dangerous in tight terrain." },
+    "Brace Mite": { role: "Creature", fieldCategory: "monster", desc: "A basket-sized six-legged scavenger with overlapping stone shell plates and metal-chewing teeth. Brace Mites nest in neglected workshops and damaged route structures, where a disturbed cluster can become a fast-moving repair hazard." },
+    "Mawling": { role: "Creature", fieldCategory: "monster", desc: "A smaller stone-braced route predator with pale seams and a split biting mouth. Dangerous on its own, but more unsettling for what its presence may imply about the surrounding road." },
+    "Anchor Maw": { role: "Creature", fieldCategory: "monster", desc: "A towering stone-braced predator built around route pressure, torn plates, and a split anchor-biting mouth. Its size makes the terrain part of the fight: legs become obstacles, seams become openings, and shelter walls stop feeling permanent." },
     "Crimson Veil": { role: "Dimension", desc: "A hostile voxel-only dimension deeper inside LatticeVeil’s cosmology. Dangerous, survivable, and treated like a real destination rather than a myth." },
     "Pale Archive": { role: "Dimension", desc: "A colder, quieter voxel-only dimension shaped by age, silence, and wrong spatial logic more than open aggression." },
     "Nullrock": { role: "Block", img: "assets/img/nullrock.png", desc: "World bottom (Y=0). 'Refusal made physical'." },
@@ -170,7 +175,7 @@ const loreData = {
     "Embercoal": { role: "Block", img: "assets/img/coal.png", desc: "Fuel source that burns with a memory of heat." }
 };
 
-const publicCharacterKeys = [
+const publicFieldIndexKeys = [
     "Avery",
     "Eli",
     "Sister Orin",
@@ -188,11 +193,20 @@ const publicCharacterKeys = [
     "Harn",
     "Pebble",
     "Wayhound",
+    "Stoneback Hauler",
     "Braceback",
     "Brace Mite",
     "Mawling",
-    "Anchor Maw"
+    "Anchor Maw",
+    "Continuum",
+    "Anchorfall Cliffs",
+    "Route-Hold",
+    "Underhold",
+    "Malrec's Workshop"
 ];
+
+let activeFieldIndexCategory = 'all';
+let lorePanelOpenedFromFieldIndex = false;
 
 let wakeLockObj = null;
 
@@ -1481,6 +1495,17 @@ function setupEventListeners() {
     if (charactersSearch) {
         charactersSearch.oninput = (e) => renderCharacterIndex(e.target.value);
     }
+    document.querySelectorAll('.field-index-tab[data-field-category]').forEach((button) => {
+        button.onclick = () => {
+            activeFieldIndexCategory = button.dataset.fieldCategory || 'all';
+            document.querySelectorAll('.field-index-tab[data-field-category]').forEach((tabButton) => {
+                const isActive = tabButton === button;
+                tabButton.classList.toggle('active', isActive);
+                tabButton.setAttribute('aria-selected', String(isActive));
+            });
+            renderCharacterIndex(charactersSearch ? charactersSearch.value : '');
+        };
+    });
     document.querySelectorAll('[data-download-scope]').forEach(button => {
         button.onclick = () => setDownloadScope(button.dataset.downloadScope);
     });
@@ -1571,20 +1596,24 @@ function setupEventListeners() {
 
 function setupLoreLinks(scope = document) {
     autoLinkLore(scope);
-    const root = scope instanceof Element || scope instanceof Document ? scope : document;
-    root.querySelectorAll('.lore-link').forEach(link => {
-        link.onclick = (e) => {
-            if (!state.showLore) return;
-            e.preventDefault();
-            const key = link.dataset.lore;
-            if (loreData[key]) showLore(key, loreData[key]);
-        };
+    const host = document.getElementById('bookContent');
+    if (!host || host.dataset.loreClickBound === 'true') return;
+
+    host.dataset.loreClickBound = 'true';
+    host.addEventListener('click', (e) => {
+        const link = e.target.closest('.lore-link');
+        if (!link || !host.contains(link) || !state.showLore) return;
+
+        e.preventDefault();
+        const key = link.dataset.lore;
+        if (loreData[key]) showLore(key, loreData[key], { fromFieldIndex: false });
     });
 }
 
 window.setupLoreLinks = setupLoreLinks;
 
-function showLore(title, data) {
+function showLore(title, data, options = {}) {
+    lorePanelOpenedFromFieldIndex = !!options.fromFieldIndex;
     const t = document.getElementById('loreTitle'); if(t) t.innerText = title;
     const r = document.getElementById('loreRole'); if(r) r.innerText = data.role;
     const d = document.getElementById('loreDesc'); if(d) d.innerText = data.desc;
@@ -1593,9 +1622,17 @@ function showLore(title, data) {
     const imgAlt = document.getElementById('loreImgAlt');
     const imgPlaceholder = document.getElementById('loreImgPlaceholder');
     const imgAltPlaceholder = document.getElementById('loreImgAltPlaceholder');
-    const isSheetEntry = ['character', 'creature'].includes(String(data.role || '').toLowerCase());
+    const closeBtn = document.getElementById('loreCloseBtn');
+    const indexBtn = document.getElementById('loreBackBtn');
+    const indexBtnIcon = document.getElementById('loreBackIcon');
+    const indexBtnLabel = document.getElementById('loreBackLabel');
+    const isSheetEntry = !!data.fieldCategory;
 
     if (visuals) visuals.style.display = (isSheetEntry || data.img || data.imgAlt) ? 'grid' : 'none';
+    if (closeBtn) closeBtn.style.display = lorePanelOpenedFromFieldIndex ? 'none' : 'inline-flex';
+    if (indexBtn) indexBtn.setAttribute('aria-label', lorePanelOpenedFromFieldIndex ? 'Back to field index' : 'Open field index');
+    if (indexBtnLabel) indexBtnLabel.textContent = lorePanelOpenedFromFieldIndex ? 'BACK' : 'OPEN FIELD INDEX';
+    if (indexBtnIcon) indexBtnIcon.className = lorePanelOpenedFromFieldIndex ? 'fas fa-arrow-left' : 'fas fa-book-open';
 
     if (img) {
         if (data.img) {
@@ -1624,6 +1661,14 @@ function showLore(title, data) {
     window.togglePanel('lorePanel');
 }
 
+window.returnToFieldIndex = function() {
+    window.togglePanel('charactersPanel');
+};
+
+window.closeLorePanel = function() {
+    window.togglePanel(null);
+};
+
 function createCharacterIndexVisual(src, alt, placeholderText) {
     const slot = document.createElement('span');
     slot.className = 'character-index-slot';
@@ -1649,9 +1694,10 @@ function renderCharacterIndex(query = '') {
     if (!list) return;
 
     const normalizedQuery = query.trim().toLowerCase();
-    const characterEntries = publicCharacterKeys
+    const characterEntries = publicFieldIndexKeys
         .map((name) => [name, loreData[name]])
-        .filter(([, data]) => data && ['character', 'creature'].includes(String(data.role || '').toLowerCase()))
+        .filter(([, data]) => data && data.fieldCategory)
+        .filter(([, data]) => activeFieldIndexCategory === 'all' || data.fieldCategory === activeFieldIndexCategory)
         .filter(([name, data]) => `${name} ${data.role} ${data.desc}`.toLowerCase().includes(normalizedQuery))
         .sort(([left], [right]) => left.localeCompare(right));
 
@@ -1660,7 +1706,7 @@ function renderCharacterIndex(query = '') {
     if (!characterEntries.length) {
         const empty = document.createElement('p');
         empty.className = 'characters-empty';
-        empty.textContent = 'No characters or creatures match that search.';
+        empty.textContent = 'No field records match that search.';
         list.appendChild(empty);
         return;
     }
@@ -1670,11 +1716,11 @@ function renderCharacterIndex(query = '') {
         card.className = 'character-index-card';
         card.type = 'button';
         card.setAttribute('aria-label', `Open ${name} reference sheet`);
-        card.onclick = () => showLore(name, data);
+        card.onclick = () => showLore(name, data, { fromFieldIndex: true });
 
         const visuals = document.createElement('span');
         visuals.className = 'character-index-visuals';
-        visuals.appendChild(createCharacterIndexVisual(data.img, `${name} primary reference`, data.role === 'Creature' ? 'CREATURE IMAGE' : 'CHARACTER IMAGE'));
+        visuals.appendChild(createCharacterIndexVisual(data.img, `${name} primary reference`, 'IMAGE'));
         visuals.appendChild(createCharacterIndexVisual(data.imgAlt, `${name} alternate reference`, 'ALT IMAGE'));
 
         const copy = document.createElement('span');
