@@ -1,6 +1,4 @@
-# FRAME 17
-
-# THE REPLACEMENT
+# The Replacement
 
 The frame took him, and then something else took the frame.
 
