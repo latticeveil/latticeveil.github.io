@@ -643,6 +643,19 @@ body.highlight-mode-active #readingArea p:hover {
      transform: translateY(-1px);
  }
 
+ .chapter-end-marker {
+     cursor: default;
+     border-style: double;
+     background: rgba(0,0,0,0.88);
+     letter-spacing: 2px;
+ }
+
+ .chapter-end-marker:hover {
+     background: rgba(0,0,0,0.88);
+     color: var(--reader-accent);
+     transform: none;
+ }
+
 .jump-to-top {
     position: fixed;
     right: 22px;
