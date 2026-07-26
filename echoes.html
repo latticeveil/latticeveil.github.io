@@ -51,6 +51,7 @@
                     <div class="chapter-item" onclick="switchToChapter(21)">FRAME 21</div>
                     <div class="chapter-item" onclick="switchToChapter(22)">FRAME 22</div>
                     <div class="chapter-item" onclick="switchToChapter(23)">FRAME 23</div>
+                    <div class="chapter-item" onclick="switchToChapter(24)">FRAME 24</div>
                 </div>
             </div>
         </div>
@@ -989,6 +990,14 @@
                 </div>
                 <div id="frame23Content"></div>
             </section>
+
+            <section data-chapter="24" id="ch-24" style="display:none;">
+                <div class="chapter-title-wrap">
+                    <span class="chapter-number">FRAME 24</span>
+                    <h2 class="chapter-title">THE FIRST TIME AGAIN</h2>
+                </div>
+                <div id="frame24Content"></div>
+            </section>
         </div>
     </div>
 
@@ -1655,6 +1664,7 @@
         loadFrameMarkdown('frame21Content', 'assets/frame-21.md', 21);
         loadFrameMarkdown('frame22Content', 'assets/frame-22.md', 22);
         loadFrameMarkdown('frame23Content', 'assets/frame-23.md', 23);
+        loadFrameMarkdown('frame24Content', 'assets/frame-24.md', 24);
 
         const requestedChapter = getRequestedChapterNumber();
         updateChapterLabel(requestedChapter);
