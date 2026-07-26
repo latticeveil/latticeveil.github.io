@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Merriweather:wght@300;400;700&family=Inter:wght@400;600&family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <link rel="stylesheet" href="assets/reader.css?v=20260601c">
+    <link rel="stylesheet" href="assets/reader.css?v=20260726a">
     <meta name="theme-color" content="#000000">
 </head>
 <body class="theme-oled font-serif">
@@ -52,6 +52,7 @@
                     <div class="chapter-item" onclick="switchToChapter(22)">FRAME 22</div>
                     <div class="chapter-item" onclick="switchToChapter(23)">FRAME 23</div>
                     <div class="chapter-item" onclick="switchToChapter(24)">FRAME 24</div>
+                    <div class="chapter-item" onclick="switchToChapter(25)">FRAME 25</div>
                 </div>
             </div>
         </div>
@@ -997,6 +998,20 @@
                     <h2 class="chapter-title">THE FIRST TIME AGAIN</h2>
                 </div>
                 <div id="frame24Content"></div>
+                <div class="chapter-nav-wrap">
+                    <a href="?chapter=25" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(25);">CONTINUE TO FINAL FRAME</a>
+                </div>
+            </section>
+
+            <section data-chapter="25" id="ch-25" style="display:none;">
+                <div class="chapter-title-wrap">
+                    <span class="chapter-number">FRAME 25 — FINAL FRAME</span>
+                    <h2 class="chapter-title">THE FIRST BLANK PAGE</h2>
+                </div>
+                <div id="frame25Content"></div>
+                <div class="chapter-nav-wrap" aria-label="End of Echoes of the Continuist">
+                    <span class="chapter-nav-btn chapter-end-marker">END OF THIS STORY</span>
+                </div>
             </section>
         </div>
     </div>
@@ -1415,6 +1430,7 @@
                 if (!line.trim()) return '';
                 if (line.trim() === '*') return '<p>*</p>';
                 const safe = escapeHtml(line)
+                    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
                     .replace(/`([^`]+)`/g, '<code>$1</code>');
                 return `<p>${safe}</p>`;
             })
@@ -1665,6 +1681,7 @@
         loadFrameMarkdown('frame22Content', 'assets/frame-22.md', 22);
         loadFrameMarkdown('frame23Content', 'assets/frame-23.md', 23);
         loadFrameMarkdown('frame24Content', 'assets/frame-24.md', 24);
+        loadFrameMarkdown('frame25Content', 'assets/frame-25.md', 25);
 
         const requestedChapter = getRequestedChapterNumber();
         updateChapterLabel(requestedChapter);
