@@ -22,7 +22,7 @@
             </div>
             <h1>LatticeVeil Roadmap</h1>
             <p>
-                This roadmap reflects the current V16.0.0 state. It separates what is already shipped, what is being cleaned up next, and what is planned for later so the public build order is easier to follow.
+                V16.1.0 &quot;Veilnet Skinlink&quot; is the current public release. V17.0.0 &quot;Veilwalker Survival&quot; is in Windows development. This roadmap separates shipped work, the active survival release path, and later systems so the public build order is easy to follow.
             </p>
         </section>
 
@@ -38,10 +38,10 @@
             <article class="roadmap-card">
                 <h2>Current Public State</h2>
                 <p>
-                    V16.0.0 "Veilnet Skinlink" is the current game release. The project now has real launcher updating, asset updating, world creation, terrain generation, multiplayer hosting and joining, friends/profile surfaces, survival HUD foundations, commands, PvP controls, death/respawn work, souls, website-edited account skins, launcher skin sync, tray controls, installer delivery, and a refreshed uninstaller path.
+                    V16.1.0 "Veilnet Skinlink" is the current public game release. The project now has launcher and asset updating, world creation, terrain generation, multiplayer hosting and joining, friends/profile surfaces, survival HUD foundations, commands, PvP controls, death/respawn work, SOUL recovery, website-edited account skins, launcher skin sync, tray controls, installer delivery, and a refreshed uninstaller path.
                 </p>
                 <div class="roadmap-note">
-                    The next major work is not another distribution reset. The next pass is focused on validating the V16 skin pipeline in normal use, tightening world import quality-of-life, continuing social/profile cleanup, and building better host/admin tools.
+                    The active Windows development target is V17.0.0 "Veilwalker Survival": validate and complete a basic playable survival loop before moving into broader import, social, admin, and dedicated-host work.
                 </div>
             </article>
 
@@ -86,40 +86,96 @@
                         <span class="roadmap-step-num">1</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status testing">Current</span>
-                            <h3>Validate V16 skin pipeline</h3>
-                            <p>Validate website skin editing, active cloud skin selection, launcher imports, tray restore behavior, and multiplayer skin visibility in normal use.</p>
+                            <h3>Validate survival foundations</h3>
+                            <p>Play-test health, hunger, fall damage, death, respawn, SOUL recovery below Hard, and save/load behavior; then tune only the values that need correction.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">2</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status needs-added">Next Up</span>
-                            <h3>Game-side world importing</h3>
-                            <p>Let the game import .lvworld files placed in the Worlds folder on launch, and add an IMPORT WORLD button with a proper texture for manual imports.</p>
+                            <h3>Complete the basic survival item loop</h3>
+                            <p>Add the planned starter resources, food, recovery items, basic tools, and simple hand-crafting needed for a new player to survive normally.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">3</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status needs-added">Next Up</span>
-                            <h3>Admin panel and host permissions</h3>
-                            <p>Replace the standalone invite button with a host/admin panel for invites, admins, ops, build-zone permissions, break/place permissions, and role tags in the TAB list.</p>
+                            <h3>Validate water, swimming, and buckets</h3>
+                            <p>Confirm current water movement and bucket behavior works during survival play without expanding it into a larger realism system.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">4</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>Profile/friends cleanup</h3>
-                            <p>Keep avatar/banner fetching reliable, reduce social refresh cost, improve large-list behavior, and continue polishing profile presentation around Veilnet accounts.</p>
+                            <h3>Add the day/night survival pass</h3>
+                            <p>Finish basic day/night and lighting behavior, persist world time, and add Sleeping Bag night skipping after the core survival loop is playable.</p>
                         </div>
                     </li>
                     <li class="roadmap-step">
                         <span class="roadmap-step-num">5</span>
                         <div class="roadmap-step-body">
                             <span class="roadmap-status planned">Planned</span>
-                            <h3>Survival loop expansion</h3>
-                            <p>Build on the current hunger, regeneration, starvation, health, fall-damage, death, and soul foundations with food, crafting, damage types, and broader survival systems.</p>
+                            <h3>Verify multiplayer survival authority</h3>
+                            <p>Validate health and hunger sync, death, respawn, item drops, SOUL recovery, and reconnect behavior between host and clients.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">6</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status needs-added">Release Gate</span>
+                            <h3>Prepare V17.0.0 release metadata</h3>
+                            <p>Only after survival validation is stable, align the game, launcher, installer, and release metadata for V17.0.0 &quot;Veilwalker Survival.&quot;</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">7</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status needs-added">Next Up</span>
+                            <h3>.lvworld import quality-of-life</h3>
+                            <p>Import placed world files safely on launch and through an in-game IMPORT WORLD action with shared validation and duplicate handling.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">8</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status planned">Planned</span>
+                            <h3>Inventory usability follow-up</h3>
+                            <p>Resolve interaction and clarity issues without reworking the existing inventory foundation.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">9</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status planned">Planned</span>
+                            <h3>Profile, friends, and launcher polish</h3>
+                            <p>Reduce social refresh cost, keep avatar and presence behavior reliable, and continue the existing launcher/profile presentation polish.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">10</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status planned">Planned</span>
+                            <h3>Multiplayer admin permissions</h3>
+                            <p>Build host/admin permission controls and role presentation only after the survival and host-authority fundamentals are stable.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">11</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status planned">Planned</span>
+                            <h3>Lock the world.lvc contract</h3>
+                            <p>Finish the remaining legacy cleanup and make the world metadata contract stable enough to stop revisiting its structure.</p>
+                        </div>
+                    </li>
+                    <li class="roadmap-step">
+                        <span class="roadmap-step-num">12</span>
+                        <div class="roadmap-step-body">
+                            <span class="roadmap-status planned">Planned</span>
+                            <h3>Veilhost design, then implementation</h3>
+                            <p>Lock dedicated-host requirements and file contracts first; build Veilhost only after survival and host-authority gameplay are stable.</p>
                         </div>
                     </li>
                 </ol>
@@ -261,7 +317,7 @@
 
         <section class="roadmap-grid roadmap-tab-panel" data-roadmap-panel="next" hidden>
             <article class="roadmap-card">
-                <h2>Next Update Targets</h2>
+                <h2>After V17 Survival</h2>
                 <div class="roadmap-phase-list">
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
@@ -321,7 +377,7 @@
 
         <section class="roadmap-grid roadmap-tab-panel" data-roadmap-panel="later" hidden>
             <article class="roadmap-card">
-                <h2>Planned Later Systems</h2>
+                <h2>Longer-Term Systems</h2>
                 <div class="roadmap-phase-list">
                     <div class="roadmap-phase">
                         <div class="roadmap-row-head">
@@ -422,21 +478,21 @@
                     </div>
                     <div class="roadmap-platform">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status planned">Planned</span>
+                            <span class="roadmap-status planned">Planned &bull; Experimental</span>
                             <h3>PC VR</h3>
                         </div>
                         <p>Possible future VR direction for PC-connected headsets.</p>
                     </div>
                     <div class="roadmap-platform">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status planned">Planned</span>
+                            <span class="roadmap-status planned">Planned &bull; Experimental</span>
                             <h3>Quest 2 / Quest 3</h3>
                         </div>
                         <p>Standalone headset support likely takes longer than PC-related versions.</p>
                     </div>
                     <div class="roadmap-platform">
                         <div class="roadmap-row-head">
-                            <span class="roadmap-status planned">Planned</span>
+                            <span class="roadmap-status planned">Planned &bull; Experimental</span>
                             <h3>WebOS / Smart TV</h3>
                         </div>
                         <p>Longest-term platform target on the current list.</p>
