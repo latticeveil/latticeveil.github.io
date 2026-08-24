@@ -3,13 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-    <title>Echoes of the Continuist | LatticeVeil Reader</title>
+    <title>Orin Odyssey | LatticeVeil Reader</title>
     <link rel="icon" href="assets/favicon.ico" type="image/x-icon">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Merriweather:wght@300;400;700&family=Inter:wght@400;600&family=VT323&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="stylesheet" href="assets/reader.css?v=20260726u">
     <meta name="theme-color" content="#000000">
+    <style>
+        :root {
+            --odyssey-primary: #8B4513;
+            --odyssey-secondary: #A0522D;
+            --odyssey-accent: #CD853F;
+            --odyssey-text: #D4A574;
+        }
+        
+        .reader-header {
+            background: linear-gradient(180deg, rgba(139, 69, 19, 0.95), rgba(26, 15, 10, 0.98));
+            border-bottom: 2px solid var(--odyssey-secondary);
+        }
+        
+        .reader-home-btn {
+            background: linear-gradient(135deg, var(--odyssey-primary), var(--odyssey-secondary));
+            border: 1px solid var(--odyssey-accent);
+        }
+        
+        .reader-home-btn:hover {
+            background: linear-gradient(135deg, var(--odyssey-secondary), var(--odyssey-accent));
+        }
+        
+        .icon-btn {
+            background: linear-gradient(135deg, var(--odyssey-primary), var(--odyssey-secondary));
+            border: 1px solid var(--odyssey-accent);
+            border-radius: 50%;
+        }
+        
+        .icon-btn:hover {
+            background: linear-gradient(135deg, var(--odyssey-secondary), var(--odyssey-accent));
+            box-shadow: 0 0 15px rgba(205, 133, 63, 0.4);
+        }
+        
+        .chapter-select-btn {
+            background: linear-gradient(135deg, var(--odyssey-primary), var(--odyssey-secondary));
+            border: 1px solid var(--odyssey-accent);
+        }
+        
+        .chapter-select-btn:hover {
+            background: linear-gradient(135deg, var(--odyssey-secondary), var(--odyssey-accent));
+        }
+        
+        .chapter-dropdown {
+            background: linear-gradient(180deg, rgba(139, 69, 19, 0.98), rgba(26, 15, 10, 0.99));
+            border: 1px solid var(--odyssey-accent);
+        }
+        
+        .chapter-item {
+            color: var(--odyssey-text);
+            border-bottom: 1px solid var(--odyssey-secondary);
+        }
+        
+        .chapter-item:hover {
+            background: rgba(205, 133, 63, 0.3);
+        }
+        
+        .chapter-item.active {
+            background: rgba(205, 133, 63, 0.4);
+            color: var(--odyssey-accent);
+        }
+        
+        .floating-novel-title {
+            background: rgba(26, 15, 10, 0.9);
+            border: 1px solid var(--odyssey-accent);
+        }
+        
+        .floating-novel-title h1 {
+            color: var(--odyssey-accent);
+        }
+    </style>
 </head>
 <body class="theme-oled font-serif">
 
@@ -22,36 +92,12 @@
                 </a>
                 <div class="chapter-selector-container">
                     <button id="chapterSelectBtn" class="chapter-select-btn" onclick="toggleChapterSelector()">
-                        <span id="currentChapterLabel">FRAME --</span>
-                        <span id="currentChapterNewBadge" class="chapter-new-badge chapter-count-badge" aria-label="Unread new frames"></span>
+                        <span id="currentChapterLabel">KNOT --</span>
+                        <span id="currentChapterNewBadge" class="chapter-new-badge chapter-count-badge" aria-label="Unread new knots"></span>
                         <i class="fas fa-chevron-down"></i>
                     </button>
                     <div id="chapterDropdown" class="chapter-dropdown" style="display:none;">
-                        <div class="chapter-item" onclick="switchToChapter(1)">FRAME 01</div>
-                        <div class="chapter-item" onclick="switchToChapter(2)">FRAME 02</div>
-                        <div class="chapter-item" onclick="switchToChapter(3)">FRAME 03</div>
-                        <div class="chapter-item" onclick="switchToChapter(4)">FRAME 04</div>
-                        <div class="chapter-item" onclick="switchToChapter(5)">FRAME 05</div>
-                        <div class="chapter-item" onclick="switchToChapter(6)">FRAME 06</div>
-                        <div class="chapter-item" onclick="switchToChapter(7)">FRAME 07</div>
-                        <div class="chapter-item" onclick="switchToChapter(8)">FRAME 08</div>
-                        <div class="chapter-item" onclick="switchToChapter(9)">FRAME 09</div>
-                        <div class="chapter-item" onclick="switchToChapter(10)">FRAME 10</div>
-                        <div class="chapter-item" onclick="switchToChapter(11)">FRAME 11</div>
-                        <div class="chapter-item" onclick="switchToChapter(12)">FRAME 12</div>
-                        <div class="chapter-item" onclick="switchToChapter(13)">FRAME 13</div>
-                        <div class="chapter-item" onclick="switchToChapter(14)">FRAME 14</div>
-                        <div class="chapter-item" onclick="switchToChapter(15)">FRAME 15</div>
-                        <div class="chapter-item" onclick="switchToChapter(16)">FRAME 16</div>
-                        <div class="chapter-item" onclick="switchToChapter(17)">FRAME 17</div>
-                        <div class="chapter-item" onclick="switchToChapter(18)">FRAME 18</div>
-                        <div class="chapter-item" onclick="switchToChapter(19)">FRAME 19</div>
-                        <div class="chapter-item" onclick="switchToChapter(20)">FRAME 20</div>
-                        <div class="chapter-item" onclick="switchToChapter(21)">FRAME 21</div>
-                        <div class="chapter-item" onclick="switchToChapter(22)">FRAME 22</div>
-                        <div class="chapter-item" onclick="switchToChapter(23)">FRAME 23</div>
-                        <div class="chapter-item" onclick="switchToChapter(24)">FRAME 24</div>
-                        <div class="chapter-item" onclick="switchToChapter(25)">FRAME 25</div>
+                        <div class="chapter-item" onclick="switchToChapter(1)">KNOT 01</div>
                     </div>
                 </div>
             </div>
@@ -77,7 +123,7 @@
 
     <!-- Floating Novel Title -->
     <div class="floating-novel-title">
-        <h1>ECHOES OF THE CONTINUIST</h1>
+        <h1>ORIN ODYSSEY</h1>
     </div>
 
     <!-- Main Content -->
@@ -86,278 +132,12 @@
             
             <section data-chapter="1" id="ch-1">
                 <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 01</span>
-                    <h2 class="chapter-title">THE FIRST FRAME</h2>
+                    <span class="chapter-number">KNOT 01</span>
+                    <h2 class="chapter-title">BEFORE THE CORD WENT TIGHT</h2>
                 </div>
-                <div id="frame01Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=2" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(2);">CONTINUE TO FRAME 02</a>
-                </div>
+                <div id="knot01Content"></div>
             </section>
 
-            <section data-chapter="2" id="ch-2" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 02</span>
-                    <h2 class="chapter-title">SURVEY POST: UNLATCHED</h2>
-                </div>
-                <div id="frame02Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=3" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(3);">CONTINUE TO FRAME 03</a>
-                </div>
-            </section>
-
-            <section data-chapter="3" id="ch-3" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 03</span>
-                    <h2 class="chapter-title">LOCKED DESIGN</h2>
-                </div>
-                <div id="frame03Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=4" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(4);">CONTINUE TO FRAME 04</a>
-                </div>
-            </section>
-
-            <section data-chapter="4" id="ch-4" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 04</span>
-                    <h2 class="chapter-title">PROJECT CHIMERA: INBOUND</h2>
-                </div>
-                <div id="frame04Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=5" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(5);">CONTINUE TO FRAME 05</a>
-                </div>
-            </section>
-
-            <section data-chapter="5" id="ch-5" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 05</span>
-                    <h2 class="chapter-title">STABILIZATION & POSITIONING</h2>
-                </div>
-                <div id="frame05Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=6" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(6);">CONTINUE TO FRAME 06</a>
-                </div>
-            </section>
-
-            <section data-chapter="6" id="ch-6" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 06</span>
-                    <h2 class="chapter-title">CONVERGENCE</h2>
-                </div>
-                <div id="frame06Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=7" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(7);">CONTINUE TO FRAME 07</a>
-                </div>
-            </section>
-
-            <section data-chapter="7" id="ch-7" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 07</span>
-                    <h2 class="chapter-title">AFTERIMAGE</h2>
-                </div>
-                <div id="frame07Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=8" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(8);">CONTINUE TO FRAME 08</a>
-                </div>
-            </section>
-
-            <section data-chapter="8" id="ch-8" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 08</span>
-                    <h2 class="chapter-title">BURST LOCK</h2>
-                </div>
-                <div id="frame08Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=9" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(9);">CONTINUE TO FRAME 09</a>
-                </div>
-            </section>
-
-            <section data-chapter="9" id="ch-9" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 09</span>
-                    <h2 class="chapter-title">COST OF RETURN</h2>
-                </div>
-                <div id="frame09Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=10" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(10);">CONTINUE TO FRAME 10</a>
-                </div>
-            </section>
-
-            <section data-chapter="10" id="ch-10" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 10</span>
-                    <h2 class="chapter-title">OPEN DEBTS</h2>
-                </div>
-                <div id="frame10Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=11" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(11);">CONTINUE TO FRAME 11</a>
-                </div>
-            </section>
-
-            <section data-chapter="11" id="ch-11" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 11</span>
-                    <h2 class="chapter-title">ANCHORFALL</h2>
-                </div>
-                <div id="frame11Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=12" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(12);">CONTINUE TO FRAME 12</a>
-                </div>
-            </section>
-
-            <section data-chapter="12" id="ch-12" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 12</span>
-                    <h2 class="chapter-title">SOUTH CROP WALL</h2>
-                </div>
-                <div id="frame12Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=13" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(13);">CONTINUE TO FRAME 13</a>
-                </div>
-            </section>
-
-            <section data-chapter="13" id="ch-13" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 13</span>
-                    <h2 class="chapter-title">WHAT THE ROAD OWES</h2>
-                </div>
-                <div id="frame13Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=14" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(14);">CONTINUE TO FRAME 14</a>
-                </div>
-            </section>
-
-            <section data-chapter="14" id="ch-14" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 14</span>
-                    <h2 class="chapter-title">THE MAW'S ANCHOR</h2>
-                </div>
-                <div id="frame14Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=15" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(15);">CONTINUE TO FRAME 15</a>
-                </div>
-            </section>
-
-            <section data-chapter="15" id="ch-15" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 15</span>
-                    <h2 class="chapter-title">THE UNFINISHED DOOR</h2>
-                </div>
-                <div id="frame15Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=16" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(16);">CONTINUE TO FRAME 16</a>
-                </div>
-            </section>
-
-            <section data-chapter="16" id="ch-16" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 16</span>
-                    <h2 class="chapter-title">THE FRAME LOOKS BACK</h2>
-                </div>
-                <div id="frame16Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=17" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(17);">CONTINUE TO FRAME 17</a>
-                </div>
-            </section>
-
-            <section data-chapter="17" id="ch-17" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 17</span>
-                    <h2 class="chapter-title">THE REPLACEMENT</h2>
-                </div>
-                <div id="frame17Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=18" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(18);">CONTINUE TO FRAME 18</a>
-                </div>
-            </section>
-
-            <section data-chapter="18" id="ch-18" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 18</span>
-                    <h2 class="chapter-title">AFTERIMAGE</h2>
-                </div>
-                <div id="frame18Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=19" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(19);">CONTINUE TO FRAME 19</a>
-                </div>
-            </section>
-
-            <section data-chapter="19" id="ch-19" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 19</span>
-                    <h2 class="chapter-title">COST OF RETURN</h2>
-                </div>
-                <div id="frame19Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=20" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(20);">CONTINUE TO FRAME 20</a>
-                </div>
-            </section>
-
-            <section data-chapter="20" id="ch-20" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 20</span>
-                    <h2 class="chapter-title">THE FIRST MERIDIAN</h2>
-                </div>
-                <div id="frame20Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=21" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(21);">CONTINUE TO FRAME 21</a>
-                </div>
-            </section>
-
-            <section data-chapter="21" id="ch-21" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 21</span>
-                    <h2 class="chapter-title">THE WORK THAT STAYS</h2>
-                </div>
-                <div id="frame21Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=22" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(22);">CONTINUE TO FRAME 22</a>
-                </div>
-            </section>
-
-            <section data-chapter="22" id="ch-22" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 22</span>
-                    <h2 class="chapter-title">THE FIRST RETURN</h2>
-                </div>
-                <div id="frame22Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=23" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(23);">CONTINUE TO FRAME 23</a>
-                </div>
-            </section>
-
-            <section data-chapter="23" id="ch-23" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 23</span>
-                    <h2 class="chapter-title">THE ONES STILL INSIDE</h2>
-                </div>
-                <div id="frame23Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=24" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(24);">CONTINUE TO FRAME 24</a>
-                </div>
-            </section>
-
-            <section data-chapter="24" id="ch-24" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 24</span>
-                    <h2 class="chapter-title">THE FIRST TIME AGAIN</h2>
-                </div>
-                <div id="frame24Content"></div>
-                <div class="chapter-nav-wrap">
-                    <a href="?chapter=25" class="chapter-nav-btn" onclick="event.preventDefault(); switchChapter(25);">CONTINUE TO FRAME 25</a>
-                </div>
-            </section>
-
-            <section data-chapter="25" id="ch-25" style="display:none;">
-                <div class="chapter-title-wrap">
-                    <span class="chapter-number">FRAME 25 — FINAL FRAME</span>
-                    <h2 class="chapter-title">THE FIRST BLANK PAGE</h2>
-                </div>
-                <div id="frame25Content"></div>
-                <div class="chapter-nav-wrap" aria-label="End of Echoes of the Continuist">
-                    <span class="chapter-nav-btn chapter-end-marker">END OF THIS STORY</span>
-                </div>
-            </section>
         </div>
     </div>
 
@@ -799,7 +579,7 @@
             }
         }
 
-        const storedChapter = parseInt(localStorage.getItem('reader_chapter') || '', 10);
+        const storedChapter = parseInt(localStorage.getItem('orinOdyssey_chapter') || '', 10);
         if (!Number.isNaN(storedChapter) && storedChapter > 0) {
             return storedChapter;
         }
@@ -908,7 +688,7 @@
     
     window.updateChapterLabel = function(chapterNum) {
         const label = document.getElementById('currentChapterLabel');
-        label.textContent = `FRAME ${chapterNum.toString().padStart(2, '0')}`;
+        label.textContent = `KNOT ${chapterNum.toString().padStart(2, '0')}`;
         markReaderChapterSeen(chapterNum);
         updateReaderReleaseBadges();
         
@@ -971,11 +751,11 @@
     
     // Initialize on load
     document.addEventListener('DOMContentLoaded', function() {
-        const loadFrameMarkdown = (hostId, assetPath, chapterNum) => {
+        const loadKnotMarkdown = (hostId, assetPath, chapterNum) => {
             const host = document.getElementById(hostId);
             if (!host) return;
 
-            const finalizeFrameRender = () => {
+            const finalizeKnotRender = () => {
                 const chapterSection = host.closest('section[data-chapter]') || host;
                 if (typeof window.prepareTextForReading === 'function') {
                     window.prepareTextForReading(chapterSection);
@@ -986,7 +766,7 @@
                 if (typeof window.renderAllHighlights === 'function') {
                     window.renderAllHighlights();
                 }
-                const savedScroll = localStorage.getItem(`reader_scroll_ch${chapterNum}`);
+                const savedScroll = localStorage.getItem(`orinOdyssey_scroll_ch${chapterNum}`);
                 if ((savedScroll === null || parseInt(savedScroll, 10) <= 0) && typeof window.scrollToChapterStart === 'function') {
                     requestAnimationFrame(() => window.scrollToChapterStart(chapterNum));
                 }
@@ -994,44 +774,20 @@
 
             fetch(assetPath)
                 .then(response => {
-                    if (!response.ok) throw new Error(`Missing FRAME ${chapterNum.toString().padStart(2, '0')}`);
+                    if (!response.ok) throw new Error(`Missing KNOT ${chapterNum.toString().padStart(2, '0')}`);
                     return response.text();
                 })
                 .then(markdown => {
                     host.innerHTML = renderFrameMarkdown(markdown);
-                    finalizeFrameRender();
+                    finalizeKnotRender();
                 })
                 .catch(() => {
-                    host.innerHTML = `<p>FRAME ${chapterNum.toString().padStart(2, '0')} failed to load locally.</p>`;
-                    finalizeFrameRender();
+                    host.innerHTML = `<p>KNOT ${chapterNum.toString().padStart(2, '0')} failed to load locally.</p>`;
+                    finalizeKnotRender();
                 });
         };
 
-        loadFrameMarkdown('frame01Content', 'chapters/echoes/frame-01.md', 1);
-        loadFrameMarkdown('frame02Content', 'chapters/echoes/frame-02.md', 2);
-        loadFrameMarkdown('frame03Content', 'chapters/echoes/frame-03.md', 3);
-        loadFrameMarkdown('frame04Content', 'chapters/echoes/frame-04.md', 4);
-        loadFrameMarkdown('frame05Content', 'chapters/echoes/frame-05.md', 5);
-        loadFrameMarkdown('frame06Content', 'chapters/echoes/frame-06.md', 6);
-        loadFrameMarkdown('frame07Content', 'chapters/echoes/frame-07.md', 7);
-        loadFrameMarkdown('frame08Content', 'chapters/echoes/frame-08.md', 8);
-        loadFrameMarkdown('frame09Content', 'chapters/echoes/frame-09.md', 9);
-        loadFrameMarkdown('frame10Content', 'chapters/echoes/frame-10.md', 10);
-        loadFrameMarkdown('frame11Content', 'chapters/echoes/frame-11.md', 11);
-        loadFrameMarkdown('frame12Content', 'chapters/echoes/frame-12.md', 12);
-        loadFrameMarkdown('frame13Content', 'chapters/echoes/frame-13.md', 13);
-        loadFrameMarkdown('frame14Content', 'chapters/echoes/frame-14.md', 14);
-        loadFrameMarkdown('frame15Content', 'chapters/echoes/frame-15.md', 15);
-        loadFrameMarkdown('frame16Content', 'chapters/echoes/frame-16.md', 16);
-        loadFrameMarkdown('frame17Content', 'chapters/echoes/frame-17.md', 17);
-        loadFrameMarkdown('frame18Content', 'chapters/echoes/frame-18.md', 18);
-        loadFrameMarkdown('frame19Content', 'chapters/echoes/frame-19.md', 19);
-        loadFrameMarkdown('frame20Content', 'chapters/echoes/frame-20.md', 20);
-        loadFrameMarkdown('frame21Content', 'chapters/echoes/frame-21.md', 21);
-        loadFrameMarkdown('frame22Content', 'chapters/echoes/frame-22.md', 22);
-        loadFrameMarkdown('frame23Content', 'chapters/echoes/frame-23.md', 23);
-        loadFrameMarkdown('frame24Content', 'chapters/echoes/frame-24.md', 24);
-        loadFrameMarkdown('frame25Content', 'chapters/echoes/frame-25.md', 25);
+        loadKnotMarkdown('knot01Content', 'chapters/odyssey/knot-01.md', 1);
 
         const requestedChapter = getRequestedChapterNumber();
         updateChapterLabel(requestedChapter);
