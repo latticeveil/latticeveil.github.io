@@ -18,7 +18,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <link rel="stylesheet" href="assets/site.css?v=20260726x">
+    <link rel="stylesheet" href="assets/site.css?v=20260726y">
     <link rel="stylesheet" href="assets/tos-modal.css">
 
     <style>
@@ -772,6 +772,74 @@
                     btn.classList.remove('active');
                 }
             }
+        }
+        
+        function selectNovel(novel) {
+            // Update button text and badge(s)
+            const novelInfo = {
+                'echoes': { 
+                    name: 'Echoes of the Continuist', 
+                    badges: [
+                        { text: 'MAIN STORY', class: 'main-story-badge' },
+                        { text: 'NEW', class: 'new-badge' }
+                    ]
+                },
+                'odyssey': { 
+                    name: 'Orin Odyssey', 
+                    badges: [
+                        { text: 'PREQUEL', class: 'prequel-badge' },
+                        { text: 'NEW', class: 'new-badge' }
+                    ]
+                },
+                'sequel': { 
+                    name: 'Route Home', 
+                    badges: [
+                        { text: 'SEQUEL', class: 'sequel-badge' }
+                    ]
+                },
+                'meridian': { 
+                    name: 'Meridian Falls', 
+                    badges: [
+                        { text: 'SPIN-OFF', class: 'spinoff-badge' }
+                    ]
+                }
+            };
+
+            const info = novelInfo[novel];
+            if (info) {
+                document.getElementById('currentNovelLabel').textContent = info.name;
+                
+                // Handle multiple badges
+                const badgeContainer = document.getElementById('currentNovelBadge');
+                if (info.badges.length > 1) {
+                    badgeContainer.className = 'novel-badges';
+                    badgeContainer.innerHTML = '';
+                    info.badges.forEach(badge => {
+                        const badgeEl = document.createElement('span');
+                        badgeEl.className = `novel-badge ${badge.class}`;
+                        badgeEl.textContent = badge.text;
+                        badgeContainer.appendChild(badgeEl);
+                    });
+                } else {
+                    badgeContainer.className = `novel-badge ${info.badges[0].class}`;
+                    badgeContainer.textContent = info.badges[0].text;
+                }
+            }
+
+            // Update content visibility
+            document.querySelectorAll('.novel-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            const contentElement = document.getElementById(`${novel}-content`);
+            if (contentElement) {
+                contentElement.classList.add('active');
+            } else {
+                console.warn(`No content found for novel: ${novel}`);
+            }
+
+            // Close dropdown
+            toggleNovelDropdown();
         }
         
         // Initialize novel selector after enhanced UI loads
