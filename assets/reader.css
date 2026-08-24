@@ -126,7 +126,8 @@ body.panel-open {
     top: 75px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1001;
+    /* Keep the title visible while scrolling without covering the header menu. */
+    z-index: 999;
     background: rgba(0, 0, 0, 0.9);
     backdrop-filter: blur(10px);
     padding: 8px 16px;
@@ -148,7 +149,7 @@ body.panel-open {
 /* Mobile styling for floating title */
 @media (max-width: 768px) {
     .floating-novel-title {
-        top: 70px;
+        top: calc(116px + env(safe-area-inset-top, 0px));
         padding: 6px 12px;
     }
     
@@ -160,11 +161,11 @@ body.panel-open {
 
 @media (max-width: 480px) {
     .floating-novel-title {
-        position: static;
-        margin-top: 15px;
-        margin-bottom: 20px;
-        transform: none;
-        left: auto;
+        position: fixed;
+        top: calc(126px + env(safe-area-inset-top, 0px));
+        left: 50%;
+        margin: 0;
+        transform: translateX(-50%);
         padding: 4px 10px;
     }
     
@@ -174,14 +175,14 @@ body.panel-open {
     }
 }
 
-/* Small screens - Title becomes static to prevent overlap */
+/* Keep the title fixed below the expanded mobile header. */
 @media (max-width: 600px) {
     .floating-novel-title {
-        position: static;
-        margin-top: 15px;
-        margin-bottom: 20px;
-        transform: none;
-        left: auto;
+        position: fixed;
+        top: calc(126px + env(safe-area-inset-top, 0px));
+        left: 50%;
+        margin: 0;
+        transform: translateX(-50%);
     }
     
     body {
