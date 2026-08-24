@@ -758,6 +758,16 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/enhanced-ui.js?v=20260504a"></script>
+    <script>
+        // Initialize novel selector after enhanced UI loads
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (typeof selectNovel === 'function') {
+                    selectNovel('echoes');
+                }
+            }, 100);
+        });
+    </script>
     <script src="assets/tos-acceptance.js"></script>
     <script src="assets/asset-catalog-order.js?v=1"></script>
     <script src="assets/asset-3d-viewer.js?v=1"></script>
@@ -1036,21 +1046,68 @@
     <div id="bookModal" class="book-modal-overlay">
         <div class="book-modal">
             <div class="book-modal-header">
-                <h2>Echoes of the Continuist</h2>
+                <div class="novel-selector-container">
+                    <div class="novel-selector-label">
+                        <i class="fas fa-book-open"></i>
+                        <span>Select Novel</span>
+                    </div>
+                    <div class="novel-dropdown-wrapper">
+                        <button id="novelSelectorBtn" class="novel-selector-btn" onclick="toggleNovelDropdown()">
+                            <span id="currentNovelLabel">Echoes of the Continuist</span>
+                            <div id="currentNovelBadge" class="novel-badge main-story-badge">MAIN STORY</div>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div id="novelDropdown" class="novel-dropdown" style="display:none;">
+                            <div class="novel-dropdown-item" data-novel="echoes" onclick="selectNovel('echoes')">
+                                <i class="fas fa-book"></i>
+                                <span>Echoes of the Continuist</span>
+                                <div class="novel-badges">
+                                    <span class="novel-badge main-story-badge">MAIN STORY</span>
+                                    <span class="novel-badge new-badge">NEW</span>
+                                </div>
+                            </div>
+                            <div class="novel-dropdown-item" data-novel="odyssey" onclick="selectNovel('odyssey')">
+                                <i class="fas fa-scroll"></i>
+                                <span>Orin Odyssey</span>
+                                <div class="novel-badges">
+                                    <span class="novel-badge prequel-badge">PREQUEL</span>
+                                    <span class="novel-badge new-badge">NEW</span>
+                                </div>
+                            </div>
+                            <div class="novel-dropdown-item" data-novel="sequel" onclick="selectNovel('sequel')">
+                                <i class="fas fa-feather-alt"></i>
+                                <span>Route Home</span>
+                                <div class="novel-badges">
+                                    <span class="novel-badge sequel-badge">SEQUEL</span>
+                                </div>
+                            </div>
+                            <div class="novel-dropdown-item" data-novel="meridian" onclick="selectNovel('meridian')">
+                                <i class="fas fa-globe"></i>
+                                <span>Meridian Falls</span>
+                                <div class="novel-badges">
+                                    <span class="novel-badge spinoff-badge">SPIN-OFF</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <button class="book-modal-close" onclick="hideBookModal()">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
             <div class="book-modal-content">
-                <button onclick="continueReading()" class="book-resume-btn">
-                    <i class="fas fa-bookmark"></i>
-                    <span>RETURN TO LATEST PAGE</span>
-                </button>
-                <div class="chapters-list">
-                    <div class="chapters-title">Chapters</div>
+                <!-- Echoes Content -->
+                <div id="echoes-content" class="novel-content active">
+                    <button onclick="continueReading()" class="book-resume-btn">
+                        <i class="fas fa-bookmark"></i>
+                        <span>RETURN TO LATEST PAGE</span>
+                    </button>
+                    <div class="chapters-list">
+                        <div class="chapters-title">Frames</div>
                     <a href="./echoes.html?chapter=1" class="chapter-item">
                         <div class="chapter-number">FRAME 01</div>
                         <div class="chapter-name">The First Frame</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=2" class="chapter-item">
                         <div class="chapter-number">FRAME 02</div>
@@ -1091,62 +1148,77 @@
                     <a href="./echoes.html?chapter=11" class="chapter-item">
                         <div class="chapter-number">FRAME 11</div>
                         <div class="chapter-name">Anchorfall</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=12" class="chapter-item">
                         <div class="chapter-number">FRAME 12</div>
                         <div class="chapter-name">South Crop Wall</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=13" class="chapter-item">
                         <div class="chapter-number">FRAME 13</div>
                         <div class="chapter-name">What the Road Owes</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=14" class="chapter-item">
                         <div class="chapter-number">FRAME 14</div>
                         <div class="chapter-name">The Maw's Anchor</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=15" class="chapter-item">
                         <div class="chapter-number">FRAME 15</div>
                         <div class="chapter-name">The Unfinished Door</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=16" class="chapter-item">
                         <div class="chapter-number">FRAME 16</div>
                         <div class="chapter-name">The Frame Looks Back</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=17" class="chapter-item">
                         <div class="chapter-number">FRAME 17</div>
                         <div class="chapter-name">The Replacement</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=18" class="chapter-item">
                         <div class="chapter-number">FRAME 18</div>
                         <div class="chapter-name">Afterimage</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=19" class="chapter-item">
                         <div class="chapter-number">FRAME 19</div>
                         <div class="chapter-name">Cost of Return</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=20" class="chapter-item">
                         <div class="chapter-number">FRAME 20</div>
                         <div class="chapter-name">The First Meridian</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=21" class="chapter-item">
                         <div class="chapter-number">FRAME 21</div>
                         <div class="chapter-name">The Work That Stays</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=22" class="chapter-item">
                         <div class="chapter-number">FRAME 22</div>
                         <div class="chapter-name">The First Return</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=23" class="chapter-item">
                         <div class="chapter-number">FRAME 23</div>
                         <div class="chapter-name">The Ones Still Inside</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=24" class="chapter-item">
                         <div class="chapter-number">FRAME 24</div>
                         <div class="chapter-name">The First Time Again</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                     <a href="./echoes.html?chapter=25" class="chapter-item">
                         <div class="chapter-number">FRAME 25 · FINAL FRAME</div>
                         <div class="chapter-name">The First Blank Page</div>
+                        <span class="chapter-new-badge">NEW</span>
                     </a>
                 </div>
                 <div class="modal-actions">
@@ -1158,6 +1230,57 @@
                         <i class="fas fa-eraser"></i>
                         <span>Clear Data</span>
                     </button>
+                </div>
+                </div>
+                
+                <!-- Orin Odyssey Content -->
+                <div id="odyssey-content" class="novel-content">
+                    <button onclick="continueOdysseyReading()" class="book-resume-btn">
+                        <i class="fas fa-bookmark"></i>
+                        <span>RETURN TO LATEST PAGE</span>
+                    </button>
+                    <div class="chapters-list">
+                        <div class="chapters-title">Knots</div>
+                        <a href="./odyssey.html?chapter=1" class="chapter-item">
+                            <div class="chapter-number">KNOT 01</div>
+                            <div class="chapter-name">Before the Cord Went Tight</div>
+                            <span class="chapter-new-badge">NEW</span>
+                        </a>
+                    </div>
+                    <div class="modal-actions">
+                        <a href="./odyssey.html" class="modal-action-btn">
+                            <i class="fas fa-book-open"></i>
+                            <span>Full Reader</span>
+                        </a>
+                        <button onclick="showOdysseyDataClearConfirm()" class="modal-action-btn clear-btn">
+                            <i class="fas fa-eraser"></i>
+                            <span>Clear Data</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Sequel Content -->
+                <div id="sequel-content" class="novel-content">
+                    <div class="work-in-progress-container">
+                        <div class="work-in-progress-icon">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <h2 class="work-in-progress-title">Route Home</h2>
+                        <p class="work-in-progress-message">This story has yet to be written.</p>
+                        <p class="work-in-progress-subtitle">The continuing journey of Eli and the consequences of THE choices he made.</p>
+                    </div>
+                </div>
+                
+                <!-- Spin-off Content -->
+                <div id="meridian-content" class="novel-content">
+                    <div class="work-in-progress-container">
+                        <div class="work-in-progress-icon">
+                            <i class="fas fa-globe-americas"></i>
+                        </div>
+                        <h2 class="work-in-progress-title">Meridian Falls</h2>
+                        <p class="work-in-progress-message">This story is a work in progress.</p>
+                        <p class="work-in-progress-subtitle">A story exploring connections beyond the Continuum.</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1187,6 +1310,38 @@
                         <span>Keep Data</span>
                     </button>
                     <button onclick="clearBookData()" class="modal-action-btn clear-btn">
+                        <i class="fas fa-trash"></i>
+                        <span>Yes, Clear It</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="odysseyDataConfirmModal" class="book-modal-overlay confirm-modal-overlay" onclick="if(event.target===this) hideOdysseyDataClearConfirm()">
+        <div class="book-modal confirm-modal">
+            <div class="book-modal-header">
+                <h2>Clear Orin Odyssey Data</h2>
+                <button class="book-modal-close" onclick="hideOdysseyDataClearConfirm()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="book-modal-content">
+                <div class="confirm-copy">
+                    <p class="confirm-lead">This will clear all saved Orin Odyssey reader data.</p>
+                    <ul class="confirm-list">
+                        <li>Your saved knot and reading position</li>
+                        <li>TTS progress and saved spoken spot</li>
+                        <li>Reader comments, notes, and reader-specific settings</li>
+                    </ul>
+                    <p class="confirm-warning">This clears data across every knot in the novel reader.</p>
+                </div>
+                <div class="modal-actions confirm-actions">
+                    <button onclick="hideOdysseyDataClearConfirm()" class="modal-action-btn">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Keep Data</span>
+                    </button>
+                    <button onclick="clearOdysseyData()" class="modal-action-btn clear-btn">
                         <i class="fas fa-trash"></i>
                         <span>Yes, Clear It</span>
                     </button>
