@@ -1551,21 +1551,24 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
 
 .book-modal-close {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  background: none;
-  border: none;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   color: var(--bg);
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   cursor: pointer;
-  padding: 5px;
-  border-radius: 4px;
+  padding: 8px 12px;
+  border-radius: 6px;
   transition: all 0.3s;
   z-index: 10;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .book-modal-close:hover {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .book-modal-header h2 {
@@ -1842,8 +1845,8 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
   }
 
   .book-modal-close {
-    top: 15px;
-    right: 15px;
+    top: 12px;
+    right: 12px;
   }
 
   .work-in-progress-container {
@@ -1866,11 +1869,6 @@ a[style*="border-bottom"]{ border-bottom-color: rgba(56,225,255,.55) !important;
     font-size: 1rem;
     max-width: 300px;
   }
-}
-
-.book-modal-close:hover {
-  background: rgba(255,255,255,0.2);
-  transform: scale(1.1);
 }
 
 .book-modal-content {
