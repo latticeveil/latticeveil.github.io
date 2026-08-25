@@ -757,6 +757,7 @@
     
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/odyssey-discovery.js"></script>
     <script src="assets/enhanced-ui.js?v=20260726w"></script>
     <script>
         // Fallback novel dropdown functionality
@@ -849,7 +850,61 @@
                     selectNovel('echoes');
                 }
             }, 100);
+            
+            // Initialize Odyssey chapter discovery
+            initializeOdysseyChapters();
         });
+        
+        // Initialize Odyssey chapters dynamically
+        async function initializeOdysseyChapters() {
+            try {
+                const knots = await window.odysseyDiscovery.discoverKnots();
+                const chaptersContainer = document.getElementById('odyssey-chapters-dynamic');
+                
+                if (!chaptersContainer) return;
+                
+                chaptersContainer.innerHTML = '';
+                
+                if (knots.length === 0) {
+                    chaptersContainer.innerHTML = '<p style="padding: 20px; text-align: center; opacity: 0.7;">No knots available yet.</p>';
+                    return;
+                }
+                
+                const highestSeen = parseInt(localStorage.getItem('reader_highest_chapter_seen') || '0', 10) || 0;
+                const latestKnot = knots[knots.length - 1];
+                
+                for (const knot of knots) {
+                    const chapterItem = document.createElement('a');
+                    chapterItem.href = `./odyssey.html?chapter=${knot.number}`;
+                    chapterItem.className = 'chapter-item';
+                    
+                    const numberDiv = document.createElement('div');
+                    numberDiv.className = 'chapter-number';
+                    numberDiv.textContent = window.odysseyDiscovery.getKnotLabel(knot.number);
+                    
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'chapter-name';
+                    
+                    // Load title for display
+                    const title = await window.odysseyDiscovery.getKnotTitle(knot.number);
+                    nameDiv.textContent = title || 'Loading...';
+                    
+                    // Add NEW badge to latest knot
+                    if (knot.number === latestKnot.number && highestSeen > 0 && knot.number > highestSeen) {
+                        const newBadge = document.createElement('span');
+                        newBadge.className = 'chapter-new-badge';
+                        newBadge.textContent = 'NEW';
+                        chapterItem.appendChild(newBadge);
+                    }
+                    
+                    chapterItem.appendChild(numberDiv);
+                    chapterItem.appendChild(nameDiv);
+                    chaptersContainer.appendChild(chapterItem);
+                }
+            } catch (error) {
+                console.error('Error initializing Odyssey chapters:', error);
+            }
+        }
     </script>
     <script src="assets/tos-acceptance.js"></script>
     <script src="assets/asset-catalog-order.js?v=1"></script>
@@ -1324,11 +1379,9 @@
                     </button>
                     <div class="chapters-list">
                         <div class="chapters-title">Knots</div>
-                        <a href="./odyssey.html?chapter=1" class="chapter-item">
-                            <div class="chapter-number">KNOT 01</div>
-                            <div class="chapter-name">Before the Cord Went Tight</div>
-                            <span class="chapter-new-badge">NEW</span>
-                        </a>
+                        <div id="odyssey-chapters-dynamic">
+                            <!-- Chapters will be dynamically populated -->
+                        </div>
                     </div>
                     <div class="modal-actions">
                         <a href="./odyssey.html" class="modal-action-btn">
