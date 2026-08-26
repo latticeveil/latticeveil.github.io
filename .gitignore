@@ -6,4 +6,5 @@ plans/
 push_site.cmd
 lore/
 downloads/*.exe
+.bat
 
