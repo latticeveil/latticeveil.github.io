@@ -803,6 +803,15 @@
                 const requestedChapter = getRequestedChapterNumber();
                 await loadKnotContent(requestedChapter);
                 
+                // Explicitly show the requested section to prevent race condition with reader.js
+                document.querySelectorAll('section[data-chapter]').forEach(section => {
+                    section.style.display = 'none';
+                });
+                const targetSection = document.getElementById(`ch-${requestedChapter}`);
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                }
+                
                 // Update UI
                 updateChapterLabel(requestedChapter);
                 updateReaderReleaseBadges();

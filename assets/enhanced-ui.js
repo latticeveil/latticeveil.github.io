@@ -88,6 +88,20 @@ class EnhancedUIManager {
             window.location.href = `./echoes.html?chapter=${lastChapter}`;
         };
 
+        // Orin Odyssey continue reading
+        window.continueOdysseyReading = function() {
+            const lastChapter = localStorage.getItem('orinOdysseyProgress') || '1';
+            const lastScroll = localStorage.getItem(`orinOdyssey_scroll_ch${lastChapter}`) || '0';
+
+            localStorage.setItem('orinOdyssey_return_context', JSON.stringify({
+                chapter: parseInt(lastChapter, 10),
+                scroll: parseInt(lastScroll, 10) || 0,
+                timestamp: Date.now()
+            }));
+
+            window.location.href = `./odyssey.html?chapter=${lastChapter}`;
+        };
+
         window.openReaderChapter = function(chapterNum) {
             const normalizedChapter = Math.max(1, parseInt(chapterNum, 10) || 1);
             const savedScroll = parseInt(localStorage.getItem(`reader_scroll_ch${normalizedChapter}`) || '0', 10) || 0;
@@ -103,6 +117,130 @@ class EnhancedUIManager {
 
             window.location.href = `./echoes.html?chapter=${normalizedChapter}`;
         };
+
+        // Orin Odyssey chapter opening
+        window.openOdysseyChapter = function(chapterNum) {
+            const normalizedChapter = Math.max(1, parseInt(chapterNum, 10) || 1);
+            const savedScroll = parseInt(localStorage.getItem(`orinOdyssey_scroll_ch${normalizedChapter}`) || '0', 10) || 0;
+            const highestSeen = parseInt(localStorage.getItem('orinOdyssey_highest_chapter_seen') || '0', 10) || 0;
+
+            localStorage.setItem('orinOdysseyProgress', String(normalizedChapter));
+            localStorage.setItem('orinOdyssey_highest_chapter_seen', String(Math.max(highestSeen, normalizedChapter)));
+            localStorage.setItem('orinOdyssey_return_context', JSON.stringify({
+                chapter: normalizedChapter,
+                scroll: savedScroll,
+                timestamp: Date.now()
+            }));
+
+            window.location.href = `./odyssey.html?chapter=${normalizedChapter}`;
+        };
+
+        // Novel dropdown functionality
+        window.toggleNovelDropdown = function() {
+            const dropdown = document.getElementById('novelDropdown');
+            const btn = document.getElementById('novelSelectorBtn');
+            
+            if (dropdown.style.display === 'none') {
+                dropdown.style.display = 'block';
+                btn.classList.add('active');
+            } else {
+                dropdown.style.display = 'none';
+                btn.classList.remove('active');
+            }
+        };
+
+        window.selectNovel = function(novel) {
+            // Update button text and badge(s)
+            const novelInfo = {
+                'echoes': { 
+                    name: 'Echoes of the Continuist', 
+                    badges: [
+                        { text: 'MAIN STORY', class: 'main-story-badge' },
+                        { text: 'NEW', class: 'new-badge' }
+                    ]
+                },
+                'odyssey': { 
+                    name: 'Orin Odyssey', 
+                    badges: [
+                        { text: 'PREQUEL', class: 'prequel-badge' },
+                        { text: 'NEW', class: 'new-badge' }
+                    ]
+                },
+                'sequel': { 
+                    name: 'Route Home', 
+                    badges: [
+                        { text: 'SEQUEL', class: 'sequel-badge' }
+                    ]
+                },
+                'meridian': { 
+                    name: 'Meridian Falls', 
+                    badges: [
+                        { text: 'SPIN-OFF', class: 'spinoff-badge' }
+                    ]
+                }
+            };
+
+            const info = novelInfo[novel];
+            if (info) {
+                document.getElementById('currentNovelLabel').textContent = info.name;
+                
+                // Handle multiple badges
+                const badgeContainer = document.getElementById('currentNovelBadge');
+                if (info.badges.length > 1) {
+                    // If multiple badges, we need to create a badge container
+                    badgeContainer.className = 'novel-badges';
+                    badgeContainer.innerHTML = '';
+                    info.badges.forEach(badge => {
+                        const badgeEl = document.createElement('span');
+                        badgeEl.className = `novel-badge ${badge.class}`;
+                        badgeEl.textContent = badge.text;
+                        badgeContainer.appendChild(badgeEl);
+                    });
+                } else {
+                    // Single badge
+                    badgeContainer.className = `novel-badge ${info.badges[0].class}`;
+                    badgeContainer.textContent = info.badges[0].text;
+                }
+            }
+
+            // Update content visibility
+            document.querySelectorAll('.novel-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            const contentElement = document.getElementById(`${novel}-content`);
+            if (contentElement) {
+                contentElement.classList.add('active');
+            } else {
+                console.warn(`No content found for novel: ${novel}`);
+            }
+
+            // Close dropdown
+            toggleNovelDropdown();
+        };
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('novelDropdown');
+            const btn = document.getElementById('novelSelectorBtn');
+            
+            if (dropdown && btn && !btn.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.style.display = 'none';
+                btn.classList.remove('active');
+            }
+        });
+
+        // Close dropdown on escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const dropdown = document.getElementById('novelDropdown');
+                const btn = document.getElementById('novelSelectorBtn');
+                if (dropdown && btn) {
+                    dropdown.style.display = 'none';
+                    btn.classList.remove('active');
+                }
+            }
+        });
         
         // Make toggleBookDropdown function globally available
         window.toggleBookDropdown = function() {
@@ -167,6 +305,19 @@ class EnhancedUIManager {
                 const chapterNum = match ? parseInt(match[1], 10) : 1;
 
                 window.openReaderChapter(chapterNum);
+            });
+        });
+
+        // Orin Odyssey chapter links
+        document.querySelectorAll('#bookModal .chapter-item[href*="odyssey.html?chapter="]').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const href = this.getAttribute('href') || '';
+                const match = href.match(/chapter=(\d+)/);
+                const chapterNum = match ? parseInt(match[1], 10) : 1;
+
+                window.openOdysseyChapter(chapterNum);
             });
         });
     }
@@ -269,10 +420,16 @@ class EnhancedUIManager {
         window.hideBookDataClearConfirm = this.hideBookDataClearConfirm.bind(this);
         window.clearSiteData = this.clearSiteData.bind(this);
         window.fullResetSite = this.fullResetSite.bind(this);
+        
+        // Orin Odyssey data management
+        window.clearOdysseyData = this.clearOdysseyData.bind(this);
+        window.showOdysseyDataClearConfirm = this.showOdysseyDataClearConfirm.bind(this);
+        window.hideOdysseyDataClearConfirm = this.hideOdysseyDataClearConfirm.bind(this);
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.hideBookDataClearConfirm();
+                this.hideOdysseyDataClearConfirm();
             }
         });
     }
@@ -288,6 +445,17 @@ class EnhancedUIManager {
 
         return Object.keys(localStorage).filter((key) =>
             bookKeyPatterns.some((pattern) => pattern.test(key))
+        );
+    }
+
+    getOdysseyDataKeys() {
+        const odysseyKeyPatterns = [
+            /^orinOdyssey/i,
+            /^odyssey_/i
+        ];
+
+        return Object.keys(localStorage).filter((key) =>
+            odysseyKeyPatterns.some((pattern) => pattern.test(key))
         );
     }
 
@@ -308,6 +476,36 @@ class EnhancedUIManager {
         if (!document.querySelector('.book-modal-overlay.active')) {
             document.body.style.overflow = '';
         }
+    }
+
+    showOdysseyDataClearConfirm() {
+        const modal = document.getElementById('odysseyDataConfirmModal');
+        if (!modal) return;
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    hideOdysseyDataClearConfirm() {
+        const modal = document.getElementById('odysseyDataConfirmModal');
+        if (!modal) return;
+
+        modal.classList.remove('active');
+
+        if (!document.querySelector('.book-modal-overlay.active')) {
+            document.body.style.overflow = '';
+        }
+    }
+
+    clearOdysseyData() {
+        const odysseyKeys = this.getOdysseyDataKeys();
+
+        odysseyKeys.forEach(key => localStorage.removeItem(key));
+
+        this.hideOdysseyDataClearConfirm();
+        this.hideBookModalIfOpen();
+        this.showNotification('Orin Odyssey reader data cleared for all knots', 'success');
+        this.closeAllDropdowns();
     }
 
     clearBookData() {
