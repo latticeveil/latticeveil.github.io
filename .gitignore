@@ -8,3 +8,5 @@ lore/
 downloads/*.exe
 *.bat
 
+# Supabase / database files
+*.sql
