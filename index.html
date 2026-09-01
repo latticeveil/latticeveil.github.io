@@ -2228,37 +2228,73 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             
             <div id="log-game" class="sub-content active">
                 <div class="log-entry">
-                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Veilnet Skinlink">
+                    <img src="https://raw.githubusercontent.com/latticeveil/LatticeVeil/main/LatticeVeilMonoGame/Defaults/Assets/textures/menu/backgrounds/MainMenu.png" class="log-image" alt="LatticeVeil Veilwalker Survival">
                     <div class="log-header">
-                        <h3>🔐 V16.1.0 "Veilnet Skinlink" - Validation, Privacy, and Release Banner Patch</h3>
-                        <span class="log-date">MAY 02, 2026</span>
+                        <h3>⚔️ V17.0.0 "Veilwalker Survival" - Complete Survival System Implementation</h3>
+                        <span class="log-date">AUGUST 31, 2026</span>
                     </div>
                     <div class="log-body">
-                        <p><strong>Veilnet Skinlink V16.1.0 is the current public game release.</strong> This patch tightens official-build validation, trims sensitive launcher logging, and makes the launcher update banner clearer when a build is current, stale, or unable to check for updates.</p>
+                        <p><strong>Veilwalker Survival V17.0.0 is the current public game release.</strong> This release implements the complete survival gameplay loop with health, hunger, crafting, and world time mechanics.</p>
 
-                        <h4>🔐 Launcher + Online Validation</h4>
+                        <h4>⚔️ Survival Systems</h4>
                         <ul>
-                            <li><strong>Platform-Aware Hashing:</strong> Official build validation now separates Windows and Android targets so future mobile builds cannot be mixed into PC release hashes.</li>
-                            <li><strong>Channel Separation:</strong> Dev and release hashes are handled as separate lanes, reducing the chance of publishing a dev hash into the public release channel.</li>
-                            <li><strong>Version Metadata:</strong> The game executable now reports V16.1.0 internally so launcher update checks and online validation can identify this patch correctly.</li>
+                            <li><strong>Complete Survival Vitals:</strong> Health (20 HP), hunger (20 points), starvation damage, and health regeneration when hunger is sufficient.</li>
+                            <li><strong>Fall Damage:</strong> Calculates fall damage based on distance fallen, with a safe distance threshold of 4.25 blocks.</li>
+                            <li><strong>Death and Respawn:</strong> Death mechanics with SOUL marker recovery for reclaiming dropped items on death.</li>
+                            <li><strong>Veilwalker Game Mode:</strong> Full survival rules and mechanics in the dedicated Veilwalker mode.</li>
+                            <li><strong>Day/Night Cycle:</strong> 40-minute real-time days with dawn, day, dusk, and night phases.</li>
+                            <li><strong>Sleep Windows:</strong> Sleep-to-dawn functionality using sleeping bags, available from 19:00 to 05:00.</li>
+                            <li><strong>Four Difficulty Modes:</strong> Stillwater (Peaceful), Wayfarer (Easy), Veilbound (Normal), and Ruinwake (Hard) with different survival tuning.</li>
                         </ul>
 
-                        <h4>🧼 Logging + Privacy Cleanup</h4>
+                        <h4>🎒 Inventory & Crafting</h4>
                         <ul>
-                            <li><strong>Token Redaction:</strong> Online gate tickets are no longer written into normal launcher logs.</li>
-                            <li><strong>Safer Service Logs:</strong> Friend/profile responses log useful status details without dumping full user payloads.</li>
-                            <li><strong>Short Hash Display:</strong> Executable hash logs now show shortened values instead of full hashes, while validation still uses the full official hash internally.</li>
-                            <li><strong>Local Path Cleanup:</strong> Release startup logs avoid exposing full local user paths where filename-level detail is enough.</li>
+                            <li><strong>Complete Inventory System:</strong> 9-slot hotbar and 27-slot grid inventory with item management.</li>
+                            <li><strong>Item Registry:</strong> Comprehensive item system with tags, materials, and metadata for all game items.</li>
+                            <li><strong>36 Hand-Crafting Recipes:</strong> Tools, weapons, kilns, torches, and food can be crafted from raw materials.</li>
+                            <li><strong>Tool-Tier Harvesting:</strong> Wood, Stone, Iron, and Diamond tool tiers with appropriate block harvesting bonuses.</li>
+                            <li><strong>Loot Registry:</strong> Block drops with material-specific drop rates and tool-tier requirements.</li>
                         </ul>
 
-                        <h4>🪧 Launcher Update Banner</h4>
+                        <h4>🌍 World & Resources</h4>
                         <ul>
-                            <li><strong>Release Name Display:</strong> The launcher banner now shows the running release name instead of a generic updated label.</li>
-                            <li><strong>Clearer Warning State:</strong> New-update and release-check problem states use red banner text so old or incomplete update states are easier to spot.</li>
-                            <li><strong>Readability Pass:</strong> Banner text is slightly larger and bolder for better visibility.</li>
+                            <li><strong>Ore Retrofit Service:</strong> Adds ores to existing stone in loaded worlds for retroactive ore generation.</li>
+                            <li><strong>New Ore Types:</strong> Amethyst, Emerald, Ruby, Sapphire, Gold, Copper, Iron, and Diamond ores with biome-specific generation.</li>
+                            <li><strong>Ore Variants:</strong> Multiple texture variants for each ore type with biome-specific bonuses.</li>
+                            <li><strong>New Blocks:</strong> Basic Kiln, Advanced Kiln, Field Oven, Torch, Fiber-Wrapped Torch, Sleeping Bag, Empty Bucket, Water Bucket.</li>
+                            <li><strong>New Items:</strong> Ore Billets, Gems, Plant Fiber, Sticks, and food items for survival.</li>
                         </ul>
 
-                        <p><strong>Downloads:</strong> <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v16.1.0" style="color: var(--primary);">Game V16.1.0</a> | <a href="https://github.com/latticeveil/Assets/releases/tag/v16.0.0" style="color: var(--primary);">Assets V16.0.0</a> | <a href="https://github.com/latticeveil/latticeveil.github.io/releases/download/v12.0.0/LatticeVeilInstaller.exe" style="color: var(--primary);">LatticeVeil Installer</a></p>
+                        <h4>🏗️ World Management</h4>
+                        <ul>
+                            <li><strong>Deleted World Management:</strong> 14-day retention period for deleted worlds with restore and permanent delete options.</li>
+                            <li><strong>Scheduled Cleanup Maintenance:</strong> Automatic daily and logon tasks to purge expired deleted worlds.</li>
+                            <li><strong>Integrated World Server:</strong> Foundation for integrated world server hosting.</li>
+                            <li><strong>Horizon LOD Pregeneration:</strong> Spawn chunk LOD pregeneration for improved performance.</li>
+                            <li><strong>Torch Flame Particle System:</strong> Animated torch flames with quality presets (OFF, LOW, MEDIUM, HIGH, ULTRA).</li>
+                        </ul>
+
+                        <h4>🔧 Technical Infrastructure</h4>
+                        <ul>
+                            <li><strong>Modding System Foundation:</strong> Function runners and file parsers for future mod support.</li>
+                            <li><strong>Diagnostic Runner:</strong> Troubleshooting tools for development and debugging.</li>
+                            <li><strong>Build Export Store:</strong> Release management system for distributing game builds.</li>
+                            <li><strong>Voxel Light Propagator:</strong> Experimental voxel lighting system (not production-ready).</li>
+                        </ul>
+
+                        <h4>🎨 Assets</h4>
+                        <ul>
+                            <li><strong>New Ore Textures:</strong> Complete texture sets for all ores with multiple variants.</li>
+                            <li><strong>Kiln Textures:</strong> On/off state textures for Basic, Advanced, and Field ovens.</li>
+                            <li><strong>Torch Textures:</strong> Regular torch and fiber-wrapped torch textures.</li>
+                            <li><strong>Bucket Textures:</strong> Empty bucket and water bucket textures.</li>
+                            <li><strong>Survival HUD:</strong> Health and hunger bar textures for the survival interface.</li>
+                            <li><strong>Updated GUI:</strong> Menu textures updated with survival-specific elements.</li>
+                            <li><strong>New Voxel Shader:</strong> Experimental voxel lighting shader (not production-ready).</li>
+                            <li><strong>Updated Asset Manifest:</strong> Asset manifest updated to v17.0.0 "Veilwalker Survival".</li>
+                        </ul>
+
+                        <p><strong>Downloads:</strong> <a href="https://github.com/latticeveil/LatticeVeil/releases/tag/v17.0.0" style="color: var(--primary);">Game V17.0.0</a> | <a href="https://github.com/latticeveil/Assets/releases/tag/v17.0.0" style="color: var(--primary);">Assets V17.0.0</a> | <a href="https://github.com/latticeveil/latticeveil.github.io/releases/download/v12.0.0/LatticeVeilInstaller.exe" style="color: var(--primary);">LatticeVeil Installer</a></p>
                     </div>
                 </div>
                 <div class="log-entry">
@@ -2915,6 +2951,21 @@ _eos.Sessions.JoinSession(options, (<span class="code-keyword">ref</span> info) 
             <!-- WEBSITE UPDATES -->
 
             <div id="log-website" class="sub-content">
+                <div class="log-entry">
+                    <div class="log-header">
+                        <h3>Website: V17.0.0 "Veilwalker Survival" - Release Entry Sync</h3>
+                        <span class="log-date">AUGUST 31, 2026</span>
+                    </div>
+                    <div class="log-body">
+                        <p>The website now lists V17.0.0 as the current public game release with complete survival system documentation and updated asset release references.</p>
+                        <ul>
+                            <li><strong>Release Feed:</strong> Added the V17.0.0 Veilwalker Survival patch notes to the Game Updates log.</li>
+                            <li><strong>Download Link:</strong> The release entry points at the official V17.0.0 game release.</li>
+                            <li><strong>Asset Reference:</strong> Updated asset release link to point to V17.0.0 Assets release.</li>
+                            <li><strong>Roadmap Update:</strong> Updated roadmap to reflect V17.0.0 as the current public release.</li>
+                        </ul>
+                    </div>
+                </div>
                 <div class="log-entry">
                     <div class="log-header">
                         <h3>Website: V16.1.0 "Veilnet Skinlink" - Release Entry Sync</h3>
