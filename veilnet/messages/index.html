@@ -8,6 +8,7 @@
   <link rel="apple-touch-icon" href="../assets/Veilnet.png">
   <meta name="theme-color" content="#7c5cff">
   <link rel="stylesheet" href="../assets/veilnet.css">
+  <link rel="stylesheet" href="../assets/messages.css">
 </head>
 <body>
   <header class="topbar">
@@ -22,9 +23,7 @@
       <nav class="nav" aria-label="Primary">
         <a href="../">Home</a>
         <a href="../community/">Community</a>
-        <a href="../worlds/index.html" onclick="alert('Demo page not included yet.'); return false;">Worlds</a>
-        <a href="../leaderboards/index.html" onclick="alert('Demo page not included yet.'); return false;">Leaderboards</a>
-        <a href="../messages/" class="nav-messages">Messages<span id="unreadIndicator" class="unread-indicator" style="display: none;"></span><span id="vnUnreadBadgeMessages" class="vn-badge vn-badge--hidden"></span></a>
+        <a href="../messages/" class="nav-messages">Messages<span id="vnUnreadBadgeMessages" class="vn-badge vn-badge--hidden"></span></a>
       </nav>
 
       <div class="right">
@@ -48,10 +47,6 @@
               <span>Go to Veilnet</span><small>Home</small>
             </div>
 
-            <div class="dd-item" onclick="location.href='../messages/'">
-              <span>Messages</span><small>Chat</small>
-            </div>
-
             <div class="dd-item" data-veil-myprofile style="display:none">
               <span>My Profile</span><small>/profile</small>
             </div>
@@ -63,11 +58,11 @@
             <div class="dd-divider"></div>
 
             <div class="dd-item" data-veil-login>
-              <span>Login with Google</span><small>Demo</small>
+              <span>Login with Google</span><small>Veilnet</small>
             </div>
 
             <div class="dd-item" data-veil-logout style="display:none">
-              <span>Log Out</span><small>Demo</small>
+              <span>Log Out</span><small>Veilnet</small>
             </div>
           </div>
         </div>
@@ -75,35 +70,70 @@
     </div>
   </header>
 
-  
-<main class="container" style="padding: 18px 0 34px">
-  <div class="breadcrumbs"><a href="../index.html">Veilnet</a> / Messages</div>
-  
-  <div class="page-title" style="margin-top:10px">
-    <h1>Messages</h1>
-    <div class="small">Demo only — images embed. Real version uses in-game uploads + moderation rules.</div>
-  </div>
-  <div class="split" style="margin-top:12px">
-    <aside class="panel">
-      <h3>Conversations</h3>
-      <div class="inner" data-veil-convos></div>
-    </aside>
-    <section data-veil-chat></section>
-  </div>
-</main>
+  <main class="container" style="padding: 18px 0 34px">
+    <div class="breadcrumbs"><a href="../index.html">Veilnet</a> / Messages</div>
 
+    <div class="page-title" style="margin-top:10px">
+      <h1>Messages</h1>
+      <div class="small">Private messages with your Veilnet friends — synced with the LatticeVeil launcher.</div>
+    </div>
+
+    <div id="msgGate" class="panel msg-gate">
+      <h3>Sign in required</h3>
+      <div class="inner">
+        <p class="small">Log in with your Veilnet account to see your friends and conversations.</p>
+        <button id="msgLoginBtn" class="btn btn-primary">Login with Google</button>
+      </div>
+    </div>
+
+    <div id="msgApp" style="display:none">
+      <div class="msg-toolbar">
+        <span id="msgConnState" class="conn-state conn-off">Connecting…</span>
+        <button id="msgSoundBtn" class="btn btn-secondary btn-sm" title="Toggle notification sound">Sound: ON</button>
+        <button id="msgRefreshBtn" class="btn btn-secondary btn-sm" title="Resync from server">Resync</button>
+      </div>
+
+      <div class="split" style="margin-top:12px">
+        <aside class="panel msg-friends-panel">
+          <h3>Conversations</h3>
+          <div class="inner" id="msgConvos"><div class="small msg-muted">Loading…</div></div>
+          <h3 style="margin-top:14px">Friends</h3>
+          <div class="inner" id="msgFriends"><div class="small msg-muted">Loading…</div></div>
+        </aside>
+
+        <section class="panel chat msg-chat-panel" id="msgChatPanel">
+          <div id="msgChatEmpty" class="msg-chat-empty small">Select a friend or conversation to start chatting.</div>
+          <div id="msgChat" style="display:none; flex-direction:column; height:100%">
+            <div class="msg-chat-head">
+              <img id="msgChatAvatar" class="msg-chat-avatar" src="../assets/default_pfp.png" alt="">
+              <div>
+                <div id="msgChatName" class="msg-chat-name"></div>
+                <div id="msgChatStatus" class="small msg-muted"></div>
+              </div>
+            </div>
+            <div class="msgs" id="msgMsgs">
+              <div id="msgOlder" class="msg-older" style="display:none"><button class="btn btn-secondary btn-sm" id="msgOlderBtn">Load older messages</button></div>
+            </div>
+            <div class="composer">
+              <input id="msgInput" type="text" maxlength="2000" placeholder="Type a message… (Enter to send)" autocomplete="off">
+              <button id="msgSendBtn" class="btn btn-primary">Send</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
 
   <footer class="footer">
     <div class="container">
-      Veilnet demo • Static GitHub Pages layout preview • No backend connections yet
+      LatticeVeil • Veilnet Messages — shared with the LatticeVeil launcher
     </div>
   </footer>
 
-  <script src="https://accounts.google.com/gsi/client"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../assets/config.js"></script>
   <script src="../assets/auth.js"></script>
   <script src="../assets/veilnet.js"></script>
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="../assets/messages.js"></script>
 </body>
 </html>
