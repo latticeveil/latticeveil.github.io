@@ -14,6 +14,8 @@
   const state = {
     me: null,                 // auth user id
     friends: [],              // [{productUserId, username, pictureUrl}]
+    incomingRequests: [],     // [{productUserId, user:{...}}]
+    outgoingRequests: [],     // [{productUserId, user:{...}}]
     conversations: new Map(), // conversation_id -> {id, other_id, other, unread, last_*}
     messages: new Map(),      // conversation_id -> Map(id -> message)
     order: new Map(),         // conversation_id -> [ids sorted by created_at]
@@ -126,6 +128,8 @@
   async function bootstrap() {
     const data = await api("bootstrap");
     state.friends = data.friends || [];
+    state.incomingRequests = data.incomingRequests || [];
+    state.outgoingRequests = data.outgoingRequests || [];
     state.conversations = new Map();
     for (const c of data.conversations || []) {
       state.conversations.set(c.conversation_id, {
@@ -134,10 +138,60 @@
       });
     }
     renderConversationList();
+    renderRequests();
     renderFriendList();
     updateNavBadge();
     joinBroadcastChannels();
     return data;
+  }
+
+  // ---------- friend requests (same friends system as launcher) ----------
+  async function handleRequest(action, friendId) {
+    try {
+      await api(action, { friend_id: friendId });
+      await bootstrap();
+    } catch (e) {
+      alert("Could not " + action + " request: " + e.message);
+    }
+  }
+
+  function renderRequests() {
+    const wrap = $("msgRequestsWrap");
+    const box = $("msgRequests");
+    const incoming = state.incomingRequests || [];
+    const outgoing = state.outgoingRequests || [];
+    if (!incoming.length && !outgoing.length) {
+      wrap.style.display = "none";
+      return;
+    }
+    wrap.style.display = "";
+    let html = "";
+    for (const r of incoming) {
+      html += '<div class="msg-row msg-request">' +
+        '<img src="' + esc(r.user?.pictureUrl || "../assets/default_pfp.png") + '" alt="">' +
+        '<div class="mr-main"><div class="mr-name">' + esc(r.user?.username || "Unknown") + '</div>' +
+        '<div class="mr-sub">wants to be your friend</div></div>' +
+        '<span class="req-actions">' +
+        '<button class="btn btn-primary btn-sm" data-act="accept" data-id="' + esc(r.productUserId) + '">Accept</button>' +
+        '<button class="btn btn-secondary btn-sm" data-act="decline" data-id="' + esc(r.productUserId) + '">Decline</button>' +
+        '</span></div>';
+    }
+    for (const r of outgoing) {
+      html += '<div class="msg-row msg-request">' +
+        '<img src="' + esc(r.user?.pictureUrl || "../assets/default_pfp.png") + '" alt="">' +
+        '<div class="mr-main"><div class="mr-name">' + esc(r.user?.username || "Unknown") + '</div>' +
+        '<div class="mr-sub">request sent — pending</div></div>' +
+        '<span class="req-actions">' +
+        '<button class="btn btn-secondary btn-sm" data-act="cancel" data-id="' + esc(r.productUserId) + '">Cancel</button>' +
+        '</span></div>';
+    }
+    box.innerHTML = html;
+    box.querySelectorAll("button[data-act]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        handleRequest(btn.getAttribute("data-act"), btn.getAttribute("data-id"));
+      });
+    });
   }
 
   // ---------- sound ----------
