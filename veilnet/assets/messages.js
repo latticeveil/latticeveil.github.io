@@ -352,7 +352,6 @@
     const box = $("msgMsgs");
     const keepOlder = $("msgOlder");
     box.innerHTML = "";
-    box.appendChild(keepOlder);
     const order = state.order.get(convId) || [];
     const canLoadOlder = order.length >= PAGE;
     keepOlder.style.display = canLoadOlder ? "" : "none";
