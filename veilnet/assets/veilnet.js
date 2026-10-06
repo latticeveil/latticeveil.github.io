@@ -413,13 +413,38 @@
     window.__veilnet_gis_handler = null;
   }
 
+  // Load the Google Identity Services script on demand (pages that include it
+  // with `async defer` may not have it ready yet, and some pages omit it).
+  function loadGisScript() {
+    return new Promise((resolve, reject) => {
+      const ready = () => !!(window.google && window.google.accounts && window.google.accounts.id);
+      if (ready()) { resolve(); return; }
+      let script = document.querySelector('script[data-veilnet-gis]') ||
+        document.querySelector('script[src*="gsi/client"]');
+      if (!script) {
+        script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.setAttribute('data-veilnet-gis', '1');
+        document.head.appendChild(script);
+      }
+      script.addEventListener('error', () => reject(new Error('Google Identity Services failed to load. Check your connection or ad blockers and try again.')));
+      // Poll until the API object exists (covers the case where the script's
+      // load event fired before we attached listeners).
+      const started = Date.now();
+      const timer = setInterval(() => {
+        if (ready()) { clearInterval(timer); resolve(); }
+        else if (Date.now() - started > 15000) { clearInterval(timer); reject(new Error('Google Identity Services failed to load. Check your connection or ad blockers and try again.')); }
+      }, 100);
+    });
+  }
+
   async function ensureGisInitialized() {
     if (window.__veilnet_gis_initialized) return;
-    
-    if (!window.google || !google.accounts || !google.accounts.id) {
-      throw new Error("Google Identity Services failed to load.");
-    }
-    
+
+    await loadGisScript();
+
     google.accounts.id.initialize({
       client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
       callback: (resp) => {
@@ -643,19 +668,12 @@
 
     // Initialize GIS only once
     if (!window.__veilnet_gis_inited) {
-      if (!window.google || !google.accounts || !google.accounts.id) {
-        throw new Error("Google Identity Services failed to load.");
+      try {
+        await ensureGisInitialized();
+      } catch (e) {
+        errorEl.textContent = e.message;
+        return;
       }
-      
-      google.accounts.id.initialize({
-        client_id: VEILNET_CONFIG.GOOGLE_CLIENT_ID,
-        callback: (resp) => {
-          if (typeof window.__veilnet_gis_handler === "function") {
-            window.__veilnet_gis_handler(resp);
-          }
-        }
-      });
-      
       window.__veilnet_gis_inited = true;
     }
 
