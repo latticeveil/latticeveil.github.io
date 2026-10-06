@@ -465,15 +465,24 @@
     el.textContent = s === "on" ? "Live" : s === "wait" ? "Reconnecting…" : "Offline";
   }
 
+  // Launcher clients broadcast pings on per-conversation topics
+  // ("veilnet-dm:<convId>"). Join one channel per conversation so
+  // launcher -> website delivery never depends on postgres_changes.
+  const dmChannels = new Map(); // convId -> channel
+  function ensureDmChannel(convId) {
+    if (dmChannels.has(convId)) return;
+    const ch = client.channel("veilnet-dm:" + convId, { config: { broadcast: { self: false } } });
+    ch.on("broadcast", { event: "new-message" }, (payload) => {
+      handleRemotePing(payload);
+    });
+    ch.subscribe();
+    dmChannels.set(convId, ch);
+  }
+
   function joinBroadcastChannels() {
     if (!state.channel) return;
     for (const convId of state.conversations.keys()) {
-      const topic = "veilnet-dm:" + convId;
-      if (state.channel.topic === topic || state._broadcastTopics?.has(topic)) continue;
-      state._broadcastTopics.add(topic);
-      state.channel.on("broadcast", { event: "new-message" }, (payload) => {
-        handleRemotePing(payload);
-      });
+      ensureDmChannel(convId);
     }
   }
 
@@ -486,63 +495,83 @@
     }).catch(() => {});
   }
 
+  // Shared delivery path for postgres_changes rows and broadcast pings.
+  // If the conversation is unknown (first message from a new friend),
+  // re-bootstrap once to discover it instead of dropping the message.
+  async function applyIncoming(convId, msg) {
+    if (!state.conversations.has(convId)) {
+      await bootstrap();
+      joinBroadcastChannels();
+      if (!state.conversations.has(convId)) return;
+    }
+    const fresh = mergeMessages(convId, [msg]);
+    if (fresh.length) await cachePut([msg]);
+    const conv = state.conversations.get(convId);
+    if (conv) { conv.last_body = msg.body; conv.last_at = msg.created_at; }
+    if (state.current === convId) {
+      renderMessages();
+      scrollToBottom();
+      if (!document.hidden) {
+        try { await api("read", { conversation_id: convId }); } catch (e) {}
+      } else {
+        bumpUnread(convId, 1);
+      }
+    }
+    maybeNotify(msg);
+    renderConversationList();
+    updateNavBadge();
+  }
+
   async function handleRemotePing(payload) {
     try {
       const convId = payload.conversation_id;
       const messageId = payload.message_id;
       if (!convId || !messageId || state.processedIds.has(messageId)) return;
-      if (!state.conversations.has(convId)) return;
+      if (!state.conversations.has(convId)) {
+        await bootstrap();
+        joinBroadcastChannels();
+      }
       const msg = await fetchMessageById(messageId);
       if (!msg) return; // RLS hid it (or deleted) — ignore
-      mergeMessages(convId, [msg]);
-      await cachePut([msg]);
-      const conv = state.conversations.get(convId);
-      if (conv) { conv.last_body = msg.body; conv.last_at = msg.created_at; }
-      if (state.current === convId) {
-        renderMessages();
-        scrollToBottom();
-        if (!document.hidden) {
-          try { await api("read", { conversation_id: convId }); } catch (e) {}
-        } else {
-          bumpUnread(convId, 1);
-        }
-        maybeNotify(msg);
-      } else {
-        maybeNotify(msg);
-        renderConversationList();
-      }
+      await applyIncoming(convId, msg);
     } catch (e) { /* transient — reconnect reconcile will cover it */ }
   }
 
+  // Live delivery is the contract: if the channel drops, re-subscribe with
+  // backoff instead of silently going stale until a manual page refresh.
+  function scheduleResubscribe() {
+    if (state._resubTimer) return;
+    state._resubDelay = Math.min((state._resubDelay || 1000) * 2, 30000);
+    state._resubTimer = setTimeout(() => {
+      state._resubTimer = null;
+      try { subscribeRealtime(); } catch (e) { console.warn("[msgs] resubscribe failed", e); scheduleResubscribe(); }
+    }, state._resubDelay);
+  }
+
   function subscribeRealtime() {
-    if (state.channel) state.channel.unsubscribe();
+    if (state._resubTimer) { clearTimeout(state._resubTimer); state._resubTimer = null; }
+    if (state.channel) { try { state.channel.unsubscribe(); } catch (e) {} }
     state._broadcastTopics = new Set();
     const ch = client.channel("veilnet-msgs-live");
     ch.on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
       const m = payload.new;
-      if (!m || !state.conversations.has(m.conversation_id)) return;
-      const fresh = mergeMessages(m.conversation_id, [m]);
-      if (fresh.length) cachePut([m]);
-      const conv = state.conversations.get(m.conversation_id);
-      if (conv) { conv.last_body = m.body; conv.last_at = m.created_at; }
-      if (state.current === m.conversation_id) {
-        renderMessages();
-        scrollToBottom();
-        if (!document.hidden) api("read", { conversation_id: m.conversation_id }).catch(() => {});
-      }
-      maybeNotify(m);
-      renderConversationList();
+      if (!m) return;
+      applyIncoming(m.conversation_id, m).catch(() => {});
     });
     ch.on("broadcast", { event: "new-message" }, (payload) => handleRemotePing(payload));
     ch.subscribe((status) => {
       if (status === "SUBSCRIBED") {
+        state._resubDelay = 1000;
         setConnState("on");
         joinBroadcastChannels();
         reconcile();
       } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        console.warn("[msgs] realtime status:", status);
         setConnState("off");
+        scheduleResubscribe();
       } else if (status === "CLOSED") {
         setConnState("wait");
+        scheduleResubscribe();
       }
     });
     state.channel = ch;
@@ -580,6 +609,8 @@
       const conv = state.conversations.get(state.current);
       if (conv) { conv.unread = 0; renderConversationList(); updateNavBadge(); }
     }
+    // Safety net: if realtime was down while the tab was hidden, catch up once.
+    if (!document.hidden && state.channel) reconcile().catch(() => {});
   });
 
   // ---------- auth / wiring ----------
@@ -587,6 +618,9 @@
     await cacheWipeAll();
     if (state.channel) { try { state.channel.unsubscribe(); } catch (e) {} }
     state.channel = null;
+    for (const ch of dmChannels.values()) { try { ch.unsubscribe(); } catch (e) {} }
+    dmChannels.clear();
+    if (state._resubTimer) { clearTimeout(state._resubTimer); state._resubTimer = null; }
     state.me = null; state.friends = []; state.conversations = new Map();
     state.messages = new Map(); state.order = new Map(); state.current = null;
     state.processedIds = new Set(); state._broadcastTopics = new Set();
