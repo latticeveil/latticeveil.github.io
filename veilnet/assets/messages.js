@@ -472,8 +472,10 @@
   function ensureDmChannel(convId) {
     if (dmChannels.has(convId)) return;
     const ch = client.channel("veilnet-dm:" + convId, { config: { broadcast: { self: false } } });
-    ch.on("broadcast", { event: "new-message" }, (payload) => {
-      handleRemotePing(payload);
+    ch.on("broadcast", { event: "new-message" }, (msg) => {
+      // supabase-js delivers the wrapper {type, event, payload}; the ping
+      // fields live in .payload (verified against the raw server frames).
+      handleRemotePing((msg && msg.payload) || msg);
     });
     ch.subscribe();
     dmChannels.set(convId, ch);
@@ -486,15 +488,20 @@
     }
   }
 
-  function broadcastPing(convId, message) {
+  async function broadcastPing(convId, message) {
+    if (!state.channel) return;
+    // A socket that just recovered (e.g. phone un-suspended) can race the
+    // first send; give it up to 3s to (re)join, then retry briefly.
+    const started = Date.now();
+    while (state.channel && state.channel.state !== "joined" && Date.now() - started < 3000) {
+      await new Promise((r) => setTimeout(r, 150));
+    }
     if (!state.channel) return;
     const frame = {
       type: "broadcast",
       event: "new-message",
       payload: { type: "new-message", conversation_id: convId, message_id: message.id, sender_id: message.sender_id },
     };
-    // A socket that just recovered (e.g. phone un-suspended) can race the
-    // first send; retry briefly so the ping actually goes out.
     const attempt = (tries) => {
       state.channel.send(frame).then((r) => {
         if ((!r || r.status !== "ok") && tries > 0) setTimeout(() => attempt(tries - 1), 600);
@@ -562,7 +569,11 @@
     if (state.channel) { try { state.channel.unsubscribe(); } catch (e) {} }
     state._broadcastTopics = new Set();
     const ch = client.channel("veilnet-msgs-live", { config: { broadcast: { self: false } } });
-    ch.on("broadcast", { event: "new-message" }, (payload) => handleRemotePing(payload));
+    ch.on("broadcast", { event: "new-message" }, (msg) => {
+      // supabase-js delivers the wrapper {type, event, payload}; the ping
+      // fields live in .payload (verified against the raw server frames).
+      handleRemotePing((msg && msg.payload) || msg);
+    });
     ch.subscribe((status) => {
       if (status === "SUBSCRIBED") {
         state._resubDelay = 1000;
@@ -699,6 +710,14 @@
       $("msgConvos").innerHTML = '<div class="small msg-muted">Could not load messaging: ' + esc(e.message) + '</div>';
     }
   }
+
+  // Safety net: realtime is the primary delivery path; this light catch-up
+  // runs every 30s only while the tab is visible and uses the incremental
+  // "after" cursor (a few hundred bytes per conversation) so it never
+  // meaningfully touches the Supabase free-tier quota.
+  setInterval(() => {
+    if (!document.hidden && state.me && state.conversations.size) reconcile().catch(() => {});
+  }, 30000);
 
   // Logout: wipe this account's cache and reset in-memory state.
   document.addEventListener("click", (e) => {
