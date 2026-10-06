@@ -215,7 +215,7 @@
     if (state.processedIds.has(msg.id)) return;
     state.processedIds.add(msg.id);
     const viewing = state.current === msg.conversation_id && !document.hidden;
-    if (!viewing) playPing();
+    playPing(); // live back-and-forth: ping on every incoming message, even while viewing
     bumpUnread(msg.conversation_id, viewing ? 0 : 1);
   }
 
@@ -550,14 +550,10 @@
 
   function subscribeRealtime() {
     if (state._resubTimer) { clearTimeout(state._resubTimer); state._resubTimer = null; }
+    teardownPgChannel();
     if (state.channel) { try { state.channel.unsubscribe(); } catch (e) {} }
     state._broadcastTopics = new Set();
-    const ch = client.channel("veilnet-msgs-live");
-    ch.on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-      const m = payload.new;
-      if (!m) return;
-      applyIncoming(m.conversation_id, m).catch(() => {});
-    });
+    const ch = client.channel("veilnet-msgs-live", { config: { broadcast: { self: false } } });
     ch.on("broadcast", { event: "new-message" }, (payload) => handleRemotePing(payload));
     ch.subscribe((status) => {
       if (status === "SUBSCRIBED") {
@@ -575,6 +571,27 @@
       }
     });
     state.channel = ch;
+
+    // Opportunistic second path: postgres_changes delivers the full row with
+    // no refetch, but only when the subscriber JWT authorizes. It runs on its
+    // OWN channel so a failed postgres_changes join can never take the
+    // broadcast-only live channel down with it.
+    const pg = client.channel("veilnet-msgs-pg");
+    pg.on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+      const m = payload.new;
+      if (!m) return;
+      applyIncoming(m.conversation_id, m).catch(() => {});
+    });
+    pg.subscribe((status) => {
+      if (status !== "SUBSCRIBED") console.warn("[msgs] pg channel status:", status);
+      // No manual resubscribe needed: supabase-js re-joins automatically, and
+      // the live broadcast channel above is the guaranteed path.
+    });
+    state.pgChannel = pg;
+  }
+
+  function teardownPgChannel() {
+    if (state.pgChannel) { try { state.pgChannel.unsubscribe(); } catch (e) {} state.pgChannel = null; }
   }
 
   async function reconcile() {
@@ -616,6 +633,7 @@
   // ---------- auth / wiring ----------
   async function wipeAndReset() {
     await cacheWipeAll();
+    teardownPgChannel();
     if (state.channel) { try { state.channel.unsubscribe(); } catch (e) {} }
     state.channel = null;
     for (const ch of dmChannels.values()) { try { ch.unsubscribe(); } catch (e) {} }
