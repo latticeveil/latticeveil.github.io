@@ -430,8 +430,14 @@
         document.head.appendChild(script);
       }
       script.addEventListener('error', () => reject(new Error('Google Identity Services failed to load. Check your connection or ad blockers and try again.')));
-      // Poll until the API object exists (covers the case where the script's
-      // load event fired before we attached listeners).
+      // Primary signal: the script's own load event (not throttled in hidden tabs).
+      script.addEventListener('load', () => {
+        if (ready()) resolve();
+        else setTimeout(() => ready() ? resolve() : reject(new Error('Google Identity Services loaded but its API is unavailable.')), 300);
+      });
+      // Fallback: poll in case the load event fired before we attached,
+      // or the browser suppressed it. Timers can be throttled in hidden
+      // tabs, so this is only a backup for the load event above.
       const started = Date.now();
       const timer = setInterval(() => {
         if (ready()) { clearInterval(timer); resolve(); }
