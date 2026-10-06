@@ -1302,7 +1302,7 @@ async function refreshHeaderUI() {
             <div class="small" style="margin-top:8px">Theme accent: <span style="font-weight:900; color:${theme}">${theme}</span></div>
           </div>
           <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:flex-end">
-            <a class="btn" href="../messages/">Message</a>
+            <a class="btn" href="/veilnet/messages/">Message</a>
             <button class="btn gold" type="button" id="btn-invite">Invite (demo)</button>
           </div>
         </div>
