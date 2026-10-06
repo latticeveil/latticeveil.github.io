@@ -488,11 +488,19 @@
 
   function broadcastPing(convId, message) {
     if (!state.channel) return;
-    state.channel.send({
+    const frame = {
       type: "broadcast",
       event: "new-message",
       payload: { type: "new-message", conversation_id: convId, message_id: message.id, sender_id: message.sender_id },
-    }).catch(() => {});
+    };
+    // A socket that just recovered (e.g. phone un-suspended) can race the
+    // first send; retry briefly so the ping actually goes out.
+    const attempt = (tries) => {
+      state.channel.send(frame).then((r) => {
+        if ((!r || r.status !== "ok") && tries > 0) setTimeout(() => attempt(tries - 1), 600);
+      }).catch(() => { if (tries > 0) setTimeout(() => attempt(tries - 1), 600); });
+    };
+    attempt(2);
   }
 
   // Shared delivery path for postgres_changes rows and broadcast pings.
@@ -541,7 +549,7 @@
   // backoff instead of silently going stale until a manual page refresh.
   function scheduleResubscribe() {
     if (state._resubTimer) return;
-    state._resubDelay = Math.min((state._resubDelay || 1000) * 2, 30000);
+    state._resubDelay = Math.min((state._resubDelay || 1000) * 2, 15000);
     state._resubTimer = setTimeout(() => {
       state._resubTimer = null;
       try { subscribeRealtime(); } catch (e) { console.warn("[msgs] resubscribe failed", e); scheduleResubscribe(); }
@@ -626,8 +634,16 @@
       const conv = state.conversations.get(state.current);
       if (conv) { conv.unread = 0; renderConversationList(); updateNavBadge(); }
     }
-    // Safety net: if realtime was down while the tab was hidden, catch up once.
-    if (!document.hidden && state.channel) reconcile().catch(() => {});
+    // Phones suspend websockets when the tab is backgrounded. Returning to
+    // the tab: resubscribe immediately instead of waiting out the backoff,
+    // then catch up on anything missed.
+    if (!document.hidden && state.me) {
+      if (!state.channel || state.connState !== "on") {
+        state._resubDelay = 1000;
+        try { subscribeRealtime(); } catch (e) {}
+      }
+      reconcile().catch(() => {});
+    }
   });
 
   // ---------- auth / wiring ----------
