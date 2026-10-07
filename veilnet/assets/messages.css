@@ -161,3 +161,25 @@
 }
 .chat-icon-btn + .chat-icon-btn { margin-left: 6px; }
 .chat-icon-btn:hover { color: var(--accent2); background: var(--accent-soft); border-color: var(--border-accent); }
+
+/* In-page alert toast (replaces browser alert()) */
+.msg-alert-toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+  z-index: 10003; max-width: 90vw; text-align: center;
+  border-color: rgba(255,120,120,.55);
+}
+.msg-alert-toast { transition: opacity .3s; }
+
+/* Demo-page toast (veilnet.js renderPost/renderProfile demo notices) */
+.vn-demo-toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+  background: var(--panel, #171421); color: var(--text, #e8e6f0);
+  border: 1px solid var(--border-accent, rgba(124,92,255,.5)); border-radius: 10px;
+  padding: 12px 18px; z-index: 99991; box-shadow: 0 10px 34px rgba(0,0,0,.5);
+  font-size: .95rem; max-width: 90vw; text-align: center;
+  animation: vnDemoToastIn .2s ease-out;
+}
+@keyframes vnDemoToastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}

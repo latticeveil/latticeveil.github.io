@@ -57,12 +57,89 @@
     return a === "unfriend" || a === "block" || a === "decline";
   }
 
+  function confirmTitle(a) {
+    if (a === "unfriend") return "Unfriend this player?";
+    if (a === "block") return "Block this player?";
+    if (a === "decline") return "Decline friend request?";
+    return "Are you sure?";
+  }
+
   function confirmText(a) {
-    if (a === "unfriend") return "Remove this friend? They will no longer see you in their friends list.";
-    if (a === "block") return "Block this player? They cannot send you messages or friend requests.";
-    if (a === "decline") return "Decline this friend request?";
+    if (a === "unfriend") return "They will be removed from your friends list and you from theirs. You can always send a new friend request later.";
+    if (a === "block") return "They will not be able to send you messages or friend requests. You can unblock them any time from their profile.";
+    if (a === "decline") return "The request will be dismissed. They can send a new one later.";
     return "";
   }
+
+  // ---------- in-page dialog & toast (never browser alert/confirm) ----------
+  function ensureDialogStyles() {
+    if (document.getElementById("vn-fd-styles")) return;
+    var st = document.createElement("style");
+    st.id = "vn-fd-styles";
+    st.textContent =
+      ".vn-fd-overlay{position:fixed;inset:0;background:rgba(0,0,0,.66);backdrop-filter:blur(4px);z-index:99990;display:flex;align-items:center;justify-content:center;padding:20px;}" +
+      ".vn-fd{max-width:420px;width:100%;background:var(--panel,#171421);border:1px solid var(--border,rgba(255,255,255,.14));border-radius:14px;padding:22px 24px;box-shadow:0 18px 60px rgba(0,0,0,.55);color:var(--text,#e8e6f0);}" +
+      ".vn-fd h3{margin:0 0 8px;font-size:1.15rem;}" +
+      ".vn-fd p{margin:0 0 18px;line-height:1.6;opacity:.85;font-size:.98rem;}" +
+      ".vn-fd-btns{display:flex;gap:10px;justify-content:flex-end;}" +
+      ".vn-fd-btn{padding:10px 18px;border-radius:8px;border:1px solid var(--border,rgba(255,255,255,.16));background:transparent;color:var(--text,#e8e6f0);cursor:pointer;font-size:.95rem;}" +
+      ".vn-fd-btn.danger{background:#ff4d4d;border-color:#ff4d4d;color:#1b1010;font-weight:600;}" +
+      ".vn-fd-btn:hover{filter:brightness(1.12);}" +
+      ".vn-toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--panel,#171421);color:var(--text,#e8e6f0);border:1px solid rgba(255,120,120,.55);border-radius:10px;padding:12px 18px;z-index:99991;box-shadow:0 10px 34px rgba(0,0,0,.5);font-size:.95rem;max-width:90vw;text-align:center;}";
+    document.head.appendChild(st);
+  }
+
+  function vnDialog(opts) {
+    ensureDialogStyles();
+    return new Promise(function (resolve) {
+      var overlay = document.createElement("div");
+      overlay.className = "vn-fd-overlay";
+      overlay.innerHTML =
+        '<div class="vn-fd" role="dialog" aria-modal="true">' +
+        "<h3></h3><p></p>" +
+        '<div class="vn-fd-btns">' +
+        '<button type="button" class="vn-fd-btn cancel">Cancel</button>' +
+        '<button type="button" class="vn-fd-btn danger">Confirm</button>' +
+        "</div></div>";
+      overlay.querySelector("h3").textContent = opts.title || "Are you sure?";
+      overlay.querySelector("p").textContent = opts.body || "";
+      var cancelBtn = overlay.querySelector(".cancel");
+      var okBtn = overlay.querySelector(".danger");
+      if (opts.okLabel) okBtn.textContent = opts.okLabel;
+      function close(result) {
+        document.removeEventListener("keydown", onKey, true);
+        overlay.remove();
+        resolve(result);
+      }
+      function onKey(e) {
+        if (e.key === "Escape") { e.stopPropagation(); close(false); }
+        else if (e.key === "Enter" && !e.__vnFdEnter) { e.preventDefault(); close(true); }
+      }
+      cancelBtn.addEventListener("click", function () { close(false); });
+      okBtn.addEventListener("click", function () { close(true); });
+      overlay.addEventListener("click", function (e) { if (e.target === overlay) close(false); });
+      document.addEventListener("keydown", onKey, true);
+      document.body.appendChild(overlay);
+      okBtn.focus();
+    });
+  }
+
+  function vnToast(message) {
+    ensureDialogStyles();
+    var t = document.createElement("div");
+    t.className = "vn-toast";
+    t.textContent = message;
+    document.body.appendChild(t);
+    setTimeout(function () {
+      t.style.transition = "opacity .3s";
+      t.style.opacity = "0";
+      setTimeout(function () { t.remove(); }, 320);
+    }, 4200);
+  }
+
+  // Expose for reuse by other Veilnet scripts (messages.js errors, etc.)
+  window.VeilnetDialog = vnDialog;
+  window.VeilnetToast = vnToast;
 
   /**
    * Build + render the friend buttons into container `box` for `targetId`.
@@ -124,13 +201,21 @@
         el.setAttribute("data-veil-friend-action", action);
         el.setAttribute("data-veil-friend-target", targetId);
         el.addEventListener("click", async function () {
-          if (confirmNeeded(action) && !confirm(confirmText(action))) return;
+          if (confirmNeeded(action)) {
+            var ok = await vnDialog({
+              title: confirmTitle(action),
+              body: confirmText(action),
+              okLabel: actionLabel(action),
+            });
+            if (!ok) return;
+          }
           el.disabled = true;
           try {
             await callApi(action, targetId);
             await window.loadFriendState(targetId, box);
+            vnToast(actionLabel(action) + " done");
           } catch (e) {
-            alert("Could not " + actionLabel(action).toLowerCase() + ": " + e.message);
+            vnToast("Could not " + actionLabel(action).toLowerCase() + ": " + e.message);
             el.disabled = false;
           }
         });

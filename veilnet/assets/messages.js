@@ -12,6 +12,23 @@
   const PAGE = 50;
 
   const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+
+  // In-page alert replacement — NEVER a browser alert(). Prefers the shared
+  // VeilnetDialog component if loaded, else falls back to an inline toast.
+  function vnAlert(message) {
+    try {
+      if (window.VeilnetDialog) {
+        window.VeilnetDialog({ title: "Notice", body: String(message), okLabel: "OK" });
+        return;
+      }
+    } catch (e) { /* fall through */ }
+    const t = document.createElement("div");
+    t.className = "msg-req-toast msg-alert-toast";
+    t.textContent = String(message);
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = "0"; setTimeout(() => t.remove(), 320); }, 4200);
+  }
+  window.vnAlert = vnAlert;
   const ACC_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H5a2 2 0 0 0 0 4h2"/><path d="M17 6h2a2 2 0 0 1 0 4h-2"/></svg>';
   const PERSON_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
 
@@ -226,7 +243,7 @@
       await api(action, { friend_id: friendId });
       await bootstrapWithRetry();
     } catch (e) {
-      alert("Could not " + action + " request: " + e.message);
+      vnAlert("Could not " + action + " request: " + e.message);
     }
   }
 
@@ -363,9 +380,9 @@
 
   function downloadCachedBackup(conv, convId) {
     cacheGetAll(convId).then((msgs) => {
-      if (!msgs.length) { alert("This device has no cached messages for this chat."); return; }
+      if (!msgs.length) { vnAlert("This device has no cached messages for this chat."); return; }
       downloadChatBackup(conv, msgs);
-    }).catch((e) => alert("Backup failed: " + e.message));
+    }).catch((e) => vnAlert("Backup failed: " + e.message));
   }
 
   // ---------- attached recovery bar (always visible above the composer) ----------
@@ -541,7 +558,7 @@
       clearClearedFlag(convId);
       clearLocalConversation(convId, "Chat cleared.");
     } catch (e) {
-      alert("Could not clear conversation: " + e.message);
+      vnAlert("Could not clear conversation: " + e.message);
     }
   }
 
@@ -894,7 +911,7 @@
       renderMessages();
       box.scrollTop = box.scrollHeight - prevHeight;
     } catch (e) {
-      alert("Could not load older messages: " + e.message);
+      vnAlert("Could not load older messages: " + e.message);
     } finally {
       state.loadingOlder = false;
     }
@@ -918,7 +935,7 @@
         joinBroadcastChannels();
         state.current = convId;
       } catch (e) {
-        alert("Could not start conversation: " + e.message);
+        vnAlert("Could not start conversation: " + e.message);
         return;
       } finally {
         state.draftFriend = null;
@@ -954,7 +971,7 @@
       const pm = map.get(tempId);
       if (pm) { pm._pending = false; pm._failed = true; }
       renderMessages();
-      alert("Message not sent (" + e.message + "). It was NOT delivered.");
+      vnAlert("Message not sent (" + e.message + "). It was NOT delivered.");
     } finally {
       state.sending.delete(convId);
     }
@@ -1198,7 +1215,7 @@
         return;
       }
       const res = await VeilnetAuth.signInWithGoogle();
-      if (res?.error) alert("Login failed: " + res.error.message);
+      if (res?.error) vnAlert("Login failed: " + res.error.message);
     });
     $("msgSendBtn").addEventListener("click", sendMessage);
     $("msgInput").addEventListener("keydown", (e) => {

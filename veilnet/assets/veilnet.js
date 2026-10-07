@@ -1352,12 +1352,21 @@
             <div style="font-weight:900; margin-bottom:8px">Add a comment (demo)</div>
             <textarea placeholder="Write a comment... (not actually sent)"></textarea>
             <div style="display:flex; justify-content:flex-end; margin-top:10px">
-              <button class="btn" type="button" onclick="alert('Demo only — no backend yet.')">Post Comment</button>
+              <button class="btn" type="button" data-demo-comment-btn>Post Comment</button>
             </div>
           </div>
         </div>
       </div>
     `;
+
+    // In-page toast instead of a browser alert (demo notice).
+    root.querySelector("[data-demo-comment-btn]")?.addEventListener("click", () => {
+      const toast = document.createElement("div");
+      toast.className = "vn-demo-toast";
+      toast.textContent = "Demo only — no backend yet.";
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    });
   }
 
   function renderComment(user, text, status){
@@ -1453,7 +1462,7 @@
             <div class="small" style="margin-top:8px">This is a demo-only picker. In the real site, this would save to your account and sync.</div>
             <hr class="sep">
             <div style="font-weight:900; margin-bottom:8px">Uploads (demo)</div>
-            <button class="btn" type="button" onclick="alert('Demo only. In-game will upload screenshots to Imgur and videos to YouTube (unlisted).')">Upload screenshot</button>
+            <button class="btn" type="button" data-demo-upload-btn>Upload screenshot</button>
           </div>
         </div>
       </div>
@@ -1465,12 +1474,30 @@
         tabs.forEach(x=>x.classList.remove("active"));
         t.classList.add("active");
         const key = t.dataset.tab;
-        alert("Demo: switching tabs to '" + key + "'. Real version will render content per tab.");
+        // In-page toast instead of a browser alert (demo notice).
+        var toast = document.createElement("div");
+        toast.className = "vn-demo-toast";
+        toast.textContent = "Demo: switching tabs to '" + key + "'. Real version will render content per tab.";
+        document.body.appendChild(toast);
+        setTimeout(function () { toast.remove(); }, 3000);
       });
     });
 
     root.querySelector("#btn-invite")?.addEventListener("click",()=>{
-      alert("Demo only — this will send a game invite and open the launcher via protocol later.");
+      var toast = document.createElement("div");
+      toast.className = "vn-demo-toast";
+      toast.textContent = "Demo only — this will send a game invite and open the launcher via protocol later.";
+      document.body.appendChild(toast);
+      setTimeout(function () { toast.remove(); }, 3000);
+    });
+
+    // In-page toast instead of a browser alert (demo notice).
+    root.querySelector("[data-demo-upload-btn]")?.addEventListener("click", () => {
+      const toast = document.createElement("div");
+      toast.className = "vn-demo-toast";
+      toast.textContent = "Demo only. In-game will upload screenshots to Imgur and videos to YouTube (unlisted).";
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     });
 
     const picker = root.querySelector("#themePicker");
