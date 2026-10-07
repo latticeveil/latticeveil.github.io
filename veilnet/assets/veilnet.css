@@ -897,6 +897,7 @@ hr.sep{
   background:rgba(255,255,255,.06); padding:8px 12px; border-radius:14px;
   max-width:78%; font-size:.9rem; align-self:flex-start; word-break:break-word;
 }
+#vnBubblePanel .vnbp-msg.vnbp-mine{align-self:flex-end; background:var(--accent,#7c5cff); color:#fff}
 #vnBubblePanel .vnbp-msg.vnbp-pending{opacity:.55}
 #vnBubblePanel .vnbp-msg.vnbp-failed{opacity:.8; border:1px solid rgba(255,77,77,.6)}
 #vnBubblePanel .vnbp-composer{
