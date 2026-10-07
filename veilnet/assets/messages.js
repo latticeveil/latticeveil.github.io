@@ -737,6 +737,21 @@
     });
   }
 
+  // Chat-head shortcuts (profile + accomplishments) for the open chat.
+  function setChatHeadLinks(username) {
+    const p = $("msgChatProfile"), a = $("msgChatAcc");
+    if (!p || !a) return;
+    if (username) {
+      p.href = "/veilnet/profile/?u=" + encodeURIComponent(username);
+      a.href = "/veilnet/accomplishments/?u=" + encodeURIComponent(username);
+      p.style.display = "inline-flex";
+      a.style.display = "inline-flex";
+    } else {
+      p.style.display = "none";
+      a.style.display = "none";
+    }
+  }
+
   // ---------- open conversation ----------
   // Clicking a friend NEVER creates a conversation. If one with messages
   // exists, open it; otherwise open a DRAFT chat — the server conversation is
@@ -755,6 +770,7 @@
     $("msgChatName").textContent = friend.username || "Unknown";
     $("msgChatStatus").textContent = "new chat";
     $("msgChatAvatar").src = friend.pictureUrl || "../assets/default_pfp.png";
+    setChatHeadLinks(friend.username || "");
     $("msgMsgs").innerHTML = '<div class="small msg-muted" style="padding:12px">No messages yet — say hi!</div>';
   }
 
@@ -770,6 +786,7 @@
     $("msgChatName").textContent = conv.other?.username || "Unknown";
     $("msgChatStatus").textContent = "private conversation";
     $("msgChatAvatar").src = conv.other?.pictureUrl || "../assets/default_pfp.png";
+    setChatHeadLinks(conv.other?.username || "");
 
     const box = $("msgMsgs");
     box.innerHTML = '<div class="small msg-muted" style="padding:12px">Loading…</div>';

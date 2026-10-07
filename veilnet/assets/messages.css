@@ -151,3 +151,13 @@
   border-radius: 14px; padding: 12px 14px; max-width: 320px;
   box-shadow: 0 12px 40px rgba(0,0,0,.55); color: var(--text); font-size: 14px;
 }
+
+/* Chat-head shortcut buttons (profile + accomplishments) */
+.chat-icon-btn {
+  margin-left: auto; color: var(--muted); padding: 7px; border-radius: 8px;
+  line-height: 0; display: inline-flex; align-items: center;
+  border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03);
+  transition: color .15s, background .15s, border-color .15s;
+}
+.chat-icon-btn + .chat-icon-btn { margin-left: 6px; }
+.chat-icon-btn:hover { color: var(--accent2); background: var(--accent-soft); border-color: var(--border-accent); }
