@@ -1593,44 +1593,41 @@
   }
 
   // Shared in-app notification ping (Messages page + Settings test button).
-  // One AudioContext per page, kept resumed by any user gesture. Creating a
-  // NEW AudioContext per ping leaves it "suspended" under desktop autoplay
-  // policies when no gesture has happened yet — that is why the notification
-  // sound silently never played on desktop.
+  // One AudioContext per page, kept resumed by any user gesture. Created
+  // LAZILY (deferred) so no autoplay-policy console warnings appear — a
+  // context constructed before any gesture logs "The AudioContext was not
+  // allowed to start" in Chrome even when everything else works.
   let __pingCtx = null;
   let __pingUnlocked = false;
   function pingCtx() {
+    if (!__pingUnlocked) return null; // no gesture yet — stay silent, no warning
     if (!__pingCtx) {
       try { __pingCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
     }
     if (__pingCtx.state === "suspended") { try { __pingCtx.resume().catch(() => {}); } catch (e) {} }
     return __pingCtx;
   }
-  // Prewarm at page load: create the AudioContext early and bus a 0-length
-  // silent buffer through it. Chrome/Firefox/Edge remember the context after
-  // any resume() triggered by a *gesture*, but they also allow resume() from
-  // a non-gesture if the context has already had start/stop pairs run — and
-  // Safari/Chrome both record "a user has interacted with this origin" once
-  // ANY stored gesture exists, so probing resumes cleanly without a click.
-  try {
-    const warm = pingCtx();
-    if (warm) {
-      const b = warm.createBuffer(1, 1, warm.sampleRate);
-      const s = warm.createBufferSource();
-      s.buffer = b;
-      s.connect(warm.destination);
-      try { s.start(0); s.stop(0); } catch (e) { /* noop */ }
-    }
-  } catch (e) { /* audio blocked — silent until first click */ }
-  document.addEventListener("pointerdown", () => {
-    pingCtx();
+  // First user gesture unlocks audio creation AND resumes an existing ctx.
+  const unlockPing = () => {
     __pingUnlocked = true;
-  }, { passive: true });
-  // Any keypress or scroll also counts as a gestural unlock in some browsers.
-  document.addEventListener("keydown", () => { __pingUnlocked = true; }, { passive: true, once: true });
+    if (!__pingCtx) {
+      try { __pingCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { __pingCtx = null; }
+    }
+    if (__pingCtx && __pingCtx.state === "suspended") { try { __pingCtx.resume().catch(() => {}); } catch (e) {} }
+  };
+  document.addEventListener("pointerdown", unlockPing, { passive: true });
+  document.addEventListener("keydown", unlockPing, { passive: true, once: true });
+  document.addEventListener("touchend", unlockPing, { passive: true, once: true });
+  // Also try unlocking on session load if the browser already recorded a
+  // gesture for this origin this session (e.g. SPAense navigation): probe
+  // silently inside a microtask after load. This won't warn because Chrome
+  // allows creation-after-gesture within the same session.
+  if (navigator.userActivation && navigator.userActivation.hasBeenActive) {
+    unlockPing();
+  }
   function playVeilnetPing() {
     const ctx = pingCtx();
-    if (!ctx) return;
+    if (!ctx) return; // silently skip until the user has interacted
     const start = () => {
       try {
         const o = ctx.createOscillator();

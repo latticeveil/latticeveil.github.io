@@ -134,22 +134,21 @@
      Two badges? Message stays left of the green request one; both clamp
      inside the tab so 2"1"/99+ can never be cut off. */
   .topbar .nav .nav-messages { position: relative; }
-  .topbar .nav .nav-messages .vn-badge {
-    position: absolute;
-    top: -2px;
-    left: max(0px, calc(50% - 30px));
-    right: auto;
-    transform: scale(.8);
-    z-index: 3;
-  }
+  .topbar .nav .nav-messages .vn-badge,
   .topbar .nav .nav-messages .vn-badge--req {
     position: absolute;
     top: -2px;
-    left: auto;
-    right: max(0px, calc(50% - 30px));
+    right: auto;
     transform: scale(.8);
     z-index: 3;
+    padding: 0 5px;
+    min-width: 18px;
+    height: 18px;
+    font-size: 10px;
+    border-radius: 9px;
   }
+  .topbar .nav .nav-messages .vn-badge { left: 4px; }
+  .topbar .nav .nav-messages .vn-badge--req { left: 26px; background: var(--green, #3dd68c); }
 
   /* Admin slot: keep the same first-paint rules (no pop-in) */
   .topbar .nav a[data-veil-admin-nav]{ display: none; }

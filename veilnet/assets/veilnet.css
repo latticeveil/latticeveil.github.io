@@ -704,9 +704,12 @@ hr.sep{
 }
 
 /* Nav stability: the unread badge must never widen a tab (it used to shift
-   the whole row when it appeared/disappeared). Absolutely position it. */
+   the whole row when it appeared/disappeared). Absolutely position it.
+   Both badges sit on the LEFT side, side by side, in reading order:
+   messages first (red), then friend requests (green). They float over the
+   start of the label and never push or widen the tab. */
 .nav .nav-messages{position:relative}
-.nav .nav-messages .vn-badge{position:absolute; top:-4px; left:-6px; right:auto; transform:none; max-width:2em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.nav .nav-messages .vn-badge{position:absolute; top:-4px; left:-4px; right:auto; padding:0 6px; min-width:20px; height:20px; font-size:11px; border-radius:10px; transform:none; white-space:nowrap}
 
 /* Profile search (topbar, left of the avatar) — uses existing theme tokens. */
 .vn-search{position:relative; margin-right:8px}
@@ -737,9 +740,12 @@ hr.sep{
   .vn-search-input:focus{width:160px}
 }
 
-/* Friend-request badge sits left of the message badge on the Friends tab.
-   Both absolutely positioned so appearing/disappearing never shifts tabs. */
-.nav .nav-messages .vn-badge--req{position:absolute; top:-4px; left:auto; right:-6px; transform:none; max-width:2em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; background:var(--green,#3dd68c)}
+/* Friend-request badge: second-in-line, just right of the message badge. */
+.nav .nav-messages .vn-badge--req{
+  position:absolute; top:-4px; left:22px; right:auto;
+  padding:0 6px; min-width:20px; height:20px; font-size:11px; border-radius:10px;
+  transform:none; white-space:nowrap; background:var(--green,#3dd68c);
+}
 
 /* Mobile: condense the search box to a magnifying glass icon. Tapping it
    toggles the full input + results open as an overlay row under the topbar. */
@@ -858,11 +864,29 @@ hr.sep{
 #vnBubblePanel .vnbp-actions button:hover,
 #vnBubblePanel .vnbp-head-back button:hover{background:rgba(255,255,255,.08)}
 #vnBubblePanel .vnbp-list{flex:1; overflow-y:auto; padding:6px}
+#vnBubblePanel .vnbp-tabs{
+  display:flex; gap:4px; padding:6px 8px;
+  border-bottom:1px solid var(--border-accent); background:rgba(255,255,255,.03);
+}
+#vnBubblePanel .vnvp-tab{
+  flex:1; padding:7px 10px; border-radius:999px; border:none; cursor:pointer;
+  background:transparent; color:var(--muted,#9aa); font-size:.85rem; font-weight:700;
+}
+#vnBubblePanel .vnvp-tab.active{background:var(--accent,#7c5cff); color:#fff}
 #vnBubblePanel .vnbp-row{
   display:flex; gap:10px; align-items:center; padding:8px 10px; cursor:pointer;
   border-radius:10px;
 }
 #vnBubblePanel .vnbp-row:hover{background:var(--accent-soft,rgba(124,92,255,.14))}
+#vnBubblePanel .vnbp-pin,
+#vnBubblePanel .vnbp-unpin{
+  margin-left:auto; flex:none; width:28px; height:28px; border-radius:50%;
+  border:none; background:transparent; cursor:pointer; font-size:.95rem;
+  color:var(--muted,#9aa); -webkit-tap-highlight-color:transparent;
+}
+#vnBubblePanel .vnbp-pin:hover{background:rgba(124,92,255,.2)}
+#vnBubblePanel .vnbp-row .vnbp-unpin{color:var(--red,#ff5d5d); font-weight:700; margin-left:0}
+#vnBubblePanel .vnbp-row .vnbp-pin.pinned{color:var(--green,#3dd68c)}
 #vnBubblePanel .vnbp-row img{width:34px; height:34px; border-radius:50%; object-fit:cover; background:#11151c}
 #vnBubblePanel .vnbp-name{font-size:.92rem; font-weight:600; line-height:1.3}
 #vnBubblePanel .vnbp-sub{display:block; font-size:.78rem; opacity:.6; font-weight:400}

@@ -15,7 +15,7 @@
 
   let el = null;
   let panel = null;
-  let state = { open: false, currentFriend: null, friends: [], convs: new Map(), me: null, pos: null };
+  let state = { open: false, currentFriend: null, friends: [], convs: new Map(), me: null, pos: null, tab: "pins" };
 
   function cfg() {
     return window.VEILNET_CONFIG || {};
@@ -40,6 +40,18 @@
     return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
+  // ---------- pinned friends ("pin" in the friends list) ----------
+  const PIN_KEY = "veilnet_bubble_pinned_friends";
+  function loadPinned() {
+    try { const r = JSON.parse(localStorage.getItem(PIN_KEY) || "[]"); return Array.isArray(r) ? r : []; } catch (e) { return []; }
+  }
+  function savePinned(arr) {
+    try { localStorage.setItem(PIN_KEY, JSON.stringify(arr.slice(0, 20))); } catch (e) { /* ignore */ }
+  }
+  function isPinned(id) { return loadPinned().indexOf(id) !== -1; }
+  function pinFriend(id) { const a = loadPinned(); if (a.indexOf(id) === -1) { a.push(id); savePinned(a); } }
+  function unpinFriend(id) { savePinned(loadPinned().filter((x) => x !== id)); }
+
   // ---------- bubble ----------
   function ensureBubble() {
     if (el) return el;
@@ -51,7 +63,6 @@
       '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
       "</div>" +
       '<div class="vn-bubble-actions">' +
-      '<button title="Pin bubble to this corner" data-b="pin">&#128204;</button>' +
       '<button title="Hide the bubble this session" data-b="hide">&times;</button>' +
       "</div>" +
       "</div>";
@@ -97,10 +108,6 @@
       }
     });
 
-    el.querySelector('[data-b="pin"]').addEventListener("click", () => {
-      try { localStorage.setItem("veilnet_bubble_pinned", "1"); } catch (e) {}
-      el.querySelector('[data-b="pin"]').classList.add("vn-bubble-pinned");
-    });
     el.querySelector('[data-b="hide"]').addEventListener("click", () => {
       try { sessionStorage.setItem("veilnet_bubble_hidden", "1"); } catch (e) {}
       el.style.display = "none";
@@ -108,15 +115,7 @@
 
     try {
       if (sessionStorage.getItem("veilnet_bubble_hidden") === "1") el.style.display = "none";
-      if (localStorage.getItem("veilnet_bubble_pinned") === "1") {
-        el.querySelector('[data-b="pin"]').classList.add("vn-bubble-pinned");
-      }
     } catch (e) { /* storage unavailable */ }
-
-    // Hook presence/position into page transitions.
-    window.addEventListener("message", (ev) => {
-      if (ev.data === "veilnet_bubble_close") closePanel();
-    });
 
     return el;
   }
@@ -128,12 +127,16 @@
     panel.id = "vnBubblePanel";
     panel.innerHTML =
       '<div class="vnbp-head">' +
-      '<span class="vnbp-title">Veilnet Messages</span>' +
+      '<span class="vnbp-title">Messages</span>' +
       '<span class="vnbp-actions">' +
-      '<button data-b="resync" title="Resync">⟳</button>' +
-      '<button data-b="full" title="Open full app">⤢</button>' +
+      '<button data-b="resync" title="Resync">&#10227;</button>' +
       '<button data-b="close" title="Close">&times;</button>' +
       "</span></div>" +
+      // Tab list: Pinned | All friends
+      '<div class="vnbp-tabs">' +
+      '<button class="vnvp-tab active" data-t="pins">Pinned</button>' +
+      '<button class="vnvp-tab" data-t="all">All friends</button>' +
+      "</div>" +
       '<div class="vnbp-list">Loading…</div>' +
       '<div class="vnbp-chat" style="display:none">' +
       '<div class="vnbp-head vnbp-head-back"><button data-b="back">←</button><span class="vnbp-title"></span></div>' +
@@ -146,10 +149,16 @@
 
     panel.querySelector('[data-b="close"]').addEventListener("click", closePanel);
     panel.querySelector('[data-b="back"]').addEventListener("click", () => showList());
-    panel.querySelector('[data-b="full"]').addEventListener("click", () => {
-      location.href = "/veilnet/messages/" + (state.currentFriend ? "?friend=" + encodeURIComponent(state.currentFriend) : "");
-    });
     panel.querySelector('[data-b="resync"]').addEventListener("click", () => refresh());
+
+    panel.querySelectorAll(".vnvp-tab").forEach((t) => {
+      t.addEventListener("click", () => {
+        panel.querySelectorAll(".vnvp-tab").forEach((x) => x.classList.remove("active"));
+        t.classList.add("active");
+        state.tab = t.getAttribute("data-t");
+        renderList();
+      });
+    });
 
     const input = panel.querySelector(".vnbp-composer input");
     const send = panel.querySelector(".vnbp-send");
@@ -219,20 +228,43 @@
   function renderList() {
     if (!panel) return;
     const list = panel.querySelector(".vnbp-list");
-    if (!state.friends.length) {
-      list.innerHTML = '<div class="vnbp-note">No friends yet.</div>';
+    const pinned = loadPinned();
+    let rows = state.friends;
+    if (state.tab !== "all") {
+      // Pinned tab (default): pinned friends first, in pin order.
+      const pinIdx = new Map(pinned.map((id, i) => [id, i]));
+      rows = state.friends
+        .filter((f) => pinIdx.has(f.productUserId))
+        .sort((a, b) => pinIdx.get(a.productUserId) - pinIdx.get(b.productUserId));
+    }
+    if (!rows.length) {
+      list.innerHTML = state.tab === "all"
+        ? '<div class="vnbp-note">No friends yet.</div>'
+        : '<div class="vnbp-note">Nothing pinned yet. Open All friends and tap the pin button beside someone.</div>';
       return;
     }
-    list.innerHTML = state.friends.map((f) => {
+    list.innerHTML = rows.map((f) => {
       const conv = Array.from(state.convs.values()).find((c) => c.other_id === f.productUserId);
+      const pinnedNow = isPinned(f.productUserId);
       return '<div class="vnbp-row" data-f="' + esc(f.productUserId) + '">' +
         '<img src="' + esc(f.pictureUrl || "../assets/default_pfp.png") + '" alt="">' +
         '<div class="vnbp-name">' + esc(f.username || "Unknown") +
-        (conv ? '<span class="vnbp-sub">' + esc((conv.last_body || "").slice(0, 40)) + "</span>" : "") +
-        "</div></div>";
+        (conv ? '<span class="vnbp-sub">' + esc(String(conv.last_body || "").slice(0, 40)) + "</span>" : "") +
+        "</div>" +
+        '<button class="vnbp-pin" title="' + (pinnedNow ? "Unpin from bubble" : "Pin to bubble") + '" data-pin="' + esc(f.productUserId) + '">📌</button>' +
+        (pinnedNow ? '<button class="vnbp-unpin" title="Unpin" data-pin="' + esc(f.productUserId) + '">×</button>' : "") +
+        "</div>";
     }).join("");
     list.querySelectorAll(".vnbp-row").forEach((row) => {
       row.addEventListener("click", () => openChat(row.getAttribute("data-f")));
+    });
+    list.querySelectorAll("button[data-pin]").forEach((b) => {
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = b.getAttribute("data-pin");
+        if (isPinned(id)) unpinFriend(id); else pinFriend(id);
+        renderList();
+      });
     });
   }
 

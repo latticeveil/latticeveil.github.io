@@ -714,6 +714,8 @@
       return;
     }
     box.innerHTML = shown.map((f) => {
+      const conv = Array.from(state.conversations.values()).find((c) => c.other_id === f.productUserId && c.last_at);
+      return '<div class="msg-row" data-friend="' + f.productUserId + '">' +
         '<img src="' + esc(f.pictureUrl || "../assets/default_pfp.png") + '" alt="">' +
         '<div class="mr-main"><div class="mr-name">' + esc(f.username) + '</div>' +
         '<div class="mr-sub">' + (conv ? "conversation" : "start chatting") + '</div></div>' +
