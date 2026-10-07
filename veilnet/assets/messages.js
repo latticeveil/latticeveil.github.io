@@ -829,6 +829,14 @@
 
   function wireUI() {
     $("msgLoginBtn").addEventListener("click", async () => {
+      // Use the same proven login modal as the header dropdown (real GIS
+      // button + username setup). VeilnetAuth.signInWithGoogle() relies on
+      // One Tap prompt(), which mobile browsers silently skip — its fallback
+      // renders into a detached div, so nothing appears on screen.
+      if (typeof window.__openVeilnetLoginModal === "function") {
+        window.__openVeilnetLoginModal();
+        return;
+      }
       const res = await VeilnetAuth.signInWithGoogle();
       if (res?.error) alert("Login failed: " + res.error.message);
     });
