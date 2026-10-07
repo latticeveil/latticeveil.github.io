@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#7c5cff">
   <link rel="stylesheet" href="../assets/veilnet.css">
   <link rel="stylesheet" href="/assets/tos-modal.css">
-  <link rel="stylesheet" href="../assets/messages.css?v=14">
+  <link rel="stylesheet" href="../assets/messages.css?v=15">
 </head>
 <body>
   <header class="topbar">
@@ -118,6 +118,13 @@
             </div>
             <div id="msgOlder" class="msg-older" style="display:none"><button class="btn btn-secondary btn-sm" id="msgOlderBtn">Load older messages</button></div>
             <div class="msgs" id="msgMsgs"></div>
+            <div id="msgClearedBar" class="msg-cleared-bar" style="display:none">
+              <span id="msgClearedText"></span>
+              <span class="msg-cleared-actions">
+                <button id="msgClearedDl" class="btn btn-secondary btn-sm">Download backup (.txt)</button>
+                <button id="msgClearedDel" class="btn btn-sm" style="background:var(--red);border-color:var(--red);color:#fff">Delete my copy</button>
+              </span>
+            </div>
             <div class="composer">
               <input id="msgInput" type="text" maxlength="2000" placeholder="Type a message… (Enter to send)" autocomplete="off">
               <button id="msgSendBtn" class="btn btn-primary">Send</button>
@@ -138,7 +145,7 @@
   <script src="../assets/config.js"></script>
   <script src="../assets/auth.js"></script>
   <script src="../assets/veilnet.js?v=13"></script>
-  <script src="../assets/messages.js?v=14"></script>
+  <script src="../assets/messages.js?v=15"></script>
   <script src="/assets/tos-acceptance.js"></script>
 </body>
 </html>

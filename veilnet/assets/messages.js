@@ -142,7 +142,7 @@
   function setClearedFlag(convId) {
     const f = clearedFlags();
     if (f[convId]) return;
-    f[convId] = true;
+    f[convId] = new Date().toISOString(); // ~when the other side's clear reached us
     try { localStorage.setItem("veilnet_cleared_" + state.me, JSON.stringify(f)); } catch (e) {}
   }
   function clearClearedFlag(convId) {
@@ -150,6 +150,15 @@
     if (!f[convId]) return;
     delete f[convId];
     try { localStorage.setItem("veilnet_cleared_" + state.me, JSON.stringify(f)); } catch (e) {}
+  }
+  function clearedAt(convId) { return clearedFlags()[convId] || null; }
+
+  // Post-download removal schedule: after the user downloads their saved
+  // copy, it is removed from this device after a grace period.
+  const COPY_GRACE_MS = 10 * 60 * 1000;
+  function copyRemovalKey(convId) { return "veilnet_copy_rm_" + state.me + "_" + convId; }
+  function copyRemovalAt(convId) {
+    return parseInt(localStorage.getItem(copyRemovalKey(convId)) || "0", 10) || 0;
   }
 
   // ---------- bootstrap ----------
@@ -340,11 +349,12 @@
       return;
     }
     // One-sided: the other person cleared THEIR copy. Ours stays as the live
-    // history of this chat, with a persistent backup download.
+    // history of this chat — download it as a file or delete it from the
+    // attached bar in the chat (always visible, no scrolling needed).
     const conv = state.conversations.get(convId);
     if (!conv) return;
     setClearedFlag(convId);
-    if (state.current === convId) showClearedBanner(convId, conv);
+    if (state.current === convId) showClearedBar(conv, convId);
     else showClearedRecoveryModal(conv, convId);
   }
 
@@ -355,15 +365,150 @@
     }).catch((e) => alert("Backup failed: " + e.message));
   }
 
-  function showClearedBanner(convId, conv) {
-    const box = $("msgMsgs");
-    if (!box || box.querySelector(".msg-cleared-banner")) return;
-    const b = document.createElement("div");
-    b.className = "msg-cleared-banner";
-    b.innerHTML = esc(conv?.other?.username || "The other person") + ' cleared this chat on their side. The messages below are your saved copy — ' +
-      '<button class="btn btn-secondary btn-sm" id="msgClearedDl">Download backup (.txt)</button>';
-    box.prepend(b);
-    b.querySelector("#msgClearedDl").addEventListener("click", () => downloadCachedBackup(conv, convId));
+  // ---------- attached recovery bar (always visible above the composer) ----------
+  let _barTimer = null;
+  function hideClearedBar() {
+    const bar = $("msgClearedBar");
+    if (bar) bar.style.display = "none";
+    if (_barTimer) { clearInterval(_barTimer); _barTimer = null; }
+  }
+  function paintClearedBar(conv, convId) {
+    const text = $("msgClearedText");
+    if (!text) return;
+    let msg = esc(conv?.other?.username || "The other person") + " cleared this chat on their side — your saved copy is ready to download or delete.";
+    const rmAt = copyRemovalAt(convId);
+    if (rmAt) {
+      const mins = Math.max(0, Math.ceil((rmAt - Date.now()) / 60000));
+      msg += " Backup saved — your copy will be removed from this device in " + (mins > 0 ? mins + " min" : "under a minute") + ".";
+    }
+    text.innerHTML = msg;
+  }
+  function showClearedBar(conv, convId) {
+    const bar = $("msgClearedBar");
+    if (!bar) return;
+    bar.style.display = "flex";
+    paintClearedBar(conv, convId);
+    if (_barTimer) clearInterval(_barTimer);
+    _barTimer = setInterval(() => {
+      const rmAt = copyRemovalAt(convId);
+      if (rmAt && Date.now() >= rmAt) {
+        clearInterval(_barTimer);
+        _barTimer = null;
+        deleteMyCopy(convId);
+        return;
+      }
+      paintClearedBar(conv, convId);
+    }, 15000);
+    $("msgClearedDl").onclick = () => requestCopyDownload(conv, convId);
+    $("msgClearedDel").onclick = () => requestCopyDelete(conv, convId);
+  }
+
+  function copyModal(html) {
+    const old = $("msgCopyModal");
+    if (old) old.remove();
+    const modal = document.createElement("div");
+    modal.id = "msgCopyModal";
+    modal.className = "msg-modal-backdrop";
+    modal.innerHTML = '<div class="msg-modal">' + html + '</div>';
+    document.body.appendChild(modal);
+    modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+    return modal;
+  }
+
+  function requestCopyDownload(conv, convId) {
+    const modal = copyModal(
+      '<h3>Download your saved copy?</h3>' +
+      '<p class="small msg-muted">The server copy of this chat was already removed when ' + esc(conv?.other?.username || "the other person") + ' cleared it. Downloading saves the whole chat as a .txt file — and once downloaded, your saved copy on this device will be <b>removed in 10 minutes</b>. Download again before then if you need another copy.</p>' +
+      '<div class="msg-modal-actions">' +
+      '<button class="btn btn-primary btn-sm" id="msgCopyGo">Download (.txt)</button>' +
+      '<button class="btn btn-secondary btn-sm" id="msgCopyCancel">Cancel</button>' +
+      '</div>'
+    );
+    modal.querySelector("#msgCopyCancel").addEventListener("click", () => modal.remove());
+    modal.querySelector("#msgCopyGo").addEventListener("click", () => {
+      modal.remove();
+      downloadCachedBackup(conv, convId).then(() => {
+        try { localStorage.setItem(copyRemovalKey(convId), String(Date.now() + COPY_GRACE_MS)); } catch (e) {}
+        if (state.current === convId) paintClearedBar(conv, convId);
+      }).catch(() => {});
+    });
+  }
+
+  function requestCopyDelete(conv, convId) {
+    const modal = copyModal(
+      '<h3>Delete your saved copy?</h3>' +
+      '<p class="small msg-muted">Messages from before the clear will be removed from THIS DEVICE only. The other person is not affected, and new messages in this chat are not affected.</p>' +
+      '<div class="msg-modal-actions">' +
+      '<button class="btn btn-sm" id="msgCopyGo" style="background:var(--red);border-color:var(--red);color:#fff">Delete my copy</button>' +
+      '<button class="btn btn-secondary btn-sm" id="msgCopyCancel">Cancel</button>' +
+      '</div>'
+    );
+    modal.querySelector("#msgCopyCancel").addEventListener("click", () => modal.remove());
+    modal.querySelector("#msgCopyGo").addEventListener("click", () => {
+      modal.remove();
+      deleteMyCopy(convId);
+    });
+  }
+
+  async function cacheDeleteConvBefore(convId, isoBefore) {
+    const db = await cacheDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("messages", "readwrite");
+      const idx = tx.objectStore("messages").index("conv_time");
+      const req = idx.openCursor(IDBKeyRange.bound([convId, ""], [convId, isoBefore]));
+      req.onsuccess = () => { const cur = req.result; if (cur) { cur.delete(); cur.continue(); } };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  // Remove THIS user's saved copy of the pre-clear history (local only —
+  // the server copy is already gone and the other person is unaffected).
+  // Messages sent AFTER the clear are live server messages and stay.
+  async function deleteMyCopy(convId) {
+    const at = clearedAt(convId) || new Date().toISOString();
+    try { await cacheDeleteConvBefore(convId, at); } catch (e) { /* keep going */ }
+    const map = state.messages.get(convId);
+    if (map) {
+      for (const [id, m] of Array.from(map)) {
+        if (m && m.created_at && String(m.created_at) < at && !String(m.id).startsWith("pending-")) map.delete(id);
+      }
+      const kept = (state.order.get(convId) || []).filter((m) => !(m.created_at && String(m.created_at) < at));
+      state.order.set(convId, kept);
+    }
+    clearClearedFlag(convId);
+    try { localStorage.removeItem(copyRemovalKey(convId)); } catch (e) {}
+    hideClearedBar();
+    const order = state.order.get(convId) || [];
+    const conv = state.conversations.get(convId);
+    if (conv) {
+      const lastM = order.length ? order[order.length - 1] : null;
+      conv.last_body = lastM ? lastM.body : null;
+      conv.last_at = lastM ? lastM.created_at : null;
+    }
+    if (state.current === convId) {
+      renderMessages();
+      if (!order.length) {
+        $("msgMsgs").innerHTML = '<div class="small msg-muted" style="padding:12px">Your saved copy was deleted. New messages will appear here.</div>';
+      }
+    }
+    renderConversationList();
+    updateNavBadge();
+  }
+
+  // On load: if a downloaded copy's grace period already elapsed while the
+  // page was closed, finish the removal now.
+  function processCopyRemovals() {
+    if (!state.me) return;
+    const prefix = "veilnet_copy_rm_" + state.me + "_";
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf(prefix) === 0) {
+        const convId = k.slice(prefix.length);
+        const rmAt = parseInt(localStorage.getItem(k) || "0", 10) || 0;
+        if (rmAt && Date.now() >= rmAt) deleteMyCopy(convId);
+      }
+    }
   }
 
   function showClearedRecoveryModal(conv, convId) {
@@ -375,7 +520,7 @@
     modal.innerHTML =
       '<div class="msg-modal">' +
       '<h3>Chat cleared</h3>' +
-      '<p class="small msg-muted">' + esc(conv.other?.username || "The other person") + ' cleared this chat on their side. Your full copy of the history is saved on this device — you can keep chatting here and download a backup any time.</p>' +
+      '<p class="small msg-muted">' + esc(conv.other?.username || "The other person") + ' cleared this chat on their side. Your full copy of the history is saved on this device — you can keep chatting here, and download or delete your copy any time from the bar attached to this chat.</p>' +
       '<div class="msg-modal-actions">' +
       '<button class="btn btn-primary btn-sm" id="msgRecDl">Download backup (.txt)</button>' +
       '<button class="btn btn-secondary btn-sm" id="msgRecClose">Close</button>' +
@@ -572,6 +717,7 @@
     const conv = state.conversations.get(convId);
     if (!conv) return;
     state.current = convId;
+    hideClearedBar();
     renderConversationList();
 
     $("msgChatEmpty").style.display = "none";
@@ -618,9 +764,12 @@
     renderConversationList();
     updateNavBadge();
     // One-sided clear: if the other person cleared this chat, surface the
-    // recovery banner every time they open it (not just in the live moment).
+    // attached recovery bar every time they open it (always visible above
+    // the composer — no scrolling needed).
     if (isClearedFlagged(convId) && (state.order.get(convId) || []).length) {
-      showClearedBanner(convId, conv);
+      showClearedBar(conv, convId);
+    } else {
+      hideClearedBar();
     }
     scrollToBottom();
   }
@@ -1019,6 +1168,7 @@
     try {
       await bootstrapWithRetry();
       subscribeRealtime();
+      processCopyRemovals();
     } catch (e) {
       $("msgConvos").innerHTML = '<div class="small msg-muted">Could not load messaging: ' + esc(e.message) + ' — <button class="btn btn-secondary btn-sm" id="msgRetryBtn">Retry</button></div>';
       const retryBtn = $("msgRetryBtn");

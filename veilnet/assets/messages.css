@@ -109,3 +109,12 @@
   color: var(--text); font-size: 13px; display: flex; align-items: center;
   gap: 10px; flex-wrap: wrap;
 }
+
+/* Attached one-sided-clear recovery bar: fixed above the composer (never
+   scrolls away), with Download + Delete-my-copy actions. */
+.msg-cleared-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 14px; border-top: 1px solid rgba(255,207,92,.4);
+  background: rgba(255,207,92,.07); color: var(--text); font-size: 13px;
+}
+.msg-cleared-bar .msg-cleared-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
