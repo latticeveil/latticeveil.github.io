@@ -1,8 +1,19 @@
 // TOS Acceptance System
+//
+// Re-acceptance model: TOS_VERSION is bumped whenever the terms change
+// materially. localStorage stores the version that was accepted; any user
+// whose stored version is older sees the modal again — no bypass, since
+// the gate also re-checks on every Google auth / login flow.
+// Current version: 2 — added mandatory messaging safety rules
+// (no password sharing, private messaging conduct, LatticeVeil
+// not responsible for messaging outcomes, upcoming report option).
+const TOS_VERSION = '2';
+
 if (typeof TOSAcceptance === 'undefined') {
 class TOSAcceptance {
     constructor() {
-        this.accepted = localStorage.getItem('latticeveil_tos_accepted') === 'true';
+        this.acceptedVersion = localStorage.getItem('latticeveil_tos_accepted') || null;
+        this.accepted = this.acceptedVersion === TOS_VERSION;
         this.downloadAccepted = localStorage.getItem('latticeveil_download_tos_accepted') === 'true';
         this.downloadInitiated = false;
         this.init();
@@ -68,6 +79,14 @@ class TOSAcceptance {
                     
                     <h3>5. ONLINE SERVICES</h3>
                     <p>Online features use Epic Online Services (EOS). Your use is subject to Epic Games' terms and policies.</p>
+                    
+                    <h3>5b. MESSAGING SAFETY — MANDATORY RULES</h3>
+                    <p><strong>Never share your password or any credentials.</strong> LatticeVeil staff, moderators, and developers will never ask for your password. Passwords or account credentials shared through Veilnet messages are done entirely at your own risk.</p>
+                    <p><strong>Messaging is entirely private.</strong> Only you and the other member can read your direct messages, and staff do not monitor them. You must behave respectfully in all messages; harassment, spam, or inappropriate conduct may result in loss of messaging access.</p>
+                    <p><strong>Never share personal information or financial details.</strong> A report option for messages is planned so inappropriate messages can be flagged for review; until then, use the Block option on a player's profile.</p>
+                    
+                    <h3>5c. NO LIABILITY FOR USER MESSAGING</h3>
+                    <p><strong>LatticeVeil is not responsible for anything that happens as a result of messaging on the platform</strong> — including bad experiences, conflicts, mistakes, or harm related to any information you choose to share with other members. You use Veilnet messaging entirely at your own risk, and we cannot supervise private conversations.</p>
                     
                     <h3>6. INDEPENDENCE CLARIFICATION</h3>
                     <p>LatticeVeil is an independent project and is not affiliated with Minecraft, Trove, or other voxel games despite visual similarities.</p>
@@ -194,7 +213,8 @@ class TOSAcceptance {
                 localStorage.setItem('latticeveil_download_tos_accepted', 'true');
             } else {
                 this.accepted = true;
-                localStorage.setItem('latticeveil_tos_accepted', 'true');
+                this.acceptedVersion = TOS_VERSION;
+                localStorage.setItem('latticeveil_tos_accepted', TOS_VERSION);
             }
             
             if (type === 'download') {
@@ -342,6 +362,7 @@ class TOSAcceptance {
     resetAcceptance() {
         this.accepted = false;
         this.downloadAccepted = false;
+        this.acceptedVersion = null;
         localStorage.removeItem('latticeveil_tos_accepted');
         localStorage.removeItem('latticeveil_download_tos_accepted');
     }
