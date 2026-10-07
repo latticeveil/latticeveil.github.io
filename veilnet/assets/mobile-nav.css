@@ -1,0 +1,199 @@
+/* MOBILE NAV — Material/iOS-style fixed bottom tab bar (as of Version 2 design pass)
+ *
+ * On screens < 980px the sticky top nav (.nav) is re-purposed into a fixed
+ * BOTTOM TAB BAR: 4-5 destinations, thumb-reachable, icon + label each,
+ * active-tab highlight, unread badge stays absolutely positioned (zero
+ * layout shift), safe-area insets respected on iOS/Android.
+ *
+ * Every page already contains identical .nav markup with:
+ *   a[href$="/veilnet/"]               Home (house icon)
+ *   a[href*="/community/"]             Community (people icon)
+ *   a[href*="/accomplishments/"]       Accomplishments (trophy icon)
+ *   a[href*="/messages/"] .nav-messages Friends (chat icon)
+ *   a[data-veil-admin-nav]             Admin (crown icon, hidden until admin)
+ *
+ * The icons are injected in veilnet.js via ::before pseudo-content? NO —
+ * pseudo content can’t carry distinct SVGs per link, so inline SVGs are
+ * created by JS in injectMobileNavIcons() (see veilnet.js). This CSS file
+ * handles only presentation.
+ *
+ * Design constraints honored:
+ * - Icons use stroke: currentColor so hover/active color both icon+label.
+ * - Unread badge still absolutely positioned (never widens a tab).
+ * - No layout shift: bar height is constant; paint-before-first-frame.
+ * - Admin first-paint logic (veilnet-boot.js vn-admin-on) still works.
+ */
+
+/* ---------- Tablet / small laptop: bottom bar starts at 980px ---------- */
+@media (max-width: 980px) {
+  /* Neutralize the old desktop topbar nav row */
+  .topbar > .container.topbar-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .topbar .nav {
+    display: none; /* desktop nav row is hidden — bottom bar replaces it */
+  }
+  /* Stamp the sticky topbar down to a compact brand + search + avatar bar */
+  .topbar {
+    position: sticky;
+    top: 0;
+  }
+  .topbar .container.topbar-inner {
+    height: 56px;
+  }
+
+  /* Create the space under the page for the fixed bottom bar.  The bar is
+     68px tall + safe-area. We pad the body end instead of `.container` so
+     any page-specific absolutely-positioned pull-to-refresh etc. stays OK. */
+  body {
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Re-skin the SAME <nav class="nav"> as a bottom tab bar: it moves from
+     inside .topbar to fixed at the bottom via position:fixed. Since the old
+     desktop .topbar .nav is display:none, we re-show it fixed. */
+  .topbar .nav {
+    display: flex;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    top: auto;
+    z-index: 1000; /* above dropdown overlays, below TOS modals (10000+) */
+    height: calc(68px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    justify-content: space-around;
+    align-items: stretch;
+    gap: 4px;
+    /* Native-feel glass bar (iOS tab bar aesthetic) */
+    background: rgba(10, 13, 20, 0.92);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    backdrop-filter: blur(18px) saturate(160%);
+    border-top: 1px solid rgba(124, 92, 255, 0.35);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+  }
+
+  .topbar .nav a {
+    /* Each tab fills 1/n of the bar, generous touch area ≥48px */
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 130px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 4px 10px;
+    border-radius: 12px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .2px;
+    line-height: 1.1;
+    color: var(--muted);
+    -webkit-tap-highlight-color: transparent;
+    transition: color .15s ease, background .15s ease, transform .1s ease;
+  }
+
+  /* Icon sizing (injected inline SVG by veilnet.js) */
+  .topbar .nav a .vn-tab-icon {
+    display: block;
+    width: 24px;
+    height: 24px;
+    color: inherit; /* follows tab color so active state colors it too */
+    flex: none;
+  }
+  .topbar .nav a .vn-tab-icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* Pressed feedback */
+  .topbar .nav a:active {
+    transform: scale(.94);
+  }
+
+  /* Active tab: accent-tinted background pill + accent color */
+  .topbar .nav a.vn-active,
+  .topbar .nav a.vn-active:hover {
+    color: var(--accent2);
+    background: rgba(124, 92, 255, 0.14);
+    box-shadow: 0 0 0 1px rgba(124, 92, 255, 0.25) inset;
+    transform: none;
+  }
+  /* Hover/focus on touch: highlight without moving layout */
+  .topbar .nav a:hover,
+  .topbar .nav a:focus-visible {
+    color: var(--text);
+    background: rgba(255, 255, 255, 0.05);
+    outline: none;
+  }
+
+  /* Unread badge floats at the icon's top-right, never shifting the tab */
+  .topbar .nav .nav-messages { position: relative; }
+  .topbar .nav .nav-messages .vn-badge {
+    position: absolute;
+    top: 4px;
+    right: calc(50% - 26px);
+    transform: scale(.8);
+  }
+
+  /* Admin slot: keep the same first-paint rules (no pop-in) */
+  .topbar .nav a[data-veil-admin-nav]{ display: none; }
+  .topbar .nav a[data-veil-admin-nav].vn-admin-on{ display: flex; }
+
+  /* Trim search box so avatar+search fit the 56px topbar comfortably */
+  .vn-search-input { width: 110px; }
+  .vn-search-input:focus { width: 150px; }
+
+  /* Dropdown needs to clear the bottom bar: left-align bottom instead */
+  .pfp-wrap .dropdown { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); top: auto; }
+}
+
+/* ---------- Phones: tighter labels and bar ---------- */
+@media (max-width: 480px) {
+  .topbar .nav { gap: 2px; }
+  .topbar .nav a {
+    font-size: 10.5px;
+    max-width: none; /* give each tab full 1/n width */
+    padding: 6px 2px 8px;
+  }
+  .topbar .nav a .vn-tab-icon { width: 22px; height: 22px; }
+  .topbar .nav { height: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  body { padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px)); }
+  .pfp-wrap .dropdown { bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ---------- Very narrow (e.g. 320px iPhone SE class): hide labels ---------- */
+@media (max-width: 360px) {
+  .topbar .nav a { font-size: 0; } /* icon-only mode */
+  .topbar .nav a .vn-tab-icon { width: 26px; height: 26px; }
+}
+
+/* ---------- Landscape phones: compact bar, less vertical chrome ---------- */
+@media (max-width: 980px) and (orientation: landscape) {
+  .topbar .nav { height: calc(56px + env(safe-area-inset-bottom, 0px)); }
+  .topbar .nav a { flex-direction: row; gap: 8px; font-size: 12px; padding: 8px 6px; }
+  .topbar .nav a .vn-tab-icon { width: 20px; height: 20px; }
+  body { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
+}
+
+/* ---------- iOS notch-safe: when browser supports viewport-fit=cover ---------- */
+@supports (padding: max(0px)) {
+  .topbar .nav {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+}
+
+/* Reduced motion: no scale pop on tap */
+@media (prefers-reduced-motion: reduce) {
+  .topbar .nav a:active { transform: none; }
+}
+
+/* ---------- Accessibility: keyboard focus ring for desktop-ish use ---------- */
+.topbar .nav a:focus-visible {
+  outline: 2px solid var(--accent2);
+  outline-offset: -2px;
+}
