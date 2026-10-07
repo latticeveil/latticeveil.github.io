@@ -21,51 +21,10 @@
       </div>
 
       <nav class="nav" aria-label="Primary">
-        <div class="nav-left">
-          <a href="../index.html" class="nav-item">Home</a>
-          <a href="../community/index.html" class="nav-item">Community</a>
-          <a href="/veilnet/messages/" class="nav-item">Messages</a>
-        </div>
-
-        <div class="nav-right">
-          <div class="avatar" data-veil-avatar title="Profile">
-            <img data-veil-avatar-img src="../assets/default_pfp.png" alt="profile">
-            <span id="vnUnreadBadgeProfile" class="vn-badge vn-badge--hidden"></span>
-          </div>
-          <div class="dropdown" data-veil-dropdown>
-            <div class="dd-head">
-              <img data-veil-dd-img src="../assets/default_pfp.png" alt="">
-              <div>
-                <div class="dd-title" data-veil-dd-title>Not signed in</div>
-                <div class="dd-sub" data-veil-dd-sub>Login to access Veilnet features</div>
-              </div>
-            </div>
-
-            <div class="dd-item" onclick="location.href='../index.html'">
-              <span>Go to Veilnet</span><small>Home</small>
-            </div>
-
-            <div class="dd-item" onclick="location.href='/veilnet/messages/'">
-              <span>Messages</span><small>Chat</small>
-            </div>
-
-            <div class="dd-item" data-veil-myprofile style="display:none">
-              <span>My Profile</span><small>/profile</small>
-            </div>
-
-            <div class="dd-item" data-veil-settings style="display:none">
-              <span>Settings</span><small>Link + prefs</small>
-            </div>
-
-            <div class="dd-item" data-veil-login>
-              <span>Login</span><small>Google</small>
-            </div>
-
-            <div class="dd-item" data-veil-logout style="display:none">
-              <span>Logout</span><small>Sign out</small>
-            </div>
-          </div>
-        </div>
+        <a href="/veilnet/">Home</a>
+        <a href="/veilnet/community/">Community</a>
+        <a href="/veilnet/accomplishments/">Accomplishments</a>
+        <a href="/veilnet/messages/" class="nav-messages">Messages<span id="vnUnreadBadgeMessages" class="vn-badge vn-badge--hidden"></span></a>
       </nav>
     </div>
   </header>
