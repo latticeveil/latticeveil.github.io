@@ -192,6 +192,47 @@
   .topbar .nav a:active { transform: none; }
 }
 
+/* ---------- DESKTOP (<980px rule does NOT apply, so no media query needed) ----------
+ * The mobile block above ONLY runs under 980px; desktop keeps the classic
+ * inline top nav from veilnet.css. Since the mobile block converted the
+ * tabs into column layouts with big injected icons, on desktop the icons
+ * are compact (18px), inline beside the label — accent color on hover/active,
+ * label always readable, pill highlight on the active tab.
+ *
+ * Combined with desktop-first scoping in the block above, these rules can
+ * NEVER leak into the bottom tab bar (which physically does not exist above
+ * 980px because the nav is not position:fixed there).
+ */
+.topbar .nav a .vn-tab-icon {
+  display: inline-block;
+  width: 17px;
+  height: 17px;
+  margin-right: 5px;
+  vertical-align: -3px; /* optical alignment with 14px label text */
+  color: var(--muted);
+  transition: color .15s ease;
+}
+.topbar .nav a .vn-tab-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.topbar .nav a:hover .vn-tab-icon,
+.topbar .nav a:focus-visible .vn-tab-icon {
+  color: var(--text);
+}
+.topbar .nav a.vn-active .vn-tab-icon {
+  color: var(--accent2);
+}
+
+/* Desktop pill highlight for the ACTIVE tab (matches hover look, softer) */
+.topbar .nav a.vn-active,
+.topbar .nav a.vn-active:hover {
+  color: var(--accent2);
+  background: rgba(124, 92, 255, 0.14);
+  box-shadow: 0 0 0 1px rgba(124, 92, 255, 0.25) inset;
+}
+
 /* ---------- Accessibility: keyboard focus ring for desktop-ish use ---------- */
 .topbar .nav a:focus-visible {
   outline: 2px solid var(--accent2);
