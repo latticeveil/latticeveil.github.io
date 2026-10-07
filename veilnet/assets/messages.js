@@ -129,6 +129,29 @@
     return fresh;
   }
 
+  // ---------- one-sided clear tracking ----------
+  // Clearing is ONE-SIDED: the person who clears loses the chat (server copy
+  // deleted + local cache wiped); the other person KEEPS their device's saved
+  // copy (IndexedDB) as the live history of that chat, and can download a
+  // .txt backup at any time. A per-account flag records "the other side
+  // cleared this chat" so the recovery banner survives reloads.
+  function clearedFlags() {
+    try { return JSON.parse(localStorage.getItem("veilnet_cleared_" + state.me) || "{}"); } catch (e) { return {}; }
+  }
+  function isClearedFlagged(convId) { return !!clearedFlags()[convId]; }
+  function setClearedFlag(convId) {
+    const f = clearedFlags();
+    if (f[convId]) return;
+    f[convId] = true;
+    try { localStorage.setItem("veilnet_cleared_" + state.me, JSON.stringify(f)); } catch (e) {}
+  }
+  function clearClearedFlag(convId) {
+    const f = clearedFlags();
+    if (!f[convId]) return;
+    delete f[convId];
+    try { localStorage.setItem("veilnet_cleared_" + state.me, JSON.stringify(f)); } catch (e) {}
+  }
+
   // ---------- bootstrap ----------
   async function bootstrap() {
     const data = await api("bootstrap");
@@ -140,7 +163,22 @@
       // A conversation only appears once it HAS messages. A DM that was just
       // ensured (or fully cleared) has no last message — it must stay out of
       // the panel, and it will not resurrect on refresh either.
-      if (!c.last_at) continue;
+      if (!c.last_at) {
+        // EXCEPT: one-sided clear. If the other person deleted the chat, this
+        // device's saved copy is the user's live history — keep the chat in
+        // the panel using the cached last message as the preview.
+        try {
+          const cached = await cacheGetAll(c.conversation_id);
+          const last = cached.length ? cached[cached.length - 1] : null;
+          if (!last) continue; // genuinely empty — not a conversation yet
+          setClearedFlag(c.conversation_id);
+          state.conversations.set(c.conversation_id, {
+            id: c.conversation_id, other_id: c.other_id, other: c.other,
+            unread: c.unread || 0, last_body: last.body, last_at: last.created_at,
+          });
+        } catch (e) { /* cache unavailable — treat as empty */ }
+        continue;
+      }
       state.conversations.set(c.conversation_id, {
         id: c.conversation_id, other_id: c.other_id, other: c.other,
         unread: c.unread || 0, last_body: c.last_body, last_at: c.last_at,
@@ -292,15 +330,22 @@
   // for both, but THIS device still holds its local cache — that is the
   // recovery path: keep it, tell the user, offer a .txt backup download.
   function handleClearedPing(payload) {
-    const convId = payload && payload.conversation_id;
+    const p = payload || {};
+    const convId = p.conversation_id;
     if (!convId) return;
+    // My own clear echoed back (e.g. my OTHER device): apply the same
+    // one-sided wipe here too — only the deleting account loses the chat.
+    if (p.by && state.me && p.by === state.me) {
+      clearLocalConversation(convId, "Chat cleared.");
+      return;
+    }
+    // One-sided: the other person cleared THEIR copy. Ours stays as the live
+    // history of this chat, with a persistent backup download.
     const conv = state.conversations.get(convId);
     if (!conv) return;
-    conv.last_body = null; conv.unread = 0;
+    setClearedFlag(convId);
     if (state.current === convId) showClearedBanner(convId, conv);
     else showClearedRecoveryModal(conv, convId);
-    renderConversationList();
-    updateNavBadge();
   }
 
   function downloadCachedBackup(conv, convId) {
@@ -315,7 +360,7 @@
     if (!box || box.querySelector(".msg-cleared-banner")) return;
     const b = document.createElement("div");
     b.className = "msg-cleared-banner";
-    b.innerHTML = 'This chat was cleared by the other person. The messages below are from this device\'s saved copy — ' +
+    b.innerHTML = esc(conv?.other?.username || "The other person") + ' cleared this chat on their side. The messages below are your saved copy — ' +
       '<button class="btn btn-secondary btn-sm" id="msgClearedDl">Download backup (.txt)</button>';
     box.prepend(b);
     b.querySelector("#msgClearedDl").addEventListener("click", () => downloadCachedBackup(conv, convId));
@@ -330,7 +375,7 @@
     modal.innerHTML =
       '<div class="msg-modal">' +
       '<h3>Chat cleared</h3>' +
-      '<p class="small msg-muted">' + esc(conv.other?.username || "The other person") + ' cleared this conversation. The messages are deleted from the server for both of you — but this device kept its saved copy, so you can still read or download them.</p>' +
+      '<p class="small msg-muted">' + esc(conv.other?.username || "The other person") + ' cleared this chat on their side. Your full copy of the history is saved on this device — you can keep chatting here and download a backup any time.</p>' +
       '<div class="msg-modal-actions">' +
       '<button class="btn btn-primary btn-sm" id="msgRecDl">Download backup (.txt)</button>' +
       '<button class="btn btn-secondary btn-sm" id="msgRecClose">Close</button>' +
@@ -345,6 +390,7 @@
   async function doClearConversation(convId) {
     try {
       await api("clear", { conversation_id: convId });
+      clearClearedFlag(convId);
       clearLocalConversation(convId, "Chat cleared.");
     } catch (e) {
       alert("Could not clear conversation: " + e.message);
@@ -363,7 +409,7 @@
       '<div class="msg-modal">' +
       '<h3>Clear chat with ' + esc(conv.other?.username || "this person") + '?</h3>' +
       '<div class="msg-modal-warn">MESSAGES IN THIS CHAT CANNOT BE RECOVERED</div>' +
-      '<p class="small msg-muted">Clearing deletes the messages for BOTH of you (keeps storage free). Want to keep a copy? Download the backup first — it saves the whole chat as a .txt file.</p>' +
+      '<p class="small msg-muted">Clearing deletes the messages for YOU — ' + esc(conv.other?.username || "the other person") + ' keeps their copy, and server storage is freed. Want to keep yours? Download the backup first — it saves the whole chat as a .txt file.</p>' +
       '<div class="msg-modal-actions">' +
       '<button class="btn btn-secondary btn-sm" id="msgClearBackup">Download backup (.txt)</button>' +
       '<button class="btn btn-secondary btn-sm" id="msgClearCancel">Cancel</button>' +
@@ -571,6 +617,11 @@
     conv.unread = 0;
     renderConversationList();
     updateNavBadge();
+    // One-sided clear: if the other person cleared this chat, surface the
+    // recovery banner every time they open it (not just in the live moment).
+    if (isClearedFlagged(convId) && (state.order.get(convId) || []).length) {
+      showClearedBanner(convId, conv);
+    }
     scrollToBottom();
   }
 
