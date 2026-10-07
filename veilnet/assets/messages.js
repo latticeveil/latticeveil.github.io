@@ -269,18 +269,70 @@
     state.messages.delete(convId);
     state.order.delete(convId);
     cacheDeleteConv(convId).catch(() => {});
-    const conv = state.conversations.get(convId);
-    if (conv) { conv.last_body = null; conv.last_at = null; conv.unread = 0; }
+    // Remove the conversation row from the panel entirely (the server
+    // conversation stays, so the Friends list can reopen a fresh chat).
+    const ch = dmChannels.get(convId);
+    if (ch) { try { ch.unsubscribe(); } catch (e) {} dmChannels.delete(convId); }
+    state.conversations.delete(convId);
     if (state.current === convId) {
       $("msgMsgs").innerHTML = '<div class="small msg-muted" style="padding:12px">' + esc(note || "Chat cleared.") + '</div>';
     }
     renderConversationList();
+    updateNavBadge();
   }
 
+  // Remote clear: the OTHER person emptied the chat. The server copy is gone
+  // for both, but THIS device still holds its local cache — that is the
+  // recovery path: keep it, tell the user, offer a .txt backup download.
   function handleClearedPing(payload) {
     const convId = payload && payload.conversation_id;
-    if (!convId || !state.conversations.has(convId)) return;
-    clearLocalConversation(convId, "This chat was cleared by the other person.");
+    if (!convId) return;
+    const conv = state.conversations.get(convId);
+    if (!conv) return;
+    conv.last_body = null; conv.unread = 0;
+    if (state.current === convId) showClearedBanner(convId, conv);
+    else showClearedRecoveryModal(conv, convId);
+    renderConversationList();
+    updateNavBadge();
+  }
+
+  function downloadCachedBackup(conv, convId) {
+    cacheGetAll(convId).then((msgs) => {
+      if (!msgs.length) { alert("This device has no cached messages for this chat."); return; }
+      downloadChatBackup(conv, msgs);
+    }).catch((e) => alert("Backup failed: " + e.message));
+  }
+
+  function showClearedBanner(convId, conv) {
+    const box = $("msgMsgs");
+    if (!box || box.querySelector(".msg-cleared-banner")) return;
+    const b = document.createElement("div");
+    b.className = "msg-cleared-banner";
+    b.innerHTML = 'This chat was cleared by the other person. The messages below are from this device\'s saved copy — ' +
+      '<button class="btn btn-secondary btn-sm" id="msgClearedDl">Download backup (.txt)</button>';
+    box.prepend(b);
+    b.querySelector("#msgClearedDl").addEventListener("click", () => downloadCachedBackup(conv, convId));
+  }
+
+  function showClearedRecoveryModal(conv, convId) {
+    const old = $("msgClearedModal");
+    if (old) old.remove();
+    const modal = document.createElement("div");
+    modal.id = "msgClearedModal";
+    modal.className = "msg-modal-backdrop";
+    modal.innerHTML =
+      '<div class="msg-modal">' +
+      '<h3>Chat cleared</h3>' +
+      '<p class="small msg-muted">' + esc(conv.other?.username || "The other person") + ' cleared this conversation. The messages are deleted from the server for both of you — but this device kept its saved copy, so you can still read or download them.</p>' +
+      '<div class="msg-modal-actions">' +
+      '<button class="btn btn-primary btn-sm" id="msgRecDl">Download backup (.txt)</button>' +
+      '<button class="btn btn-secondary btn-sm" id="msgRecClose">Close</button>' +
+      '</div>' +
+      '</div>';
+    document.body.appendChild(modal);
+    modal.querySelector("#msgRecClose").addEventListener("click", () => modal.remove());
+    modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+    modal.querySelector("#msgRecDl").addEventListener("click", () => downloadCachedBackup(conv, convId));
   }
 
   async function doClearConversation(convId) {
@@ -337,20 +389,12 @@
   }
 
   // ---------- sound ----------
+  // The ping lives in veilnet.js (window.VeilnetPing): one shared
+  // AudioContext kept resumed by user gestures. A fresh context per ping was
+  // staying "suspended" on desktop autoplay policies — the sound never played.
   function playPing() {
     if (!state.sound) return;
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g); g.connect(ctx.destination);
-      o.type = "sine"; o.frequency.value = 880;
-      g.gain.setValueAtTime(0.0001, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
-      o.start(); o.stop(ctx.currentTime + 0.4);
-      setTimeout(() => ctx.close(), 600);
-    } catch (e) { /* audio unavailable — silent */ }
+    if (window.VeilnetPing) window.VeilnetPing.play();
   }
   function maybeNotify(msg) {
     if (msg.sender_id === state.me) return;

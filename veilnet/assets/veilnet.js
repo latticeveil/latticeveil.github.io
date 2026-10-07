@@ -1376,22 +1376,104 @@ async function refreshHeaderUI() {
   }
 
   function renderSettings(){
-    const root = document.querySelector("[data-veil-settings]");
+    // NOTE: [data-veil-settings] is the DROPDOWN menu item — it must stay a
+    // plain link. The old code rendered a demo "Account Status" card into it,
+    // which is why the dropdown showed "Logged in (demo): No". Real settings
+    // render into [data-veil-settings-root] on /veilnet/settings/.
+    const root = document.querySelector("[data-veil-settings-root]");
     if(!root) return;
-    
-    const currentUser = getCurrentUser();
-    const loggedIn = currentUser.loggedIn;
-    
+
     root.innerHTML = `
       <div class="panel">
         <h3>Account</h3>
+        <div class="inner" id="vnSettingsAccount">
+          <div class="small" style="color:var(--muted)">Loading…</div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <h3>Messages</h3>
         <div class="inner">
-          <div style="font-weight:900; margin-bottom:6px">Account Status</div>
-          <div class="small">Logged in (demo): <b>${loggedIn ? "Yes" : "No"}</b></div>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 0">
+            <input type="checkbox" id="vnMsgSoundToggle" style="width:18px;height:18px;accent-color:var(--accent)">
+            <span>Message notification sound</span>
+          </label>
+          <div class="small" style="color:var(--muted);margin:2px 0 12px">Plays a soft ping in the app when a message arrives. No browser permission popups.</div>
+          <button class="btn btn-secondary btn-sm" id="vnMsgSoundTest">Play test sound</button>
         </div>
       </div>
     `;
+
+    // Messages prefs — same storage key the Messages page toolbar uses.
+    const soundToggle = root.querySelector("#vnMsgSoundToggle");
+    soundToggle.checked = (localStorage.getItem("veilnet_msg_sound") ?? "on") === "on";
+    soundToggle.addEventListener("change", () => {
+      localStorage.setItem("veilnet_msg_sound", soundToggle.checked ? "on" : "off");
+    });
+    root.querySelector("#vnMsgSoundTest").addEventListener("click", () => {
+      if (window.VeilnetPing) window.VeilnetPing.play();
+    });
+
+    // Account: real auth state (was the stale demo card before).
+    const accountBox = root.querySelector("#vnSettingsAccount");
+    (async () => {
+      let user = null;
+      try { user = await VeilnetAuth.getUser(); } catch (e) { user = null; }
+      if (user) {
+        accountBox.innerHTML = `
+          <div style="font-weight:800">${escapeHtml(user.email || user.id)}</div>
+          <div class="small" style="color:var(--muted);margin:4px 0 12px">Signed in with Google.</div>`;
+        const out = document.createElement("button");
+        out.className = "btn btn-secondary btn-sm";
+        out.textContent = "Log out";
+        out.addEventListener("click", async () => { await VeilnetAuth.logout(); location.reload(); });
+        accountBox.appendChild(out);
+      } else {
+        accountBox.innerHTML = `
+          <div class="small" style="color:var(--muted);margin-bottom:12px">Not signed in.</div>`;
+        const inBtn = document.createElement("button");
+        inBtn.className = "btn btn-primary btn-sm";
+        inBtn.textContent = "Login with Google";
+        inBtn.addEventListener("click", () => {
+          if (typeof window.__openVeilnetLoginModal === "function") window.__openVeilnetLoginModal();
+        });
+        accountBox.appendChild(inBtn);
+      }
+    })();
   }
+
+  // Shared in-app notification ping (Messages page + Settings test button).
+  // One AudioContext per page, kept resumed by any user gesture. Creating a
+  // NEW AudioContext per ping leaves it "suspended" under desktop autoplay
+  // policies when no gesture has happened yet — that is why the notification
+  // sound silently never played on desktop.
+  let __pingCtx = null;
+  function pingCtx() {
+    if (!__pingCtx) {
+      try { __pingCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+    }
+    if (__pingCtx.state === "suspended") { try { __pingCtx.resume().catch(() => {}); } catch (e) {} }
+    return __pingCtx;
+  }
+  document.addEventListener("pointerdown", () => { pingCtx(); }, { passive: true });
+  function playVeilnetPing() {
+    const ctx = pingCtx();
+    if (!ctx) return;
+    const start = () => {
+      try {
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = "sine"; o.frequency.value = 880;
+        g.gain.setValueAtTime(0.0001, ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.35);
+        o.start(); o.stop(ctx.currentTime + 0.4);
+      } catch (e) { /* audio unavailable — silent */ }
+    };
+    if (ctx.state === "suspended") ctx.resume().then(start).catch(() => {});
+    else start();
+  }
+  window.VeilnetPing = { play: playVeilnetPing };
 
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));

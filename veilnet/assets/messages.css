@@ -101,3 +101,11 @@
   padding: 10px 12px; border-radius: 10px; margin-bottom: 10px;
 }
 .msg-modal-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+/* Remote-cleared chat: recovery banner (other user's device keeps its copy) */
+.msg-cleared-banner {
+  margin: 10px 12px; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid rgba(255,207,92,.4); background: rgba(255,207,92,.07);
+  color: var(--text); font-size: 13px; display: flex; align-items: center;
+  gap: 10px; flex-wrap: wrap;
+}
