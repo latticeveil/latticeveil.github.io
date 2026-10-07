@@ -1732,6 +1732,8 @@
       this.renderBadge();
     },
     reqAdd(n) { this.reqSetCount(this.reqCount + (n || 1)); },
+    // Accepting/declining a request resolves it — clear the green ticker.
+    reqClear() { this.reqSetCount(0); },
     loadReq() {
       const k = this.reqKeys();
       try {

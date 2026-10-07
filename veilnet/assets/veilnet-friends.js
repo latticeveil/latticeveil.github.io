@@ -151,6 +151,18 @@
       boxOrId || document.querySelector("[data-veil-friend-box]");
     if (!box || !targetId) return;
 
+    // Profile "Message" shortcut — jumps straight into a chat with this
+    // player via /messages/?friend=<uuid>. Hidden for you/signed-out.
+    var msgBtn = document.createElement("button");
+    msgBtn.type = "button";
+    msgBtn.className = "btn btn-sm btn-secondary";
+    msgBtn.textContent = "Message";
+    msgBtn.setAttribute("data-veil-message-btn", "");
+    msgBtn.addEventListener("click", function () {
+      location.href = "/veilnet/messages/?friend=" + encodeURIComponent(targetId);
+    });
+    box.appendChild(msgBtn);
+
     box.innerHTML = "";
     try {
       var me = null;
@@ -214,6 +226,11 @@
             await callApi(action, targetId);
             await window.loadFriendState(targetId, box);
             vnToast(actionLabel(action) + " done");
+            // Accept/decline resolved an incoming request — clear the green
+            // ticker immediately so the badge does not linger as stale.
+            if ((action === "accept" || action === "decline") && window.VeilnetNotify && window.VeilnetNotify.reqClear) {
+              window.VeilnetNotify.reqClear();
+            }
           } catch (e) {
             vnToast("Could not " + actionLabel(action).toLowerCase() + ": " + e.message);
             el.disabled = false;

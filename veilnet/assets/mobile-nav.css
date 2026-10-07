@@ -130,13 +130,25 @@
     outline: none;
   }
 
-  /* Unread badge floats at the icon's top-right, never shifting the tab */
+  /* Unread badge floats at the icon's top-left, never shifting the tab.
+     Two badges? Message stays left of the green request one; both clamp
+     inside the tab so 2"1"/99+ can never be cut off. */
   .topbar .nav .nav-messages { position: relative; }
   .topbar .nav .nav-messages .vn-badge {
     position: absolute;
-    top: 4px;
-    right: calc(50% - 26px);
+    top: -2px;
+    left: max(0px, calc(50% - 30px));
+    right: auto;
     transform: scale(.8);
+    z-index: 3;
+  }
+  .topbar .nav .nav-messages .vn-badge--req {
+    position: absolute;
+    top: -2px;
+    left: auto;
+    right: max(0px, calc(50% - 30px));
+    transform: scale(.8);
+    z-index: 3;
   }
 
   /* Admin slot: keep the same first-paint rules (no pop-in) */

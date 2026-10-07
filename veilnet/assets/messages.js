@@ -241,6 +241,11 @@
   async function handleRequest(action, friendId) {
     try {
       await api(action, { friend_id: friendId });
+      // Accept/decline/cancel resolves the pending request — drop the
+      // green friend-request ticker instantly (no stale badge).
+      if ((action === "accept" || action === "decline" || action === "cancel") && window.VeilnetNotify?.reqClear) {
+        window.VeilnetNotify.reqClear();
+      }
       await bootstrapWithRetry();
     } catch (e) {
       vnAlert("Could not " + action + " request: " + e.message);
@@ -700,9 +705,15 @@
       box.innerHTML = '<div class="small msg-muted">No friends yet — add friends from the launcher.</div>';
       return;
     }
-    box.innerHTML = state.friends.map((f) => {
-      const conv = Array.from(state.conversations.values()).find((c) => c.other_id === f.productUserId && c.last_at);
-      return '<div class="msg-row" data-friend="' + f.productUserId + '">' +
+    const q = (($("msgFriendSearch")?.value || "").trim().toLowerCase());
+    const shown = q ? state.friends.filter((f) => (f.username || "").toLowerCase().includes(q)) : state.friends;
+    if (!shown.length) {
+      box.innerHTML = q
+        ? '<div class="small msg-muted">No friends match "' + esc(q) + '".</div>'
+        : '<div class="small msg-muted">No friends yet — add friends from the launcher or their profiles.</div>';
+      return;
+    }
+    box.innerHTML = shown.map((f) => {
         '<img src="' + esc(f.pictureUrl || "../assets/default_pfp.png") + '" alt="">' +
         '<div class="mr-main"><div class="mr-name">' + esc(f.username) + '</div>' +
         '<div class="mr-sub">' + (conv ? "conversation" : "start chatting") + '</div></div>' +
@@ -716,6 +727,25 @@
     box.querySelectorAll("a.friend-acc, a.friend-profile").forEach((el) => {
       el.addEventListener("click", (e) => e.stopPropagation());
     });
+  }
+
+  // Profile "Message" button handoff: /messages/?friend=<uuid> opens a
+  // draft chat with that friend immediately after load.
+  function maybeOpenFromProfile() {
+    const fid = new URLSearchParams(location.search).get("friend");
+    if (!fid) return;
+    try { history.replaceState(null, "", location.pathname); } catch (e) { /* ignore */ }
+    if (state.friends.some((f) => f.productUserId === fid)) {
+      openWithFriend(fid);
+    } else {
+      vnAlert("You can only message friends here — add them from their profile first.");
+    }
+  }
+
+  // Friends-page inline search: filter rendered rows as you type.
+  const friendSearchInput = $("msgFriendSearch");
+  if (friendSearchInput) {
+    friendSearchInput.addEventListener("input", () => renderFriendList());
   }
 
   // ---------- incoming friend-request popups ----------
@@ -1248,6 +1278,7 @@
       await bootstrapWithRetry();
       subscribeRealtime();
       processCopyRemovals();
+      maybeOpenFromProfile();
     } catch (e) {
       $("msgConvos").innerHTML = '<div class="small msg-muted">Could not load messaging: ' + esc(e.message) + ' — <button class="btn btn-secondary btn-sm" id="msgRetryBtn">Retry</button></div>';
       const retryBtn = $("msgRetryBtn");
