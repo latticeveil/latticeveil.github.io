@@ -290,6 +290,13 @@ window.VeilnetAuth = (function() {
       if (typeof window.clearCachedProfile === 'function') {
         window.clearCachedProfile();
       }
+      // Also clear the header cache + admin flag so the Admin nav chip
+      // disappears the same tick the user logs out.
+      if (typeof window.clearHeaderCache === 'function') {
+        window.clearHeaderCache();
+      } else {
+        try { localStorage.removeItem('veilnet_is_admin'); } catch (e) {}
+      }
       
       const { error } = await client.auth.signOut();
       return { error };

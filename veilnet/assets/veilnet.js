@@ -884,6 +884,8 @@
 
   // Expose clearCachedProfile for auth.js to call during logout
   window.clearCachedProfile = cacheClear;
+  // Expose header-cache clearing so auth.js logout can also drop the admin flag
+  window.clearHeaderCache = clearHeaderCache;
 
   function getUserAvatarFromAuth(user) {
     // Try common metadata keys
@@ -907,13 +909,29 @@
       return v && v.ts ? v : null;
     } catch (e) { return null; }
   }
+  // Dedicated, stable admin flag read synchronously by veilnet-boot.js so
+  // the Admin nav slot can be revealed at FIRST PAINT. Kept separate from
+  // veilnet_hdr_state so shape changes never break the no-popin behavior.
+  const VN_ADMIN_FLAG = "veilnet_is_admin";
+  function setAdminFlag(isAdmin) {
+    try {
+      if (isAdmin) localStorage.setItem(VN_ADMIN_FLAG, "1");
+      else localStorage.removeItem(VN_ADMIN_FLAG);
+    } catch (e) { /* storage unavailable */ }
+  }
+  function clearAdminFlag() {
+    try { localStorage.removeItem(VN_ADMIN_FLAG); } catch (e) {}
+  }
+
   function setHeaderCache(name, avatar, isAdmin, email) {
     try {
       localStorage.setItem("veilnet_hdr_state", JSON.stringify({ name, avatar, isAdmin: !!isAdmin, email: email || "", ts: Date.now() }));
     } catch (e) { /* storage unavailable */ }
+    setAdminFlag(isAdmin);
   }
   function clearHeaderCache() {
     try { localStorage.removeItem("veilnet_hdr_state"); } catch (e) {}
+    clearAdminFlag();
   }
   function paintCachedHeader() {
     const c = getHeaderCache();
@@ -923,7 +941,11 @@
     if (title) title.textContent = c.name;
     if (sub) sub.textContent = c.email || "Online via Google";
     if (c.avatar) setHeaderAvatarSource(c.avatar);
-    document.querySelectorAll("[data-veil-admin-nav]").forEach((el) => setAdminNavVisible(el, !!c.admin));
+    // Re-reveal from the boot key even if the object cache is empty/fresh —
+    // belt & suspenders alongside veilnet-boot.js which already runs at first paint.
+    let adminFlag = !!c.isAdmin;
+    try { if (localStorage.getItem(VN_ADMIN_FLAG) === "1") adminFlag = true; } catch (e) {}
+    document.querySelectorAll("[data-veil-admin-nav]").forEach((el) => setAdminNavVisible(el, adminFlag));
     return true;
   }
 
