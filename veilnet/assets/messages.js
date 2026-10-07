@@ -13,6 +13,7 @@
 
   const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
   const ACC_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H5a2 2 0 0 0 0 4h2"/><path d="M17 6h2a2 2 0 0 1 0 4h-2"/></svg>';
+  const PERSON_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>';
 
   const state = {
     me: null,                 // auth user id
@@ -199,6 +200,7 @@
     renderFriendList();
     updateNavBadge();
     joinBroadcastChannels();
+    notifyNewRequests();
     return data;
   }
 
@@ -687,14 +689,51 @@
         '<img src="' + esc(f.pictureUrl || "../assets/default_pfp.png") + '" alt="">' +
         '<div class="mr-main"><div class="mr-name">' + esc(f.username) + '</div>' +
         '<div class="mr-sub">' + (conv ? "conversation" : "start chatting") + '</div></div>' +
+        '<a class="friend-profile" href="/veilnet/profile/?u=' + encodeURIComponent(f.username || "") + '" title="View profile" aria-label="View profile">' + PERSON_SVG + '</a>' +
         '<a class="friend-acc" href="/veilnet/accomplishments/?u=' + encodeURIComponent(f.username || "") + '" title="View accomplishments" aria-label="View accomplishments">' + ACC_SVG + '</a>' +
         '</div>';
     }).join("");
     box.querySelectorAll(".msg-row").forEach((el) => {
       el.addEventListener("click", () => openWithFriend(el.getAttribute("data-friend")));
     });
-    box.querySelectorAll("a.friend-acc").forEach((el) => {
+    box.querySelectorAll("a.friend-acc, a.friend-profile").forEach((el) => {
       el.addEventListener("click", (e) => e.stopPropagation());
+    });
+  }
+
+  // ---------- incoming friend-request popups ----------
+  function reqSeenList() {
+    try { return JSON.parse(localStorage.getItem("veilnet_reqs_seen_" + state.me) || "[]"); } catch (e) { return []; }
+  }
+  function notifyNewRequests() {
+    const seen = new Set(reqSeenList());
+    const fresh = (state.incomingRequests || []).filter((r) => !seen.has(r.productUserId));
+    if (!fresh.length) return;
+    for (const r of fresh) seen.add(r.productUserId);
+    try { localStorage.setItem("veilnet_reqs_seen_" + state.me, JSON.stringify(Array.from(seen))); } catch (e) {}
+    for (const r of fresh) showRequestToast(r);
+  }
+  function showRequestToast(r) {
+    let stack = document.getElementById("msgReqToastStack");
+    if (!stack) {
+      stack = document.createElement("div");
+      stack.id = "msgReqToastStack";
+      document.body.appendChild(stack);
+    }
+    const t = document.createElement("div");
+    t.className = "msg-req-toast";
+    t.innerHTML =
+      '<div class="mrt-text"><b>' + esc(r.user?.username || "Someone") + '</b> sent you a friend request.</div>' +
+      '<div class="mrt-actions">' +
+      '<button class="btn btn-primary btn-sm" data-a="accept">Accept</button>' +
+      '<button class="btn btn-secondary btn-sm" data-a="decline">Decline</button>' +
+      '</div>';
+    stack.appendChild(t);
+    t.querySelectorAll("button").forEach((b) => {
+      b.addEventListener("click", async () => {
+        t.remove();
+        await handleRequest(b.getAttribute("data-a"), r.productUserId);
+      });
     });
   }
 

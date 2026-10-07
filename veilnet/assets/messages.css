@@ -129,3 +129,25 @@
 }
 .msg-friends-panel .msg-row:hover .friend-acc { opacity: 1; }
 .friend-acc:hover { background: rgba(124,92,255,.15); color: var(--accent); }
+
+/* Person-icon profile shortcut on friend rows (next to the trophy) */
+.msg-friends-panel .msg-row .friend-profile {
+  position: absolute; right: 60px; top: 50%; transform: translateY(-50%);
+  background: transparent; border: none; color: var(--muted); cursor: pointer;
+  padding: 7px; border-radius: 8px; line-height: 0; opacity: .3;
+  transition: opacity .15s, background .15s, color .15s;
+  display: inline-flex;
+}
+.msg-friends-panel .msg-row:hover .friend-profile { opacity: 1; }
+.friend-profile:hover { background: rgba(124,92,255,.15); color: var(--accent); }
+
+/* Incoming friend-request popup (bottom-right, stacked) */
+#msgReqToastStack {
+  position: fixed; right: 18px; bottom: 18px; z-index: 10002;
+  display: flex; flex-direction: column; gap: 10px; align-items: flex-end;
+}
+.msg-req-toast {
+  background: var(--panel, #0f1622); border: 1px solid var(--border-accent);
+  border-radius: 14px; padding: 12px 14px; max-width: 320px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.55); color: var(--text); font-size: 14px;
+}
