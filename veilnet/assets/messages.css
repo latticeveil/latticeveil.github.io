@@ -73,3 +73,31 @@
 #msgChat .composer .btn { min-height: 52px; padding: 0 22px; font-size: 15px; font-weight: 600; }
 .msgs .msg { font-size: 15px; }
 .msgs .msg .meta { font-size: 12px; }
+
+/* Clear-conversation trashcan + confirm modal */
+.msg-friends-panel .msg-row { position: relative; }
+.conv-clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  background: transparent; border: none; color: var(--muted); cursor: pointer;
+  padding: 7px; border-radius: 8px; line-height: 0; opacity: .3;
+  transition: opacity .15s, background .15s, color .15s;
+}
+.msg-friends-panel .msg-row:hover .conv-clear { opacity: 1; }
+.conv-clear:hover { background: rgba(255,77,77,.15); color: var(--red, #ff4d4d); }
+.msg-modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75);
+  display: flex; align-items: center; justify-content: center; z-index: 10001; padding: 16px;
+}
+.msg-modal {
+  background: var(--panel, #0f1622);
+  border: 1px solid var(--border-accent, rgba(124,92,255,.45));
+  border-radius: 16px; max-width: 440px; width: 100%; padding: 20px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.55);
+}
+.msg-modal h3 { margin: 0 0 10px; }
+.msg-modal-warn {
+  color: #ff4d4d; font-weight: 800; letter-spacing: .5px; text-align: center;
+  border: 1px solid rgba(255,77,77,.4); background: rgba(255,77,77,.08);
+  padding: 10px 12px; border-radius: 10px; margin-bottom: 10px;
+}
+.msg-modal-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }

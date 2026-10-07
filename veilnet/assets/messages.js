@@ -11,6 +11,8 @@
   const FN = CFG.SUPABASE_URL + "/functions/v1/messaging-api";
   const PAGE = 50;
 
+  const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+
   const state = {
     me: null,                 // auth user id
     friends: [],              // [{productUserId, username, pictureUrl}]
@@ -145,11 +147,27 @@
     return data;
   }
 
+  // Transient db_error on load ("Could not load messaging: db_error" for a
+  // second, fixed by refreshing) must self-heal: retry with backoff instead
+  // of stranding the user on an error line.
+  async function bootstrapWithRetry(tries = 4) {
+    let lastErr;
+    for (let i = 0; i < tries; i++) {
+      try {
+        return await bootstrap();
+      } catch (e) {
+        lastErr = e;
+        await new Promise((r) => setTimeout(r, 400 * Math.pow(2, i))); // 400ms .. 2.4s
+      }
+    }
+    throw lastErr;
+  }
+
   // ---------- friend requests (same friends system as launcher) ----------
   async function handleRequest(action, friendId) {
     try {
       await api(action, { friend_id: friendId });
-      await bootstrap();
+      await bootstrapWithRetry();
     } catch (e) {
       alert("Could not " + action + " request: " + e.message);
     }
@@ -191,6 +209,130 @@
         e.stopPropagation();
         handleRequest(btn.getAttribute("data-act"), btn.getAttribute("data-id"));
       });
+    });
+  }
+
+  // ---------- clear conversation (trashcan) ----------
+  async function cacheDeleteConv(convId) {
+    const db = await cacheDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("messages", "readwrite");
+      const idx = tx.objectStore("messages").index("conv_time");
+      const req = idx.openCursor(IDBKeyRange.bound([convId, ""], [convId, "\uffff"]));
+      req.onsuccess = () => { const cur = req.result; if (cur) { cur.delete(); cur.continue(); } };
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  // Full history (paged) for the pre-clear .txt backup.
+  async function fetchAllMessages(convId) {
+    const all = [];
+    let before = null;
+    for (let i = 0; i < 500; i++) {
+      const extra = before ? { conversation_id: convId, before, limit: 100 } : { conversation_id: convId, limit: 100 };
+      const r = await api("list", extra);
+      const msgs = r.messages || [];
+      all.push(...msgs);
+      if (msgs.length < 100) break;
+      before = msgs[msgs.length - 1].created_at;
+    }
+    return all.sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+  }
+
+  function downloadChatBackup(conv, msgs) {
+    const who = (senderId) => (senderId === state.me ? "You" : (conv.other?.username || String(senderId).slice(0, 8)));
+    const lines = [
+      "LatticeVeil — Veilnet chat backup",
+      "Conversation: " + (conv.other?.username || "Unknown"),
+      "Exported: " + new Date().toLocaleString(),
+      "Messages: " + msgs.length,
+      "========================================",
+      "",
+    ];
+    for (const m of msgs) {
+      const d = new Date(m.created_at);
+      lines.push("[" + (isNaN(d) ? m.created_at : d.toLocaleString()) + "] " + who(m.sender_id) + ": " + m.body);
+    }
+    const blob = new Blob([lines.join("\r\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "veilnet-chat-" + String(conv.other?.username || "chat").replace(/[^a-z0-9_-]+/gi, "_") + "-" + new Date().toISOString().slice(0, 10) + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  function clearLocalConversation(convId, note) {
+    state.messages.delete(convId);
+    state.order.delete(convId);
+    cacheDeleteConv(convId).catch(() => {});
+    const conv = state.conversations.get(convId);
+    if (conv) { conv.last_body = null; conv.last_at = null; conv.unread = 0; }
+    if (state.current === convId) {
+      $("msgMsgs").innerHTML = '<div class="small msg-muted" style="padding:12px">' + esc(note || "Chat cleared.") + '</div>';
+    }
+    renderConversationList();
+  }
+
+  function handleClearedPing(payload) {
+    const convId = payload && payload.conversation_id;
+    if (!convId || !state.conversations.has(convId)) return;
+    clearLocalConversation(convId, "This chat was cleared by the other person.");
+  }
+
+  async function doClearConversation(convId) {
+    try {
+      await api("clear", { conversation_id: convId });
+      clearLocalConversation(convId, "Chat cleared.");
+    } catch (e) {
+      alert("Could not clear conversation: " + e.message);
+    }
+  }
+
+  function showClearConfirm(convId) {
+    const conv = state.conversations.get(convId);
+    if (!conv) return;
+    const old = $("msgClearModal");
+    if (old) old.remove();
+    const modal = document.createElement("div");
+    modal.id = "msgClearModal";
+    modal.className = "msg-modal-backdrop";
+    modal.innerHTML =
+      '<div class="msg-modal">' +
+      '<h3>Clear chat with ' + esc(conv.other?.username || "this person") + '?</h3>' +
+      '<div class="msg-modal-warn">MESSAGES IN THIS CHAT CANNOT BE RECOVERED</div>' +
+      '<p class="small msg-muted">Clearing deletes the messages for BOTH of you (keeps storage free). Want to keep a copy? Download the backup first — it saves the whole chat as a .txt file.</p>' +
+      '<div class="msg-modal-actions">' +
+      '<button class="btn btn-secondary btn-sm" id="msgClearBackup">Download backup (.txt)</button>' +
+      '<button class="btn btn-secondary btn-sm" id="msgClearCancel">Cancel</button>' +
+      '<button class="btn btn-sm" id="msgClearGo" style="background:var(--red);border-color:var(--red);color:#fff">Clear chat</button>' +
+      '</div>' +
+      '<div class="small msg-muted" id="msgClearStatus" style="margin-top:8px"></div>' +
+      '</div>';
+    document.body.appendChild(modal);
+    const status = modal.querySelector("#msgClearStatus");
+    modal.querySelector("#msgClearCancel").addEventListener("click", () => modal.remove());
+    modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+    modal.querySelector("#msgClearBackup").addEventListener("click", async () => {
+      status.textContent = "Building backup…";
+      try {
+        const msgs = await fetchAllMessages(convId);
+        if (!msgs.length) { status.textContent = "Nothing to back up — this chat is empty."; return; }
+        downloadChatBackup(conv, msgs);
+        status.textContent = "Backup downloaded (" + msgs.length + " messages). You can now clear safely.";
+      } catch (e) {
+        status.textContent = "Backup failed: " + e.message + " — nothing was deleted.";
+      }
+    });
+    modal.querySelector("#msgClearGo").addEventListener("click", async () => {
+      const go = modal.querySelector("#msgClearGo");
+      go.disabled = true;
+      go.textContent = "Clearing…";
+      await doClearConversation(convId);
+      modal.remove();
     });
   }
 
@@ -256,10 +398,18 @@
       return '<div class="msg-row' + active + '" data-conv="' + c.id + '">' +
         '<img src="' + esc(c.other?.pictureUrl || "../assets/default_pfp.png") + '" alt="">' +
         '<div class="mr-main"><div class="mr-name">' + esc(c.other?.username || "Unknown") + '</div>' +
-        '<div class="mr-sub">' + sub + '</div></div>' + unread + '</div>';
+        '<div class="mr-sub">' + sub + '</div></div>' + unread +
+        '<button class="conv-clear" title="Clear conversation (deletes messages for both of you)" data-clear="' + c.id + '" aria-label="Clear conversation">' + TRASH_SVG + '</button>' +
+        '</div>';
     }).join("");
     box.querySelectorAll(".msg-row").forEach((el) => {
       el.addEventListener("click", () => openConversation(el.getAttribute("data-conv")));
+    });
+    box.querySelectorAll("button[data-clear]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showClearConfirm(btn.getAttribute("data-clear"));
+      });
     });
   }
 
@@ -477,6 +627,9 @@
       // fields live in .payload (verified against the raw server frames).
       handleRemotePing((msg && msg.payload) || msg);
     });
+    ch.on("broadcast", { event: "conversation-cleared" }, (msg) => {
+      handleClearedPing((msg && msg.payload) || msg);
+    });
     ch.subscribe();
     dmChannels.set(convId, ch);
   }
@@ -573,6 +726,9 @@
       // supabase-js delivers the wrapper {type, event, payload}; the ping
       // fields live in .payload (verified against the raw server frames).
       handleRemotePing((msg && msg.payload) || msg);
+    });
+    ch.on("broadcast", { event: "conversation-cleared" }, (msg) => {
+      handleClearedPing((msg && msg.payload) || msg);
     });
     ch.subscribe((status) => {
       if (status === "SUBSCRIBED") {
@@ -704,20 +860,23 @@
     state.me = user.id;
 
     try {
-      await bootstrap();
+      await bootstrapWithRetry();
       subscribeRealtime();
     } catch (e) {
-      $("msgConvos").innerHTML = '<div class="small msg-muted">Could not load messaging: ' + esc(e.message) + '</div>';
+      $("msgConvos").innerHTML = '<div class="small msg-muted">Could not load messaging: ' + esc(e.message) + ' — <button class="btn btn-secondary btn-sm" id="msgRetryBtn">Retry</button></div>';
+      const retryBtn = $("msgRetryBtn");
+      if (retryBtn) retryBtn.addEventListener("click", () => start());
     }
   }
 
-  // Safety net: realtime is the primary delivery path; this light catch-up
-  // runs every 30s only while the tab is visible and uses the incremental
-  // "after" cursor (a few hundred bytes per conversation) so it never
-  // meaningfully touches the Supabase free-tier quota.
+  // Safety net: realtime is the primary delivery path. This light catch-up
+  // runs every 12s only while the tab is visible and uses the incremental
+  // "after" cursor (a few hundred bytes per conversation) so even if a live
+  // frame is missed, a message can never be more than ~12s late — and it
+  // never meaningfully touches the Supabase free-tier quota.
   setInterval(() => {
     if (!document.hidden && state.me && state.conversations.size) reconcile().catch(() => {});
-  }, 30000);
+  }, 12000);
 
   // Logout: wipe this account's cache and reset in-memory state.
   document.addEventListener("click", (e) => {

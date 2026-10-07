@@ -93,20 +93,20 @@ class TOSAcceptance {
                     <h3>📄 FULL POLICIES</h3>
                     <p>For complete details, please read our full policies:</p>
                     <ul>
-                        <li><a href="terms.html" target="_blank">Terms of Service</a></li>
-                        <li><a href="privacy.html" target="_blank">Privacy Policy</a></li>
+                        <li><a href="/terms.html" target="_blank">Terms of Service</a></li>
+                        <li><a href="/privacy.html" target="_blank">Privacy Policy</a></li>
                     </ul>
                 </div>
                 <div class="tos-footer">
                     <div class="tos-scroll-indicator">Please scroll through all terms before accepting</div>
                     <div class="tos-checkbox-container">
-                        <div class="tos-checkbox">
+                        <label class="tos-checkbox" for="tos-checkbox-${type}">
                             <input type="checkbox" id="tos-checkbox-${type}">
-                            <label for="tos-checkbox-${type}">I have read and agree to the Terms of Service and Privacy Policy</label>
-                        </div>
+                            <span>I have read and agree to the Terms of Service and Privacy Policy</span>
+                        </label>
                     </div>
                     <div class="tos-buttons">
-                        <button class="tos-btn" id="view-full-terms-${type}" onclick="window.open('terms.html', '_blank')">
+                        <button class="tos-btn" id="view-full-terms-${type}" onclick="window.open('/terms.html', '_blank')">
                             View Full Terms
                         </button>
                         <button class="tos-btn accept" id="accept-tos-${type}" disabled>
@@ -167,51 +167,12 @@ class TOSAcceptance {
         body.addEventListener('touchmove', checkScrollComplete);
         body.addEventListener('touchend', checkScrollComplete);
 
-        // Enhanced checkbox event listeners for mobile - only work when enabled
-        checkbox.addEventListener('change', (e) => {
-            if (!checkbox.disabled) {
-                updateAcceptButton();
-            }
-        });
-        
-        checkbox.addEventListener('click', (e) => {
-            if (checkbox.disabled) {
-                e.preventDefault();
-                return;
-            }
-            updateAcceptButton();
-        });
-        
-        // Make the entire container clickable only when checkbox is enabled
-        checkboxContainer.addEventListener('click', (e) => {
-            if (e.target !== checkbox && !checkbox.disabled) {
-                checkbox.checked = !checkbox.checked;
-                updateAcceptButton();
-            }
-        });
-        
-        // Improved mobile touch handling - toggle checkbox state reliably only when enabled
-        checkbox.addEventListener('touchstart', (e) => {
-            if (checkbox.disabled) {
-                e.preventDefault();
-                return;
-            }
-            // Don't prevent default to allow normal checkbox behavior
-            setTimeout(() => {
-                updateAcceptButton();
-            }, 10); // Small delay to ensure checkbox state is updated
-        });
-        
-        checkbox.addEventListener('touchend', (e) => {
-            if (checkbox.disabled) {
-                e.preventDefault();
-                return;
-            }
-            e.preventDefault(); // Prevent zoom/double-tap
-            setTimeout(() => {
-                updateAcceptButton();
-            }, 10);
-        });
+        // The <label for> wrapper gives the whole row one native tap target on
+        // every platform (including iOS Safari, where JS preventDefault on
+        // touchend cancels the click that would toggle the checkbox). No touch
+        // or container click handlers are needed — adding any that call
+        // preventDefault swallows taps or double-toggles on mobile.
+        checkbox.addEventListener('change', updateAcceptButton);
 
         // Also check checkbox state and scroll status periodically (fallback for mobile)
         const checkboxInterval = setInterval(() => {
