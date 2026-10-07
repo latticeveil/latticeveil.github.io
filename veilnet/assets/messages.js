@@ -22,6 +22,7 @@
     messages: new Map(),      // conversation_id -> Map(id -> message)
     order: new Map(),         // conversation_id -> [ids sorted by created_at]
     current: null,            // conversation_id being viewed
+    sessionStart: Date.now(), // pings only fire for messages that arrive LIVE
     draftFriend: null,        // friend of an open draft chat (no server conversation yet)
     processedIds: new Set(),  // message ids already merged (delivery dedupe)
     notifiedIds: new Set(),   // message ids already pinged/badged (notify dedupe)
@@ -407,12 +408,20 @@
     // IMPORTANT: sound/badge dedupe must be separate from processedIds.
     // mergeMessages marks processedIds BEFORE this runs (applyIncoming →
     // merge → maybeNotify), so checking processedIds here swallowed BOTH the
-    // ping and the live unread badge for every real message — they only ever
-    // appeared after a refresh (bootstrap recomputed unread server-side).
+    // ping and the live unread badge for every real message.
     if (state.notifiedIds.has(msg.id)) return;
     state.notifiedIds.add(msg.id);
-    // In the message screen for this chat: silent, no unread. Anywhere else
-    // (other chat, other page, background tab): ping + unread badge.
+    // Messages that arrived BEFORE this page load were already counted by
+    // bootstrap (server truth) — never replay their ping on load/refresh.
+    if (msg.created_at && new Date(msg.created_at).getTime() < state.sessionStart - 15000) return;
+    // Cross-tab + reload dedupe: if another tab (or an earlier page view)
+    // already pinged this message, stay silent.
+    if (window.VeilnetNotify) {
+      if (window.VeilnetNotify.hasSeen(msg.id)) return;
+      window.VeilnetNotify.markSeen(msg.id);
+    }
+    // In the open chat with the tab visible: silent, no unread (it is being
+    // read right now). Anywhere else: ping + unread badge immediately.
     if (state.current === msg.conversation_id && !document.hidden) return;
     playPing();
     bumpUnread(msg.conversation_id, 1);
@@ -432,8 +441,11 @@
     return t;
   }
   function updateNavBadge() {
-    const el = $("vnUnreadBadgeMessages");
     const n = totalUnread();
+    // Keep the global (all-pages) unread counter in sync: bootstrap sets it
+    // to server truth, reads and new messages adjust it from here.
+    if (window.VeilnetNotify) window.VeilnetNotify.setCount(n);
+    const el = $("vnUnreadBadgeMessages");
     if (!el) return;
     el.textContent = n > 99 ? "99+" : String(n);
     el.classList.toggle("vn-badge--hidden", n === 0);
@@ -548,8 +560,14 @@
       box.prepend(note);
     }
 
-    // 3) mark read
-    try { await api("read", { conversation_id: convId }); } catch (e) {}
+    // 3) mark read — retry once: a transient failure here left the unread
+    // pill alive and replayed pings on every refresh.
+    try {
+      await api("read", { conversation_id: convId });
+    } catch (e) {
+      await new Promise((r) => setTimeout(r, 800));
+      try { await api("read", { conversation_id: convId }); } catch (e2) {}
+    }
     conv.unread = 0;
     renderConversationList();
     updateNavBadge();
@@ -760,10 +778,10 @@
       scrollToBottom();
       if (!document.hidden) {
         try { await api("read", { conversation_id: convId }); } catch (e) {}
-      } else {
-        bumpUnread(convId, 1);
       }
     }
+    // Unread badge + ping are owned by maybeNotify (handles hidden tabs and
+    // other conversations correctly — the old else-branch double-counted).
     maybeNotify(msg);
     renderConversationList();
     updateNavBadge();

@@ -1110,6 +1110,7 @@ async function refreshHeaderUI() {
     }
     if(ddLogout){
       ddLogout.addEventListener("click", async ()=>{
+        try { if (window.VeilnetNotify) VeilnetNotify.setCount(0); } catch (e) {}
         await VeilnetAuth.logout();
         dd?.classList.remove("open");
         await refreshHeaderUI();
@@ -1475,6 +1476,115 @@ async function refreshHeaderUI() {
   }
   window.VeilnetPing = { play: playVeilnetPing };
 
+  // Global message notifier — works on EVERY Veilnet page (not just
+  // /messages/): plays the ping the moment a message arrives and keeps the
+  // Messages badge live everywhere. Per-account localStorage persists the
+  // unread count and recently-seen pings, so navigating or refreshing never
+  // replays old pings and the badge survives page changes.
+  const VeilnetNotify = {
+    myId: null,
+    count: 0,
+    seen: [],
+    _ch: null,
+    keys() {
+      const uid = this.myId || "anon";
+      return { count: "veilnet_unread_" + uid, seen: "veilnet_seen_" + uid };
+    },
+    load() {
+      const k = this.keys();
+      try {
+        this.count = parseInt(localStorage.getItem(k.count) || "0", 10) || 0;
+        this.seen = JSON.parse(localStorage.getItem(k.seen) || "[]");
+        if (!Array.isArray(this.seen)) this.seen = [];
+      } catch (e) { this.count = 0; this.seen = []; }
+    },
+    save() {
+      const k = this.keys();
+      try {
+        localStorage.setItem(k.count, String(this.count));
+        localStorage.setItem(k.seen, JSON.stringify(this.seen.slice(-300)));
+      } catch (e) { /* storage unavailable — non-fatal */ }
+    },
+    hasSeen(id) { return this.seen.indexOf(id) !== -1; },
+    markSeen(id) {
+      if (!id || this.hasSeen(id)) return;
+      this.seen.push(id);
+      if (this.seen.length > 300) this.seen = this.seen.slice(-300);
+      this.save();
+    },
+    setCount(n) {
+      this.count = Math.max(0, n | 0);
+      this.save();
+      this.renderBadge();
+    },
+    add(n) { this.setCount(this.count + (n || 1)); },
+    renderBadge() {
+      const paint = (el) => {
+        if (!el) return;
+        el.textContent = this.count > 99 ? "99+" : String(this.count);
+        el.classList.toggle("vn-badge--hidden", this.count === 0);
+      };
+      paint(document.getElementById("vnUnreadBadgeMessages"));
+      paint(document.getElementById("vnUnreadBadgeDd"));
+      // Pages without a badge element: inject one into the dropdown's
+      // Messages item (most pages have no nav Messages link at all).
+      if (!document.getElementById("vnUnreadBadgeDd")) {
+        const ddItem = Array.from(document.querySelectorAll("[data-veil-dropdown] .dd-item"))
+          .find((el) => (el.getAttribute("onclick") || "").indexOf("/veilnet/messages/") !== -1);
+        if (ddItem) {
+          const label = ddItem.querySelector("span");
+          if (label) {
+            const span = document.createElement("span");
+            span.id = "vnUnreadBadgeDd";
+            span.className = "vn-badge vn-badge--hidden";
+            span.style.marginLeft = "8px";
+            label.appendChild(span);
+            paint(span);
+          }
+        }
+      }
+    },
+    handleLivePing(msg) {
+      // supabase-js delivers {type, event, payload}; fields live in .payload.
+      const p = (msg && msg.payload) || msg;
+      const convId = p && p.conversation_id;
+      const messageId = p && p.message_id;
+      const senderId = p && p.sender_id;
+      if (!convId || !messageId) return;
+      if (this.myId && senderId === this.myId) return;
+      if (this.hasSeen(messageId)) return; // other tab / earlier page already pinged it
+      this.markSeen(messageId);
+      // Respect the Messages sound toggle (same key the Messages page uses).
+      if ((localStorage.getItem("veilnet_msg_sound") ?? "on") === "on") playVeilnetPing();
+      this.add(1);
+    },
+    subscribe() {
+      // The Messages page runs its own richer realtime subscription — never
+      // double-join the same topic.
+      if (this._ch || document.getElementById("msgApp") || !window.supabase || !window.VEILNET_CONFIG) return;
+      try {
+        const client = VeilnetAuth.init();
+        const ch = client.channel("veilnet-msgs-live", { config: { broadcast: { self: false } } });
+        ch.on("broadcast", { event: "new-message" }, (msg) => this.handleLivePing(msg));
+        ch.subscribe(() => {});
+        this._ch = ch;
+      } catch (e) { /* realtime unavailable — badge still works via storage */ }
+    },
+    start(userId) {
+      this.myId = userId || null;
+      this.load();
+      this.renderBadge();
+      if (this.myId) this.subscribe();
+      // Returning to a backgrounded tab: nudge the subscription if it dropped.
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden && this.myId && this._ch && !document.getElementById("msgApp")) {
+          try { this._ch.subscribe(); } catch (e) {}
+        }
+      });
+    }
+  };
+  window.VeilnetNotify = VeilnetNotify;
+
   function escapeHtml(s){
     return String(s).replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
   }
@@ -1500,5 +1610,8 @@ async function refreshHeaderUI() {
     
     // Bootstrap auth system
     bootstrapAuth();
+
+    // Global message notifier: ping sound + live badge on every page.
+    VeilnetAuth.getUser().then((u) => { VeilnetNotify.start(u ? u.id : null); }).catch(() => { VeilnetNotify.start(null); });
   });
 })();
