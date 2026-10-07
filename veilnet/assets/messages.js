@@ -22,7 +22,9 @@
     messages: new Map(),      // conversation_id -> Map(id -> message)
     order: new Map(),         // conversation_id -> [ids sorted by created_at]
     current: null,            // conversation_id being viewed
-    processedIds: new Set(),  // message ids already seen (sound dedupe)
+    draftFriend: null,        // friend of an open draft chat (no server conversation yet)
+    processedIds: new Set(),  // message ids already merged (delivery dedupe)
+    notifiedIds: new Set(),   // message ids already pinged/badged (notify dedupe)
     channel: null,
     connState: "off",
     sound: (localStorage.getItem("veilnet_msg_sound") ?? "on") === "on",
@@ -134,6 +136,10 @@
     state.outgoingRequests = data.outgoingRequests || [];
     state.conversations = new Map();
     for (const c of data.conversations || []) {
+      // A conversation only appears once it HAS messages. A DM that was just
+      // ensured (or fully cleared) has no last message — it must stay out of
+      // the panel, and it will not resurrect on refresh either.
+      if (!c.last_at) continue;
       state.conversations.set(c.conversation_id, {
         id: c.conversation_id, other_id: c.other_id, other: c.other,
         unread: c.unread || 0, last_body: c.last_body, last_at: c.last_at,
@@ -398,11 +404,18 @@
   }
   function maybeNotify(msg) {
     if (msg.sender_id === state.me) return;
-    if (state.processedIds.has(msg.id)) return;
-    state.processedIds.add(msg.id);
-    const viewing = state.current === msg.conversation_id && !document.hidden;
-    playPing(); // live back-and-forth: ping on every incoming message, even while viewing
-    bumpUnread(msg.conversation_id, viewing ? 0 : 1);
+    // IMPORTANT: sound/badge dedupe must be separate from processedIds.
+    // mergeMessages marks processedIds BEFORE this runs (applyIncoming →
+    // merge → maybeNotify), so checking processedIds here swallowed BOTH the
+    // ping and the live unread badge for every real message — they only ever
+    // appeared after a refresh (bootstrap recomputed unread server-side).
+    if (state.notifiedIds.has(msg.id)) return;
+    state.notifiedIds.add(msg.id);
+    // In the message screen for this chat: silent, no unread. Anywhere else
+    // (other chat, other page, background tab): ping + unread badge.
+    if (state.current === msg.conversation_id && !document.hidden) return;
+    playPing();
+    bumpUnread(msg.conversation_id, 1);
   }
 
   // ---------- unread / badges ----------
@@ -430,6 +443,7 @@
   function renderConversationList() {
     const box = $("msgConvos");
     const items = Array.from(state.conversations.values())
+      .filter((c) => c.last_at) // empty/cleared chats never render
       .sort((a, b) => String(b.last_at || "").localeCompare(String(a.last_at || "")));
     if (!items.length) {
       box.innerHTML = '<div class="small msg-muted">No conversations yet — pick a friend below.</div>';
@@ -464,7 +478,7 @@
       return;
     }
     box.innerHTML = state.friends.map((f) => {
-      const conv = Array.from(state.conversations.values()).find((c) => c.other_id === f.productUserId);
+      const conv = Array.from(state.conversations.values()).find((c) => c.other_id === f.productUserId && c.last_at);
       return '<div class="msg-row" data-friend="' + f.productUserId + '">' +
         '<img src="' + esc(f.pictureUrl || "../assets/default_pfp.png") + '" alt="">' +
         '<div class="mr-main"><div class="mr-name">' + esc(f.username) + '</div>' +
@@ -476,21 +490,24 @@
   }
 
   // ---------- open conversation ----------
-  async function openWithFriend(friendId) {
-    let conv = Array.from(state.conversations.values()).find((c) => c.other_id === friendId);
-    if (!conv) {
-      try {
-        const r = await api("ensure", { friend_id: friendId });
-        const friend = state.friends.find((f) => f.productUserId === friendId);
-        conv = { id: r.conversation_id, other_id: friendId, other: friend, unread: 0, last_at: null, last_body: null };
-        state.conversations.set(conv.id, conv);
-        joinBroadcastChannels();
-      } catch (e) {
-        alert("Could not open conversation: " + e.message);
-        return;
-      }
-    }
-    openConversation(conv.id);
+  // Clicking a friend NEVER creates a conversation. If one with messages
+  // exists, open it; otherwise open a DRAFT chat — the server conversation is
+  // only created the moment the first message is actually sent.
+  function openWithFriend(friendId) {
+    const friend = state.friends.find((f) => f.productUserId === friendId);
+    if (!friend) return;
+    const conv = Array.from(state.conversations.values()).find((c) => c.other_id === friendId && c.last_at);
+    if (conv) { openConversation(conv.id); return; }
+    state.draftFriend = friend;
+    state.current = null;
+    renderConversationList();
+    $("msgChatEmpty").style.display = "none";
+    $("msgChat").style.display = "flex";
+    $("msgOlder").style.display = "none";
+    $("msgChatName").textContent = friend.username || "Unknown";
+    $("msgChatStatus").textContent = "new chat";
+    $("msgChatAvatar").src = friend.pictureUrl || "../assets/default_pfp.png";
+    $("msgMsgs").innerHTML = '<div class="small msg-muted" style="padding:12px">No messages yet — say hi!</div>';
   }
 
   async function openConversation(convId) {
@@ -605,11 +622,29 @@
 
   // ---------- send ----------
   async function sendMessage() {
-    const convId = state.current;
-    if (!convId || state.sending.has(convId)) return;
     const input = $("msgInput");
     const text = (input.value || "").trim();
     if (!text) return;
+    let convId = state.current;
+    // Draft chat: NOW the server conversation gets created (first real send).
+    if (!convId && state.draftFriend) {
+      try {
+        const r = await api("ensure", { friend_id: state.draftFriend.productUserId });
+        convId = r.conversation_id;
+        state.conversations.set(convId, {
+          id: convId, other_id: state.draftFriend.productUserId, other: state.draftFriend,
+          unread: 0, last_at: null, last_body: null,
+        });
+        joinBroadcastChannels();
+        state.current = convId;
+      } catch (e) {
+        alert("Could not start conversation: " + e.message);
+        return;
+      } finally {
+        state.draftFriend = null;
+      }
+    }
+    if (!convId || state.sending.has(convId)) return;
     input.value = "";
 
     const tempId = "pending-" + Date.now() + "-" + Math.random().toString(36).slice(2);
@@ -868,7 +903,8 @@
     if (state._resubTimer) { clearTimeout(state._resubTimer); state._resubTimer = null; }
     state.me = null; state.friends = []; state.conversations = new Map();
     state.messages = new Map(); state.order = new Map(); state.current = null;
-    state.processedIds = new Set(); state._broadcastTopics = new Set();
+    state.draftFriend = null;
+    state.processedIds = new Set(); state.notifiedIds = new Set(); state._broadcastTopics = new Set();
   }
 
   function wireUI() {
