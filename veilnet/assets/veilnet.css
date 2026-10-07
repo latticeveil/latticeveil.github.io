@@ -736,3 +736,27 @@ hr.sep{
   .vn-search-input{width:120px}
   .vn-search-input:focus{width:160px}
 }
+
+/* Friend-request badge sits left of the message badge on the Friends tab.
+   Both absolutely positioned so appearing/disappearing never shifts tabs. */
+.nav .nav-messages .vn-badge--req{position:absolute; top:-4px; right:14px; transform:scale(.85); background:var(--green,#3dd68c)}
+
+/* Mobile: condense the search box to a magnifying glass icon. Tapping it
+   toggles the full input + results open as an overlay row under the topbar. */
+.vn-search-toggle{
+  display:none; width:38px; height:38px; margin-right:8px; border-radius:999px;
+  border:1px solid rgba(255,255,255,.14); background:rgba(255,255,255,.04);
+  color:var(--text); align-items:center; justify-content:center; cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.vn-search-toggle:hover{border-color:var(--border-accent); background:rgba(255,255,255,.08)}
+.vn-search-toggle svg{width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round}
+@media (max-width:640px){
+  .vn-search-toggle{display:flex}
+  .vn-search{display:none; position:absolute; top:100%; left:0; right:0; margin:0; padding:10px 14px;
+    background:var(--panel,#0f1622); border-bottom:1px solid var(--border-accent); z-index:65}
+  .vn-search.open{display:block}
+  .vn-search .vn-search-input{width:100%}
+  .vn-search .vn-search-input:focus{width:100%}
+  .vn-search .vn-search-results{left:14px; right:14px; top:100%}
+}

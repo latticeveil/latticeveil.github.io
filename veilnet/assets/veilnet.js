@@ -1162,6 +1162,19 @@
     let lastQ = "";
     const close = () => box.classList.remove("open");
     document.addEventListener("click", (e) => { if (!wrap.contains(e.target)) close(); });
+
+    // Mobile magnifier: toggles the search box open/closed as an overlay row.
+    const toggleBtn = document.querySelector("[data-veil-search-toggle]");
+    if (toggleBtn && !toggleBtn.dataset.wired) {
+      toggleBtn.dataset.wired = "1";
+      toggleBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        wrap.classList.toggle("open");
+        if (wrap.classList.contains("open")) input.focus();
+        else { close(); input.value = ""; }
+      });
+    }
     document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
     input.addEventListener("input", () => {
       clearTimeout(timer);
@@ -1623,9 +1636,14 @@
     count: 0,
     seen: [],
     _ch: null,
-    keys() {
+    // Friend-request notifications — SEPARATE count/badge + seen list so
+    // friend requests and message badges never overwrite each other.
+    reqCount: 0,
+    reqSeen: [],
+    _reqChSlWrapped: false,
+    reqKeys() {
       const uid = this.myId || "anon";
-      return { count: "veilnet_unread_" + uid, seen: "veilnet_seen_" + uid };
+      return { count: "veilnet_frireq_unread_" + uid, seen: "veilnet_frireq_seen_" + uid };
     },
     load() {
       const k = this.keys();
@@ -1643,6 +1661,34 @@
       } catch (e) { /* storage unavailable — non-fatal */ }
     },
     hasSeen(id) { return this.seen.indexOf(id) !== -1; },
+    reqSeenHas(id) { return this.reqSeen.indexOf(id) !== -1; },
+    markReqSeen(id) {
+      if (!id || this.reqSeenHas(id)) return;
+      this.reqSeen.push(id);
+      if (this.reqSeen.length > 300) this.reqSeen = this.reqSeen.slice(-300);
+      this.saveReq();
+    },
+    reqSetCount(n) {
+      this.reqCount = Math.max(0, n | 0);
+      this.saveReq();
+      this.renderBadge();
+    },
+    reqAdd(n) { this.reqSetCount(this.reqCount + (n || 1)); },
+    loadReq() {
+      const k = this.reqKeys();
+      try {
+        this.reqCount = parseInt(localStorage.getItem(k.count) || "0", 10) || 0;
+        this.reqSeen = JSON.parse(localStorage.getItem(k.seen) || "[]");
+        if (!Array.isArray(this.reqSeen)) this.reqSeen = [];
+      } catch (e) { this.reqCount = 0; this.reqSeen = []; }
+    },
+    saveReq() {
+      const k = this.reqKeys();
+      try {
+        localStorage.setItem(k.count, String(this.reqCount));
+        localStorage.setItem(k.seen, JSON.stringify(this.reqSeen.slice(-300)));
+      } catch (e) { /* storage unavailable — non-fatal */ }
+    },
     markSeen(id) {
       if (!id || this.hasSeen(id)) return;
       this.seen.push(id);
@@ -1661,8 +1707,32 @@
         el.textContent = this.count > 99 ? "99+" : String(this.count);
         el.classList.toggle("vn-badge--hidden", this.count === 0);
       };
+      const paintReq = (el) => {
+        if (!el) return;
+        el.textContent = this.reqCount > 99 ? "99+" : String(this.reqCount);
+        el.classList.toggle("vn-badge--hidden", this.reqCount === 0);
+      };
       paint(document.getElementById("vnUnreadBadgeMessages"));
       paint(document.getElementById("vnUnreadBadgeDd"));
+      // Friend-request badge (separate from message count) in nav + dropdown.
+      paintReq(document.getElementById("vnUnreadBadgeRequests"));
+      if (!document.getElementById("vnUnreadBadgeRequests")) {
+        const ddItem = Array.from(document.querySelectorAll("[data-veil-dropdown] .dd-item"))
+          .find((el) => (el.getAttribute("onclick") || "").indexOf("/veilnet/messages/") !== -1);
+        if (ddItem) {
+          const label = ddItem.querySelector("span");
+          if (label) {
+            const span = document.createElement("span");
+            span.id = "vnUnreadBadgeRequests";
+            span.className = "vn-badge vn-badge--hidden vn-badge--req";
+            span.style.marginLeft = "4px";
+            span.style.background = "var(--green, #3dd68c)";
+            span.style.marginTop = "-3px";
+            label.appendChild(span);
+            paintReq(span);
+          }
+        }
+      }
       // Pages without a badge element: inject one into the dropdown's
       // Messages item (most pages have no nav Messages link at all).
       if (!document.getElementById("vnUnreadBadgeDd")) {
@@ -1703,13 +1773,46 @@
         const client = VeilnetAuth.init();
         const ch = client.channel("veilnet-msgs-live", { config: { broadcast: { self: false } } });
         ch.on("broadcast", { event: "new-message" }, (msg) => this.handleLivePing(msg));
+        ch.on("broadcast", { event: "friend-request" }, (msg) => this.handleFriendRequestPing(msg));
+        ch.on("broadcast", { event: "friend-accepted" }, (msg) => this.handleFriendAcceptedPing(msg));
         ch.subscribe(() => {});
         this._ch = ch;
       } catch (e) { /* realtime unavailable — badge still works via storage */ }
     },
+    // Friend request arrives live: separate green badge + same ping sound.
+    handleFriendRequestPing(msg) {
+      const p = (msg && msg.payload) || msg;
+      const fromId = p && (p.from || p.from_id || p.sender_id);
+      const toId = p && (p.to || p.to_id || p.user_id);
+      if (!fromId || !toId) return;
+      if (toId !== this.myId) return; // only my requests
+      if (fromId === this.myId) return;
+      const dedupeId = "fr_" + fromId;
+      if (this.reqSeenHas(dedupeId)) return;
+      this.markReqSeen(dedupeId);
+      if ((localStorage.getItem("veilnet_msg_sound") ?? "on") === "on") playVeilnetPing();
+      this.reqAdd(1);
+    },
+    // Their request got auto-accepted (you had a pending reverse): green badge.
+    handleFriendAcceptedPing(msg) {
+      const p = (msg && msg.payload) || msg;
+      const fromId = p && (p.from || p.from_id);
+      const toId = p && (p.to || p.to_id);
+      if (!fromId || !toId || toId !== this.myId) return;
+      if (fromId === this.myId) return;
+      // Shared "accepted" count shows on the same green badge; if the user
+      // visits the Friends page and sees the new friend, seen list handles
+      // cross-tab. Use a distinct key so both badge types don't collide.
+      const dedupeId = "fa_" + fromId;
+      if (this.reqSeenHas(dedupeId)) return;
+      this.markReqSeen(dedupeId);
+      if ((localStorage.getItem("veilnet_msg_sound") ?? "on") === "on") playVeilnetPing();
+      this.reqAdd(1);
+    },
     start(userId) {
       this.myId = userId || null;
       this.load();
+      this.loadReq();
       this.renderBadge();
       if (this.myId) this.subscribe();
       // Returning to a backgrounded tab: nudge the subscription if it dropped.
