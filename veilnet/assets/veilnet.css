@@ -760,3 +760,28 @@ hr.sep{
   .vn-search .vn-search-input:focus{width:100%}
   .vn-search .vn-search-results{left:14px; right:14px; top:100%}
 }
+
+/* Live social toasts (messages + friend requests) — stackable bottom-right,
+   in-page popups the moment something happens. No refresh needed. */
+.vn-social-toast-stack{
+  position:fixed; right:18px; bottom:18px; z-index:99970;
+  display:flex; flex-direction:column; gap:10px; align-items:flex-end;
+  pointer-events:none;
+}
+.vn-social-toast{
+  pointer-events:auto; cursor:pointer;
+  background:var(--panel,#0f1622); color:var(--text,#e8e6f0);
+  border:1px solid var(--border-accent,rgba(124,92,255,.5)); border-radius:14px;
+  padding:14px 16px; min-width:240px; max-width:340px;
+  box-shadow:0 12px 40px rgba(0,0,0,.55);
+  opacity:0; transform:translateY(12px);
+  transition:opacity .35s ease-out, transform .35s ease-out;
+}
+.vn-social-toast.vn-social-toast--show{opacity:1; transform:translateY(0)}
+.vn-social-toast--req{border-color:rgba(61,214,140,.6)}
+.vn-social-toast-title{font-weight:700; font-size:.95rem; margin-bottom:4px}
+.vn-social-toast--req .vn-social-toast-title{color:var(--green,#3dd68c)}
+.vn-social-toast-body{font-size:.88rem; opacity:.85; line-height:1.5;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.vn-social-toast-actions{margin-top:8px; font-size:.82rem}
+.vn-social-toast-actions .vn-social-toast-link{color:var(--accent,#7c5cff); text-decoration:underline}]

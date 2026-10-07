@@ -1598,6 +1598,7 @@
   // policies when no gesture has happened yet — that is why the notification
   // sound silently never played on desktop.
   let __pingCtx = null;
+  let __pingUnlocked = false;
   function pingCtx() {
     if (!__pingCtx) {
       try { __pingCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
@@ -1605,7 +1606,28 @@
     if (__pingCtx.state === "suspended") { try { __pingCtx.resume().catch(() => {}); } catch (e) {} }
     return __pingCtx;
   }
-  document.addEventListener("pointerdown", () => { pingCtx(); }, { passive: true });
+  // Prewarm at page load: create the AudioContext early and bus a 0-length
+  // silent buffer through it. Chrome/Firefox/Edge remember the context after
+  // any resume() triggered by a *gesture*, but they also allow resume() from
+  // a non-gesture if the context has already had start/stop pairs run — and
+  // Safari/Chrome both record "a user has interacted with this origin" once
+  // ANY stored gesture exists, so probing resumes cleanly without a click.
+  try {
+    const warm = pingCtx();
+    if (warm) {
+      const b = warm.createBuffer(1, 1, warm.sampleRate);
+      const s = warm.createBufferSource();
+      s.buffer = b;
+      s.connect(warm.destination);
+      try { s.start(0); s.stop(0); } catch (e) { /* noop */ }
+    }
+  } catch (e) { /* audio blocked — silent until first click */ }
+  document.addEventListener("pointerdown", () => {
+    pingCtx();
+    __pingUnlocked = true;
+  }, { passive: true });
+  // Any keypress or scroll also counts as a gestural unlock in some browsers.
+  document.addEventListener("keydown", () => { __pingUnlocked = true; }, { passive: true, once: true });
   function playVeilnetPing() {
     const ctx = pingCtx();
     if (!ctx) return;
@@ -1626,6 +1648,38 @@
   }
   window.VeilnetPing = { play: playVeilnetPing };
 
+  // Live social toast — in-page visual popup the MOMENT a message or friend
+  // request arrives (no refresh, no click needed). Stackable, tappable,
+  // auto-dismisses. The "toast" UI works even on pages without the chat.
+  let __socialToastStack = null;
+  function socialToast({ title, body, senderId, isRequest }) {
+    if (!__socialToastStack || !document.body.contains(__socialToastStack)) {
+      __socialToastStack = document.createElement("div");
+      __socialToastStack.className = "vn-social-toast-stack";
+      document.body.appendChild(__socialToastStack);
+    }
+    const t = document.createElement("div");
+    t.className = "vn-social-toast" + (isRequest ? " vn-social-toast--req" : "");
+    const safeTitle = escapeHtml(title || "");
+    const safeBody = escapeHtml(body || "");
+    const profileHref = senderId
+      ? "<a class=\"vn-social-toast-link\" href=\"/veilnet/messages/\">Open Friends</a>"
+      : "";
+    t.innerHTML =
+      '<div class="vn-social-toast-title">' + safeTitle + "</div>" +
+      '<div class="vn-social-toast-body">' + safeBody + "</div>" +
+      (profileHref ? '<div class="vn-social-toast-actions">' + profileHref + "</div>" : "");
+    t.addEventListener("click", () => { location.href = "/veilnet/messages/"; });
+    __socialToastStack.appendChild(t);
+    // Force reflow then reveal to trigger slide-in animation.
+    setTimeout(() => t.classList.add("vn-social-toast--show"), 10);
+    setTimeout(() => {
+      t.classList.remove("vn-social-toast--show");
+      setTimeout(() => t.remove(), 350);
+    }, 6500);
+  }
+  window.socialToast = socialToast;
+
   // Global message notifier — works on EVERY Veilnet page (not just
   // /messages/): plays the ping the moment a message arrives and keeps the
   // Messages badge live everywhere. Per-account localStorage persists the
@@ -1641,6 +1695,10 @@
     reqCount: 0,
     reqSeen: [],
     _reqChSlWrapped: false,
+    keys() {
+      const uid = this.myId || "anon";
+      return { count: "veilnet_unread_" + uid, seen: "veilnet_seen_" + uid };
+    },
     reqKeys() {
       const uid = this.myId || "anon";
       return { count: "veilnet_frireq_unread_" + uid, seen: "veilnet_frireq_seen_" + uid };
@@ -1757,6 +1815,7 @@
       const convId = p && p.conversation_id;
       const messageId = p && p.message_id;
       const senderId = p && p.sender_id;
+      const previewBody = p && p.body;
       if (!convId || !messageId) return;
       if (this.myId && senderId === this.myId) return;
       if (this.hasSeen(messageId)) return; // other tab / earlier page already pinged it
@@ -1764,6 +1823,13 @@
       // Respect the Messages sound toggle (same key the Messages page uses).
       if ((localStorage.getItem("veilnet_msg_sound") ?? "on") === "on") playVeilnetPing();
       this.add(1);
+      // Live in-page popup (no refresh, no click needed). Skipped when the
+      // user is actually looking at that same conversation in the chat —
+      // the message already shows in-thread there.
+      const inChat = document.getElementById("msgApp")
+        && document.getElementById("msgChatTitle")
+        && !document.hidden;
+      if (!inChat) socialToast({ title: "New message", body: previewBody, senderId });
     },
     subscribe() {
       // The Messages page runs its own richer realtime subscription — never
@@ -1784,6 +1850,7 @@
       const p = (msg && msg.payload) || msg;
       const fromId = p && (p.from || p.from_id || p.sender_id);
       const toId = p && (p.to || p.to_id || p.user_id);
+      const fromName = p && (p.username || p.from_username || "");
       if (!fromId || !toId) return;
       if (toId !== this.myId) return; // only my requests
       if (fromId === this.myId) return;
@@ -1792,6 +1859,8 @@
       this.markReqSeen(dedupeId);
       if ((localStorage.getItem("veilnet_msg_sound") ?? "on") === "on") playVeilnetPing();
       this.reqAdd(1);
+      // Live in-page popup for friend requests (no refresh needed).
+      socialToast({ title: "Friend request", body: fromName ? (fromName + " wants to be your friend") : "Someone wants to be your friend", senderId: fromId, isRequest: true });
     },
     // Their request got auto-accepted (you had a pending reverse): green badge.
     handleFriendAcceptedPing(msg) {
@@ -1808,6 +1877,8 @@
       this.markReqSeen(dedupeId);
       if ((localStorage.getItem("veilnet_msg_sound") ?? "on") === "on") playVeilnetPing();
       this.reqAdd(1);
+      // Live in-page popup for accept events too (no refresh, no click).
+      socialToast({ title: "Friend request accepted", body: "You are now friends on Veilnet", senderId: fromId });
     },
     start(userId) {
       this.myId = userId || null;
