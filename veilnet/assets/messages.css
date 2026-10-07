@@ -159,6 +159,27 @@
   border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03);
   transition: color .15s, background .15s, border-color .15s;
 }
+
+/* Per-friend pin button in the friends list (desktop only — mobile skips
+   the bubble entirely). Same row geometry as the profile/acc icons. */
+.msg-row { position: relative; }
+.friend-pin {
+  position: absolute; right: 60px; top: 50%; transform: translateY(-50%);
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03);
+  color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: color .15s, background .15s, border-color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.friend-pin:hover { color: var(--accent2); background: var(--accent-soft); border-color: var(--border-accent); }
+.friend-pin.pinned { color: var(--green, #3dd68c); border-color: rgba(61,214,140,.5); background: rgba(61,214,140,.1); }
+
+@media (max-width: 640px) {
+  /* Mobile: no pin buttons, no messenger bubble (skip entirely). */
+  .friend-pin { display: none; }
+  #vnBubble, #vnBubblePanel { display: none !important; }
+}
 .chat-icon-btn + .chat-icon-btn { margin-left: 6px; }
 .chat-icon-btn:hover { color: var(--accent2); background: var(--accent-soft); border-color: var(--border-accent); }
 

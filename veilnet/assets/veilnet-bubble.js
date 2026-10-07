@@ -325,13 +325,33 @@
     }
   }
 
+  // Show/hide the bubble to match current pin state. On the messages page
+  // the bubble only makes sense once something is pinned; everywhere else
+  // signed-in users always get it.
+  function syncVisibility() {
+    if (!el) return;
+    const onMsgPage = !!document.getElementById("msgApp");
+    const hasPins = loadPinned().length > 0;
+    const hidden = (() => { try { return sessionStorage.getItem("veilnet_bubble_hidden") === "1"; } catch (e) { return false; } })();
+    const shouldShow = !hidden && (onMsgPage ? hasPins : true);
+    el.style.display = shouldShow ? "" : "none";
+  }
+
   // ---------- boot ----------
   function wire() {
-    if (document.getElementById("msgApp")) return; // full app page — no bubble
     if (document.getElementById("vnBubble")) return;
-    // Only when signed in, and never bubble+panel double.
+    // Only when signed in.
     window.VeilnetAuth?.getUser?.().then((u) => {
-      if (u) ensureBubble();
+      if (!u) return;
+      ensureBubble();
+      syncVisibility();
+      // Messages page pin buttons dispatch this when pins change.
+      window.addEventListener("veilnet:bubble-pins-changed", () => {
+        try { sessionStorage.removeItem("veilnet_bubble_hidden"); } catch (e) {}
+        syncVisibility();
+        // If the panel is open, refresh the pinned list live.
+        if (state.open) refresh();
+      });
     }).catch(() => {});
   }
 

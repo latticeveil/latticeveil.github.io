@@ -713,12 +713,20 @@
         : '<div class="small msg-muted">No friends yet — add friends from the launcher or their profiles.</div>';
       return;
     }
+    // Pinned friends (Facebook-style bubble). Same key the bubble widget
+    // reads, so pinning here pops the floating chat panel on this page and
+    // persists across the whole site. Desktop only (hidden on mobile).
+    let pinned = [];
+    try { pinned = JSON.parse(localStorage.getItem("veilnet_bubble_pinned_friends") || "[]"); if (!Array.isArray(pinned)) pinned = []; } catch (e) { pinned = []; }
+
     box.innerHTML = shown.map((f) => {
       const conv = Array.from(state.conversations.values()).find((c) => c.other_id === f.productUserId && c.last_at);
+      const isP = pinned.indexOf(f.productUserId) !== -1;
       return '<div class="msg-row" data-friend="' + f.productUserId + '">' +
         '<img src="' + esc(f.pictureUrl || "../assets/default_pfp.png") + '" alt="">' +
         '<div class="mr-main"><div class="mr-name">' + esc(f.username) + '</div>' +
         '<div class="mr-sub">' + (conv ? "conversation" : "start chatting") + '</div></div>' +
+        '<button class="friend-pin' + (isP ? " pinned" : "") + '" data-pin="' + f.productUserId + '" title="' + (isP ? "Unpin from bubble" : "Pin to messenger bubble") + '" aria-label="Pin to messenger bubble">📌</button>' +
         '<a class="friend-profile" href="/veilnet/profile/?u=' + encodeURIComponent(f.username || "") + '" title="View profile" aria-label="View profile">' + PERSON_SVG + '</a>' +
         '<a class="friend-acc" href="/veilnet/accomplishments/?u=' + encodeURIComponent(f.username || "") + '" title="View accomplishments" aria-label="View accomplishments">' + ACC_SVG + '</a>' +
         '</div>';
@@ -728,6 +736,21 @@
     });
     box.querySelectorAll("a.friend-acc, a.friend-profile").forEach((el) => {
       el.addEventListener("click", (e) => e.stopPropagation());
+    });
+    box.querySelectorAll("button.friend-pin").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = el.getAttribute("data-pin");
+        let arr = [];
+        try { arr = JSON.parse(localStorage.getItem("veilnet_bubble_pinned_friends") || "[]"); if (!Array.isArray(arr)) arr = []; } catch (err) { arr = []; }
+        const i = arr.indexOf(id);
+        if (i === -1) { if (arr.length >= 20) { vnAlert("You can pin up to 20 friends."); return; } arr.push(id); }
+        else arr.splice(i, 1);
+        try { localStorage.setItem("veilnet_bubble_pinned_friends", JSON.stringify(arr)); } catch (err) {}
+        // Ask the bubble widget to show/hide itself right away.
+        window.dispatchEvent(new CustomEvent("veilnet:bubble-pins-changed"));
+        renderFriendList();
+      });
     });
   }
 
