@@ -532,6 +532,7 @@
           </div>
           <div class="profile-info">
             <p id="profileStatus">&nbsp;</p>
+            <div id="profileFriendBox" style="display:none"></div>
           </div>
         </div>
       </div>
@@ -714,10 +715,9 @@
         <canvas id="settingsSkinPreviewCanvas" class="settings-skin-canvas" width="64" height="64" aria-hidden="true"></canvas>
       </section>
     </div>
-  </div>
-
-  <script src="https://accounts.google.com/gsi/client"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  </div>    <script src="https://accounts.google.com/gsi/client"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../assets/veilnet-friends.js?v=18"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="../assets/config.js"></script>
   <script src="../assets/auth.js"></script>
@@ -1100,6 +1100,9 @@
       
       // Check if viewing own profile for edit buttons
       setupEditButtons(profile);
+      
+      // Friend/unfriend/block from this profile (same friends system as the game)
+      if (profile?.id && window.loadFriendState) window.loadFriendState(profile.id, 'profileFriendBox');
     }
 
     // Setup edit buttons based on ownership

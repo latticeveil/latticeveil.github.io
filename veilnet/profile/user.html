@@ -132,6 +132,7 @@
 
   <script src="https://accounts.google.com/gsi/client"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../assets/veilnet-friends.js?v=18"></script>
   <script src="../assets/config.js"></script>
   <script src="../assets/auth.js"></script>
   <script src="../assets/veilnet-boot.js?v=18"></script>
@@ -208,72 +209,5 @@
     ensureHeader();
   </script>
   <script src="/assets/tos-acceptance.js?v=2"></script>
-  <script>
-    // Friend/unfriend/block on profiles — uses the SAME friends system as the
-    // game (messaging-api mirrors the friend-request/friend-remove semantics),
-    // so friending from the site and from the game stay one system.
-    (function () {
-      var FN = (window.VEILNET_CONFIG && window.VEILNET_CONFIG.SUPABASE_URL) + "/functions/v1/messaging-api";
-
-      async function callApi(action, friend_id) {
-        var token = await VeilnetAuth.getToken();
-        var r = await fetch(FN, {
-          method: "POST",
-          headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
-          body: JSON.stringify({ action: action, friend_id: friend_id })
-        });
-        var body = await r.json().catch(function () { return {}; });
-        if (!r.ok || body.ok === false) throw new Error(body.error || ("http_" + r.status));
-        return body;
-      }
-
-      window.loadFriendState = async function (targetId) {
-        var box = document.getElementById("profileFriendBox");
-        if (!box) return;
-        box.innerHTML = "";
-        try {
-          var me = await VeilnetAuth.getUser();
-          if (!me || me.id === targetId) { box.style.display = "none"; return; }
-          var client = VeilnetAuth.init();
-          var res = await client.from("friends")
-            .select("user_id, friend_id, status")
-            .or("and(user_id.eq." + me.id + ",friend_id.eq." + targetId + "),and(user_id.eq." + targetId + ",friend_id.eq." + me.id + ")");
-          var rows = res.data || [];
-          var mine = rows.find(function (r) { return r.user_id === me.id; });
-          var theirs = rows.find(function (r) { return r.user_id === targetId; });
-          var btns = [];
-          var blockedByMe = mine && mine.status === "blocked";
-          if (theirs && theirs.status === "pending") {
-            btns.push(["Accept Friend Request", "accept", "btn-primary"]);
-            btns.push(["Decline", "decline", "btn-secondary"]);
-          } else if (mine && mine.status === "accepted") {
-            btns.push(["Unfriend", "unfriend", "btn-secondary"]);
-          } else if (mine && mine.status === "pending") {
-            btns.push(["Cancel Request", "cancel", "btn-secondary"]);
-          } else if (!blockedByMe) {
-            btns.push(["Add Friend", "request", "btn-primary"]);
-          }
-          btns.push(blockedByMe ? ["Unblock", "unblock", "btn-secondary"] : ["Block", "block", "btn-secondary"]);
-
-          box.innerHTML = "";
-          btns.forEach(function (b) {
-            var el = document.createElement("button");
-            el.className = "btn btn-sm " + b[2];
-            el.textContent = b[0];
-            if (b[1] === "block") el.style.cssText = "background:transparent;border-color:rgba(255,77,77,.5);color:#ff6b6b";
-            el.addEventListener("click", async function () {
-              el.disabled = true;
-              try { await callApi(b[1], targetId); } catch (e) { alert("Could not " + b[1] + ": " + e.message); }
-              window.loadFriendState(targetId);
-            });
-            box.appendChild(el);
-          });
-          box.style.display = "flex";
-        } catch (e) {
-          box.style.display = "none";
-        }
-      };
-    })();
-  </script>
 </body>
 </html>
