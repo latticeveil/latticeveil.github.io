@@ -12,6 +12,7 @@
   const PAGE = 50;
 
   const TRASH_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>';
+  const ACC_SVG = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 6H5a2 2 0 0 0 0 4h2"/><path d="M17 6h2a2 2 0 0 1 0 4h-2"/></svg>';
 
   const state = {
     me: null,                 // auth user id
@@ -685,10 +686,15 @@
       return '<div class="msg-row" data-friend="' + f.productUserId + '">' +
         '<img src="' + esc(f.pictureUrl || "../assets/default_pfp.png") + '" alt="">' +
         '<div class="mr-main"><div class="mr-name">' + esc(f.username) + '</div>' +
-        '<div class="mr-sub">' + (conv ? "conversation" : "start chatting") + '</div></div></div>';
+        '<div class="mr-sub">' + (conv ? "conversation" : "start chatting") + '</div></div>' +
+        '<a class="friend-acc" href="/veilnet/accomplishments/?u=' + encodeURIComponent(f.username || "") + '" title="View accomplishments" aria-label="View accomplishments">' + ACC_SVG + '</a>' +
+        '</div>';
     }).join("");
     box.querySelectorAll(".msg-row").forEach((el) => {
       el.addEventListener("click", () => openWithFriend(el.getAttribute("data-friend")));
+    });
+    box.querySelectorAll("a.friend-acc").forEach((el) => {
+      el.addEventListener("click", (e) => e.stopPropagation());
     });
   }
 

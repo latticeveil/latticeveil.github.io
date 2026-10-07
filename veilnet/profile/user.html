@@ -25,7 +25,8 @@
         <a href="/veilnet/community/">Community</a>
         <a href="/veilnet/accomplishments/">Accomplishments</a>
         <a href="/veilnet/messages/" class="nav-messages">Messages<span id="vnUnreadBadgeMessages" class="vn-badge vn-badge--hidden"></span></a>
-      </nav>
+              <a href="/veilnet/admin/" data-veil-admin-nav>Admin</a>
+</nav>
     </div>
   </header>
 
@@ -38,6 +39,7 @@
         <div class="profile-info">
           <h1 id="profileUsername">Loading...</h1>
           <p id="profileStatus">Loading profile...</p>
+          <a id="profileAccLink" class="btn btn-secondary btn-sm" href="#" style="display:none; margin-top:8px">View Accomplishments</a>
         </div>
       </div>
 
@@ -102,6 +104,12 @@
           // Update profile display
           document.getElementById('profileUsername').textContent = user.username;
           document.getElementById('profileStatus').textContent = `Online via Google`;
+          // Accomplishments entry point (static page for now)
+          var accLink = document.getElementById('profileAccLink');
+          if (accLink && user.username) {
+            accLink.href = '/veilnet/accomplishments/?u=' + encodeURIComponent(user.username);
+            accLink.style.display = 'inline-block';
+          }
           document.getElementById('profileAbout').textContent = user.aboutme || 'No information provided';
           document.getElementById('profileStatusMessage').textContent = user.status_message || 'No status message';
           document.getElementById('profileTheme').style.background = user.theme_color || '#38e1ff';

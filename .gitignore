@@ -1,0 +1,12 @@
+supabase/
+.env
+.env.local
+.env.*.local
+plans/
+push_site.cmd
+lore/
+downloads/*.exe
+*.bat
+
+# Supabase / database files
+*.sql

@@ -768,7 +768,9 @@
 
   function setAdminNavVisible(link, visible) {
     if (!link) return;
-    link.style.display = visible ? "" : "none";
+    // Class-based (not inline style) so the static Admin slot in the markup
+    // keeps its exact position and the CSS attribute rule stays in charge.
+    link.classList.toggle("vn-admin-on", !!visible);
   }
 
   async function isAdminUserHint(user) {
@@ -894,8 +896,38 @@
     const google = ids.find(x => (x.provider || "").toLowerCase() === "google");
     const idData = google?.identity_data || google?.identityData || {};
     return idData.picture || idData.avatar_url || idData.avatarUrl || "";
+  }  // Header cache: paint name/avatar/admin instantly from localStorage on
+  // every page so nothing awkwardly pops in between page loads. Refreshes
+  // happen in the background; TTL keeps Supabase reads low (a page-to-page
+  // click within 2 minutes costs ZERO database reads).
+  const HDR_CACHE_TTL_MS = 2 * 60 * 1000;
+  function getHeaderCache() {
+    try {
+      const v = JSON.parse(localStorage.getItem("veilnet_hdr_state") || "null");
+      return v && v.ts ? v : null;
+    } catch (e) { return null; }
   }
-async function refreshHeaderUI() {
+  function setHeaderCache(name, avatar, isAdmin, email) {
+    try {
+      localStorage.setItem("veilnet_hdr_state", JSON.stringify({ name, avatar, isAdmin: !!isAdmin, email: email || "", ts: Date.now() }));
+    } catch (e) { /* storage unavailable */ }
+  }
+  function clearHeaderCache() {
+    try { localStorage.removeItem("veilnet_hdr_state"); } catch (e) {}
+  }
+  function paintCachedHeader() {
+    const c = getHeaderCache();
+    if (!c || !c.name) return false;
+    const title = document.querySelector("[data-veil-dd-title]");
+    const sub = document.querySelector("[data-veil-dd-sub]");
+    if (title) title.textContent = c.name;
+    if (sub) sub.textContent = c.email || "Online via Google";
+    if (c.avatar) setHeaderAvatarSource(c.avatar);
+    document.querySelectorAll("[data-veil-admin-nav]").forEach((el) => setAdminNavVisible(el, !!c.admin));
+    return true;
+  }
+
+  async function refreshHeaderUI(){
     const titleTargets = uniqueElements([
       document.getElementById("veilnet-display-name"),
       document.querySelector("[data-veil-dd-title]")
@@ -926,11 +958,21 @@ async function refreshHeaderUI() {
     const defaultAvatar = ASSET("default_pfp.png");
 
     try {
+      // Fast path: if the header was painted from cache moments ago, verify
+      // the session locally only — zero Supabase reads, zero layout shifts.
+      const cachedHdr = getHeaderCache();
+      if (cachedHdr && Date.now() - cachedHdr.ts < HDR_CACHE_TTL_MS && window.__veilnet_header_wired) {
+        try {
+          const s = await VeilnetAuth.init().auth.getSession();
+          if (s && s.data && s.data.session && s.data.session.user) { paintCachedHeader(); return; }
+        } catch (e) { /* fall through to the full path */ }
+      }
       const user = await VeilnetAuth.getUser();
 
       if (!user) {
         window.__veilAvatarVersion = null;
         adminHintCache = { userId: "", isAdmin: false, expiresAt: 0 };
+        clearHeaderCache();
         cacheClear();
         setHeaderAvatarSource(defaultAvatar);
 
@@ -997,6 +1039,7 @@ async function refreshHeaderUI() {
       launcherItems.forEach((el) => setMenuItemVisible(el, true));
       const isAdmin = await isAdminUserHint(user);
       adminNavLinks.forEach((el) => setAdminNavVisible(el, isAdmin));
+      setHeaderCache(displayName, avatarSrc, isAdmin, user.email);
 
       if (ring) {
         const accentRing = getComputedStyle(document.documentElement).getPropertyValue("--border-accent").trim() || "rgba(124,92,255,.45)";
@@ -1081,6 +1124,51 @@ async function refreshHeaderUI() {
   } else {
     wireProfileMenuToggle();
     refreshHeaderUI();
+  }
+
+  // Profile search: compact topbar box left of the avatar; debounced username
+  // lookup with avatar+name results linking to profiles. Uses the same design
+  // tokens as the rest of Veilnet (no theme change).
+  function wireProfileSearch() {
+    const wrap = document.querySelector("[data-veil-search]");
+    if (!wrap || wrap.dataset.wired) return;
+    wrap.dataset.wired = "1";
+    const input = wrap.querySelector(".vn-search-input");
+    const box = wrap.querySelector(".vn-search-results");
+    if (!input || !box) return;
+    let timer = null;
+    let lastQ = "";
+    const close = () => box.classList.remove("open");
+    document.addEventListener("click", (e) => { if (!wrap.contains(e.target)) close(); });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+    input.addEventListener("input", () => {
+      clearTimeout(timer);
+      const q = input.value.trim();
+      if (q.length < 2) { close(); box.innerHTML = ""; lastQ = ""; return; }
+      timer = setTimeout(async () => {
+        if (q === lastQ && box.classList.contains("open")) return;
+        lastQ = q;
+        try {
+          const client = VeilnetAuth.init();
+          const { data, error } = await client.from("profiles")
+            .select("username, picture")
+            .ilike("username", q + "%")
+            .order("username")
+            .limit(6);
+          if (error) throw error;
+          if (!data || !data.length) {
+            box.innerHTML = '<div class="vn-search-none">No players found</div>';
+          } else {
+            box.innerHTML = data.map((p) =>
+              '<a href="/veilnet/profile/?u=' + encodeURIComponent(p.username || "") + '">' +
+              '<img src="' + escapeHtml(p.picture || "/veilnet/assets/default_pfp.png") + '" alt="" onerror="this.style.visibility=\'hidden\'">' +
+              '<span>' + escapeHtml(p.username || "Unknown") + '</span></a>'
+            ).join("");
+          }
+          box.classList.add("open");
+        } catch (e) { /* keep previous results on transient errors */ }
+      }, 250);
+    });
   }
 
   async function ensureHeader(){
@@ -1609,6 +1697,8 @@ async function refreshHeaderUI() {
     // initCrossTabSync(); // DISABLED
     
     // Bootstrap auth system
+    paintCachedHeader();
+    wireProfileSearch();
     bootstrapAuth();
 
     // Global message notifier: ping sound + live badge on every page.

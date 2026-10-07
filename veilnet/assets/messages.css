@@ -118,3 +118,14 @@
   background: rgba(255,207,92,.07); color: var(--text); font-size: 13px;
 }
 .msg-cleared-bar .msg-cleared-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+
+/* Accomplishments shortcut on friend rows (like the trashcan, left of it) */
+.msg-friends-panel .msg-row .friend-acc {
+  position: absolute; right: 34px; top: 50%; transform: translateY(-50%);
+  background: transparent; border: none; color: var(--muted); cursor: pointer;
+  padding: 7px; border-radius: 8px; line-height: 0; opacity: .3;
+  transition: opacity .15s, background .15s, color .15s;
+  display: inline-flex;
+}
+.msg-friends-panel .msg-row:hover .friend-acc { opacity: 1; }
+.friend-acc:hover { background: rgba(124,92,255,.15); color: var(--accent); }

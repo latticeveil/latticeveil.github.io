@@ -25,10 +25,15 @@
         <a href="/veilnet/community/">Community</a>
         <a href="/veilnet/accomplishments/">Accomplishments</a>
         <a href="/veilnet/messages/" class="nav-messages">Messages<span id="vnUnreadBadgeMessages" class="vn-badge vn-badge--hidden"></span></a>
-      </nav>
+              <a href="/veilnet/admin/" data-veil-admin-nav>Admin</a>
+</nav>
 
       <div class="right">
-        <div class="pfp-wrap">
+                <div class="vn-search" data-veil-search>
+          <input class="vn-search-input" type="text" placeholder="Search players" autocomplete="off" spellcheck="false" aria-label="Search players">
+          <div class="vn-search-results"></div>
+        </div>
+<div class="pfp-wrap">
           <div class="avatar" data-veil-avatar title="Profile">
             <img data-veil-avatar-img src="../assets/default_pfp.png" alt="profile">
             <span id="vnUnreadBadgeProfile" class="vn-badge vn-badge--hidden"></span>
@@ -83,7 +88,8 @@
     <div class="breadcrumbs"><a href="../index.html">Veilnet</a> / Accomplishments</div>
 
     <div class="page-title" style="margin-top:10px">
-      <h1>Accomplishments</h1>
+      <h1 id="accTitle">Accomplishments</h1>
+      <div class="small" id="accSub">Your own in-game achievements, tied to your account.</div>
     </div>
 
     <div class="panel" style="margin-top:12px">
@@ -109,6 +115,18 @@
   <script src="../assets/config.js"></script>
   <script src="../assets/auth.js"></script>
   <script src="../assets/veilnet.js"></script>
+  <script>
+    // ?u=<username> — reached from a friend's row or their profile; the page
+    // is static for now, but already personalizes the heading.
+    (function () {
+      var u = new URLSearchParams(location.search).get("u");
+      if (u) {
+        document.getElementById("accTitle").textContent = u + "'s Accomplishments";
+        document.getElementById("accSub").textContent = "In-game achievements earned on " + u + "'s account.";
+        document.title = "Veilnet • " + u + " • Accomplishments";
+      }
+    })();
+  </script>
   <script src="/assets/tos-acceptance.js"></script>
 </body>
 </html>
