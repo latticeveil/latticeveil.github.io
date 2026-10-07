@@ -186,6 +186,11 @@
     state.friends = data.friends || [];
     state.incomingRequests = data.incomingRequests || [];
     state.outgoingRequests = data.outgoingRequests || [];
+    // If no pending requests remain server-side, the green ticker must be
+    // empty — clears any stale count (e.g. accepted on another device).
+    if (!state.incomingRequests.length && window.VeilnetNotify?.reqClear) {
+      window.VeilnetNotify.reqClear();
+    }
     state.conversations = new Map();
     for (const c of data.conversations || []) {
       // A conversation only appears once it HAS messages. A DM that was just
@@ -246,8 +251,7 @@
       if ((action === "accept" || action === "decline" || action === "cancel") && window.VeilnetNotify?.reqClear) {
         window.VeilnetNotify.reqClear();
       }
-      await bootstrapWithRetry();
-    } catch (e) {
+      await bootstrapWithRetry();      } catch (e) {
       vnAlert("Could not " + action + " request: " + e.message);
     }
   }
@@ -809,19 +813,36 @@
     });
   }
 
-  // Chat-head shortcuts (profile + accomplishments) for the open chat.
-  function setChatHeadLinks(username) {
-    const p = $("msgChatProfile"), a = $("msgChatAcc");
+  // Chat-head shortcuts (profile + accomplishments + pin) for the open chat.
+  function setChatHeadLinks(username, friendId) {
+    const p = $("msgChatProfile"), a = $("msgChatAcc"), pin = $("msgChatPin");
     if (!p || !a) return;
     if (username) {
       p.href = "/veilnet/profile/?u=" + encodeURIComponent(username);
       a.href = "/veilnet/accomplishments/?u=" + encodeURIComponent(username);
       p.style.display = "inline-flex";
       a.style.display = "inline-flex";
+      pin.style.display = "inline-flex";
+      refreshChatPin(friendId);
     } else {
       p.style.display = "none";
       a.style.display = "none";
+      if (pin) pin.style.display = "none";
     }
+  }
+
+  // Reflect pinned state on the chat-head pin button (desktop only).
+  function refreshChatPin(friendId) {
+    const pin = $("msgChatPin");
+    if (!pin) return;
+    if (!friendId || window.innerWidth <= 640) { pin.style.display = "none"; return; }
+    pin.style.display = "inline-flex";
+    let pinned = [];
+    try { pinned = JSON.parse(localStorage.getItem("veilnet_bubble_pinned_friends") || "[]"); if (!Array.isArray(pinned)) pinned = []; } catch (e) { pinned = []; }
+    const isP = pinned.indexOf(friendId) !== -1;
+    pin.classList.toggle("pinned", isP);
+    pin.title = isP ? "Unpin from messenger bubble" : "Pin to messenger bubble";
+    pin.setAttribute("data-pin", friendId);
   }
 
   // ---------- open conversation ----------
@@ -842,7 +863,7 @@
     $("msgChatName").textContent = friend.username || "Unknown";
     $("msgChatStatus").textContent = "new chat";
     $("msgChatAvatar").src = friend.pictureUrl || "../assets/default_pfp.png";
-    setChatHeadLinks(friend.username || "");
+    setChatHeadLinks(friend.username || "", friendId);
     $("msgMsgs").innerHTML = '<div class="small msg-muted" style="padding:12px">No messages yet — say hi!</div>';
   }
 
@@ -858,7 +879,7 @@
     $("msgChatName").textContent = conv.other?.username || "Unknown";
     $("msgChatStatus").textContent = "private conversation";
     $("msgChatAvatar").src = conv.other?.pictureUrl || "../assets/default_pfp.png";
-    setChatHeadLinks(conv.other?.username || "");
+    setChatHeadLinks(conv.other?.username || "", conv.other_id);
 
     const box = $("msgMsgs");
     box.innerHTML = '<div class="small msg-muted" style="padding:12px">Loading…</div>';
@@ -1276,6 +1297,24 @@
     $("msgInput").addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     });
+    // Chat-head pin: pin/unpin the open chat's friend to the bubble.
+    const chatPin = $("msgChatPin");
+    if (chatPin) {
+      chatPin.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const id = chatPin.getAttribute("data-pin");
+        if (!id) return;
+        let arr = [];
+        try { arr = JSON.parse(localStorage.getItem("veilnet_bubble_pinned_friends") || "[]"); if (!Array.isArray(arr)) arr = []; } catch (err) { arr = []; }
+        const i = arr.indexOf(id);
+        if (i === -1) { if (arr.length >= 20) { vnAlert("You can pin up to 20 friends."); return; } arr.push(id); }
+        else arr.splice(i, 1);
+        try { localStorage.setItem("veilnet_bubble_pinned_friends", JSON.stringify(arr)); } catch (err) {}
+        window.dispatchEvent(new CustomEvent("veilnet:bubble-pins-changed"));
+        refreshChatPin(id);
+        renderFriendList();
+      });
+    }
     $("msgOlderBtn").addEventListener("click", loadOlder);
     $("msgRefreshBtn").addEventListener("click", () => reconcile().then(() => bootstrap()).catch(() => {}));
     const soundBtn = $("msgSoundBtn");

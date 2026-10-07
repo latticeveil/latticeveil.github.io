@@ -161,18 +161,27 @@
 }
 
 /* Per-friend pin button in the friends list (desktop only — mobile skips
-   the bubble entirely). Same row geometry as the profile/acc icons. */
+   the bubble entirely). Row icon strip right→left: trash(8) acc(34)
+   profile(60) pin(86). The pin is the same size as the other icons and
+   clearly separated — no overlap. */
 .msg-row { position: relative; }
 .friend-pin {
-  position: absolute; right: 60px; top: 50%; transform: translateY(-50%);
-  width: 30px; height: 30px; border-radius: 8px;
-  border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.03);
-  color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1;
+  position: absolute; right: 118px; top: 50%; transform: translateY(-50%);
+  width: 24px; height: 24px; padding: 4px; border-radius: 8px;
+  border: none; background: transparent;
+  color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1;
   display: inline-flex; align-items: center; justify-content: center;
   transition: color .15s, background .15s, border-color .15s;
   -webkit-tap-highlight-color: transparent;
+  opacity: .3;
 }
-.friend-pin:hover { color: var(--accent2); background: var(--accent-soft); border-color: var(--border-accent); }
+.msg-friends-panel .msg-row:hover .friend-pin { opacity: 1; }
+.friend-pin.pinned { opacity: 1; color: var(--green, #3dd68c); }
+.friend-pin:hover { color: var(--accent2); background: rgba(124,92,255,.15); }
+
+/* Chat-head pin: same style as profile/acc icon buttons in the chat head. */
+.chat-icon-btn.pin-btn { color: var(--muted); }
+.chat-icon-btn.pin-btn.pinned { color: var(--green, #3dd68c); border-color: rgba(61,214,140,.45); background: rgba(61,214,140,.08); }
 .friend-pin.pinned { color: var(--green, #3dd68c); border-color: rgba(61,214,140,.5); background: rgba(61,214,140,.1); }
 
 @media (max-width: 640px) {

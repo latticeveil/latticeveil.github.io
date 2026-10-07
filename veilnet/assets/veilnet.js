@@ -1734,10 +1734,15 @@
     loadReq() {
       const k = this.reqKeys();
       try {
-        this.reqCount = parseInt(localStorage.getItem(k.count) || "0", 10) || 0;
         this.reqSeen = JSON.parse(localStorage.getItem(k.seen) || "[]");
         if (!Array.isArray(this.reqSeen)) this.reqSeen = [];
-      } catch (e) { this.reqCount = 0; this.reqSeen = []; }
+      } catch (e) { this.reqSeen = []; }
+      // The request badge is DERIVED, not persisted: any stale count from an
+      // older session (e.g. a request accepted on another device/tab) would
+      // otherwise show forever. Live pings add to it; accept/decline and the
+      // messages-page bootstrap clear it via reqClear().
+      this.reqCount = 0;
+      this.saveReq();
     },
     saveReq() {
       const k = this.reqKeys();
